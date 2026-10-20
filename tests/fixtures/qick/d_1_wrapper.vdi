@@ -1,0 +1,337 @@
+#-----------------------------------------------------------
+# Vivado v2023.2 (64-bit)
+# SW Build 4029153 on Fri Oct 13 20:13:54 MDT 2023
+# IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+# SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+# Start of session at: Wed Jul  1 19:32:15 2026
+# Process ID: 8050
+# Current directory: /home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1
+# Command line: vivado -log d_1_wrapper.vdi -applog -product Vivado -messageDb vivado.pb -mode batch -source d_1_wrapper.tcl -notrace
+# Log file: /home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper.vdi
+# Journal file: /home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/vivado.jou
+# Running On: 192.0.2.10, OS: Linux, CPU Frequency: 1958.814 MHz, CPU Physical cores: 4, Host memory: 16493 MB
+#-----------------------------------------------------------
+source d_1_wrapper.tcl -notrace
+WARNING: [Common 17-1361] You have specified a new message control rule that is equivalent to an existing rule with attributes ' -id {[BD 41-1271]}  -suppress '. The existing rule will be replaced.
+create_project: Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 1285.137 ; gain = 16.867 ; free physical = 3309 ; free virtual = 25470
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/home/user/projects/qick/qick/firmware/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/opt/Xilinx/Vivado/2023.2/data/ip'.
+WARNING: [filemgmt 56-443] The ECC Algorithm string is empty. Setting the Memory Map to default ECC value to ECC_NONE.
+WARNING: [filemgmt 56-443] The ECC Algorithm string is empty. Setting the Memory Map to default ECC value to ECC_NONE.
+add_files: Time (s): cpu = 00:00:11 ; elapsed = 00:00:12 . Memory (MB): peak = 1456.043 ; gain = 156.062 ; free physical = 2798 ; free virtual = 25288
+Command: link_design -top d_1_wrapper -part xczu48dr-ffvg1517-2-e
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+INFO: [Device 21-403] Loading part xczu48dr-ffvg1517-2-e
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.gen/sources_1/bd/d_1/ip/d_1_axi_dma_avg_0/d_1_axi_dma_avg_0.dcp' for cell 'd_1_i/axi_dma_avg'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.gen/sources_1/bd/d_1/ip/d_1_axi_dma_buf_0/d_1_axi_dma_buf_0.dcp' for cell 'd_1_i/axi_dma_buf'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.gen/sources_1/bd/d_1/ip/d_1_axi_dma_gen_0/d_1_axi_dma_gen_0.dcp' for cell 'd_1_i/axi_dma_gen'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.gen/sources_1/bd/d_1/ip/d_1_axi_dma_mr_0/d_1_axi_dma_mr_0.dcp' for cell 'd_1_i/axi_dma_mr'
+  IBUFDS => IBUFDS (DIFFINBUF, IBUFCTRL): 1 instance 
+  IOBUFDS => IOBUFDS (DIFFINBUF, IBUFCTRL, INV, OBUFT(x2)): 8 instances
+  IOBUFE3 => IOBUFE3 (IBUFCTRL, INBUF, OBUFT_DCIEN): 72 instances
+  LUT6_2 => LUT6_2 (LUT5, LUT6): 31 instances
+  OBUFDS => OBUFDS_DUAL_BUF (INV, OBUF(x2)): 1 instance 
+  RAM16X1D => RAM32X1D (RAMD32(x2)): 6 instances
+  RAM32M => RAM32M (RAMD32(x6), RAMS32(x2)): 227 instances
+  RAM32M16 => RAM32M16 (RAMD32(x14), RAMS32(x2)): 730 instances
+  RAM32X1D => RAM32X1D (RAMD32(x2)): 14 instances
+
+78 Infos, 113 Warnings, 0 Critical Warnings and 0 Errors encountered.
+link_design completed successfully
+link_design: Time (s): cpu = 00:05:02 ; elapsed = 00:04:13 . Memory (MB): peak = 5702.137 ; gain = 4246.094 ; free physical = 426 ; free virtual = 22009
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:03 . Memory (MB): peak = 5702.137 ; gain = 0.000 ; free physical = 294 ; free virtual = 21772
+
+Starting Cache Timing Information Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Cache Timing Information Task | Checksum: 19b348941
+
+Time (s): cpu = 00:01:49 ; elapsed = 00:00:27 . Memory (MB): peak = 5702.137 ; gain = 0.000 ; free physical = 630 ; free virtual = 21871
+
+Starting Logic Optimization Task
+
+Phase 1 Initialization
+
+Ending Power Optimization Task | Checksum: 191a77c04
+
+Time (s): cpu = 00:04:13 ; elapsed = 00:01:12 . Memory (MB): peak = 7504.031 ; gain = 1801.895 ; free physical = 642 ; free virtual = 19721
+
+Starting Final Cleanup Task
+
+Starting Logic Optimization Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Logic Optimization Task | Checksum: 147961e4a
+
+Time (s): cpu = 00:02:41 ; elapsed = 00:00:40 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1692 ; free virtual = 21316
+INFO: [Constraints 18-11670] Building netlist checker database with flags, 0x8
+Done building netlist checker database: Time (s): cpu = 00:00:00.16 ; elapsed = 00:00:00.17 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1690 ; free virtual = 21315
+Ending Final Cleanup Task | Checksum: 147961e4a
+
+Time (s): cpu = 00:02:45 ; elapsed = 00:00:44 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1690 ; free virtual = 21315
+
+Starting Netlist Obfuscation Task
+Netlist sorting complete. Time (s): cpu = 00:00:00.04 ; elapsed = 00:00:00.04 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1690 ; free virtual = 21315
+Ending Netlist Obfuscation Task | Checksum: 147961e4a
+
+Time (s): cpu = 00:00:00.08 ; elapsed = 00:00:00.08 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1690 ; free virtual = 21315
+INFO: [Common 17-83] Releasing license: Implementation
+132 Infos, 316 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:16:11 ; elapsed = 00:07:02 . Memory (MB): peak = 7504.031 ; gain = 1801.895 ; free physical = 1690 ; free virtual = 21315
+INFO: [runtcl-4] Executing : report_drc -file d_1_wrapper_drc_opted.rpt -pb d_1_wrapper_drc_opted.pb -rpx d_1_wrapper_drc_opted.rpx
+Command: report_drc -file d_1_wrapper_drc_opted.rpt -pb d_1_wrapper_drc_opted.pb -rpx d_1_wrapper_drc_opted.rpx
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 2-168] The results of DRC are in file /home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_drc_opted.rpt.
+report_drc completed successfully
+report_drc: Time (s): cpu = 00:00:39 ; elapsed = 00:00:11 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1674 ; free virtual = 21303
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00.48 ; elapsed = 00:00:00.11 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1516 ; free virtual = 21191
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1516 ; free virtual = 21191
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Write ShapeDB Complete: Time (s): cpu = 00:00:04 ; elapsed = 00:00:00.92 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1400 ; free virtual = 21117
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:07 ; elapsed = 00:00:02 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1356 ; free virtual = 21108
+Wrote Netlist Cache: Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1356 ; free virtual = 21107
+Wrote Device Cache: Time (s): cpu = 00:00:00.05 ; elapsed = 00:00:00.02 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1351 ; free virtual = 21104
+Write Physdb Complete: Time (s): cpu = 00:00:08 ; elapsed = 00:00:02 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1350 ; free virtual = 21103
+INFO: [Common 17-1381] The checkpoint '/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_opt.dcp' has been generated.
+write_checkpoint: Time (s): cpu = 00:02:23 ; elapsed = 00:00:51 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1403 ; free virtual = 21118
+INFO: [Chipscope 16-240] Debug cores have already been implemented
+Command: place_design -directive ExtraNetDelay_high
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+INFO: [Common 17-83] Releasing license: Implementation
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+Running DRC as a precondition to command place_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+INFO: [Place 46-5] The placer was invoked with the 'ExtraNetDelay_high' directive.
+INFO: [Place 30-611] Multithreading enabled for place_design using a maximum of 8 CPUs
+
+Starting Placer Task
+
+Phase 1 Placer Initialization
+
+Phase 1.1 Placer Initialization Netlist Sorting
+Netlist sorting complete. Time (s): cpu = 00:00:00.05 ; elapsed = 00:00:00.04 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1262 ; free virtual = 21022
+Phase 1.1 Placer Initialization Netlist Sorting | Checksum: ec2a0f34
+
+Time (s): cpu = 00:00:00.16 ; elapsed = 00:00:00.16 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1257 ; free virtual = 21016
+Netlist sorting complete. Time (s): cpu = 00:00:00.04 ; elapsed = 00:00:00.04 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 1253 ; free virtual = 21014
+
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device | Checksum: 160805216
+
+Time (s): cpu = 00:00:54 ; elapsed = 00:00:39 . Memory (MB): peak = 7504.031 ; gain = 0.000 ; free physical = 993 ; free virtual = 20946
+
+Phase 1.3 Build Placer Netlist Model
+Phase 1.3 Build Placer Netlist Model | Checksum: 23089ef6b
+
+Time (s): cpu = 00:04:12 ; elapsed = 00:01:44 . Memory (MB): peak = 7736.324 ; gain = 232.293 ; free physical = 633 ; free virtual = 20531
+
+Phase 1.4 Constrain Clocks/Macros
+Phase 1.4 Constrain Clocks/Macros | Checksum: 23089ef6b
+
+Time (s): cpu = 00:04:12 ; elapsed = 00:01:45 . Memory (MB): peak = 7736.324 ; gain = 232.293 ; free physical = 631 ; free virtual = 20529
+Phase 1 Placer Initialization | Checksum: 23089ef6b
+
+Time (s): cpu = 00:04:13 ; elapsed = 00:01:46 . Memory (MB): peak = 7736.324 ; gain = 232.293 ; free physical = 630 ; free virtual = 20529
+Post Placement Optimization Initialization | Checksum: 1b1fea1a2
+
+Phase 4.1.1.1 BUFG Insertion
+
+Starting Physical Synthesis Task
+
+Phase 1 Physical Synthesis Initialization
+INFO: [Physopt 32-721] Multithreading enabled for phys_opt_design using a maximum of 8 CPUs
+INFO: [Physopt 32-619] Estimated Timing Summary | WNS=-0.132 | TNS=-10.875 |
+Phase 1 Physical Synthesis Initialization | Checksum: 1cd2bbb8c
+
+Time (s): cpu = 00:00:42 ; elapsed = 00:00:09 . Memory (MB): peak = 8017.383 ; gain = 0.000 ; free physical = 942 ; free virtual = 20162
+INFO: [Place 46-35] Processed net d_1_i/axi_dma_tproc/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_RESET/sig_cmd_stat_rst_user_reg_n_cdc_from, inserted BUFG to drive 1045 loads.
+INFO: [Place 46-45] Replicated bufg driver d_1_i/axi_dma_tproc/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_RESET/sig_cmd_stat_rst_user_reg_n_cdc_from_reg_replica
+INFO: [Place 46-56] BUFG insertion identified 1 candidate nets. Inserted BUFG: 1, Replicated BUFG Driver: 1, Skipped due to Placement/Routing Conflicts: 0, Skipped due to Timing Degradation: 0, Skipped due to netlist editing failed: 0.
+Ending Physical Synthesis Task | Checksum: 1b69509e6
+
+Time (s): cpu = 00:01:06 ; elapsed = 00:00:16 . Memory (MB): peak = 8017.383 ; gain = 0.000 ; free physical = 1028 ; free virtual = 20202
+Phase 4.1.1.1 BUFG Insertion | Checksum: 1f1fec9e7
+
+Time (s): cpu = 00:39:08 ; elapsed = 00:12:39 . Memory (MB): peak = 8017.383 ; gain = 513.352 ; free physical = 1020 ; free virtual = 20196
+
+Phase 4.1.1.2 Post Placement Timing Optimization
+INFO: [Place 30-746] Post Placement Timing Summary WNS=0.038. For the most accurate timing information please run report_timing.
+Phase 4.1.1.2 Post Placement Timing Optimization | Checksum: 19c360f3d
+
+Time (s): cpu = 00:53:07 ; elapsed = 00:26:39 . Memory (MB): peak = 8017.383 ; gain = 513.352 ; free physical = 1872 ; free virtual = 17774
+
+Time (s): cpu = 00:53:07 ; elapsed = 00:26:39 . Memory (MB): peak = 8017.383 ; gain = 513.352 ; free physical = 1871 ; free virtual = 17774
+Phase 4.1 Post Commit Optimization | Checksum: 19c360f3d
+
+Command: phys_opt_design -directive AggressiveExplore
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+INFO: [Vivado_Tcl 4-137] Directive used for phys_opt_design is: AggressiveExplore
+
+Starting Initial Update Timing Task
+
+Time (s): cpu = 00:02:51 ; elapsed = 00:00:31 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 2039 ; free virtual = 19936
+INFO: [Vivado_Tcl 4-383] Design worst setup slack (WNS) is greater than or equal to 0.000 ns. Skipping all physical synthesis optimizations.
+INFO: [Vivado_Tcl 4-232] No setup violation found. The netlist was not modified.
+INFO: [Common 17-83] Releasing license: Implementation
+336 Infos, 316 Warnings, 0 Critical Warnings and 0 Errors encountered.
+phys_opt_design completed successfully
+phys_opt_design: Time (s): cpu = 00:02:53 ; elapsed = 00:01:53 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 2038 ; free virtual = 19936
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Write ShapeDB Complete: Time (s): cpu = 00:00:04 ; elapsed = 00:00:00.79 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1954 ; free virtual = 19952
+Wrote PlaceDB: Time (s): cpu = 00:00:33 ; elapsed = 00:00:11 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1670 ; free virtual = 19927
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1670 ; free virtual = 19927
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.97 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1670 ; free virtual = 19933
+Wrote Netlist Cache: Time (s): cpu = 00:00:00.64 ; elapsed = 00:00:00.23 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1646 ; free virtual = 19933
+Wrote Device Cache: Time (s): cpu = 00:00:00.04 ; elapsed = 00:00:00.02 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1638 ; free virtual = 19928
+Write Physdb Complete: Time (s): cpu = 00:00:37 ; elapsed = 00:00:12 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1638 ; free virtual = 19927
+INFO: [Common 17-1381] The checkpoint '/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_physopt.dcp' has been generated.
+write_checkpoint: Time (s): cpu = 00:00:53 ; elapsed = 00:00:28 . Memory (MB): peak = 8055.379 ; gain = 0.000 ; free physical = 1852 ; free virtual = 19932
+Command: route_design -directive NoTimingRelaxation
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+Running DRC as a precondition to command route_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors, 1 Warnings
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+
+Starting Routing Task
+INFO: [Route 35-270] Using Router directive 'NoTimingRelaxation'.
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 8 CPUs
+
+Phase 1 Build RT Design
+Checksum: PlaceDB: 644745eb ConstDB: 0 ShapeSum: 9f99cd53 RouteDB: e7d34be3
+Nodegraph reading from file.  Time (s): cpu = 00:00:00.74 ; elapsed = 00:00:00.76 . Memory (MB): peak = 8063.383 ; gain = 0.000 ; free physical = 1869 ; free virtual = 20004
+Post Restoration Checksum: NetGraph: f9a45dc7 | NumContArr: 4c0ec341 | Constraints: 35ebdf9c | Timing: c2a8fa9d
+
+Time (s): cpu = 00:03:29 ; elapsed = 00:00:42 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1649 ; free virtual = 19878
+
+Phase 2.4 Update Timing
+Phase 2.4 Update Timing | Checksum: 18b7687f3
+
+Time (s): cpu = 00:05:30 ; elapsed = 00:01:07 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1644 ; free virtual = 19877
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.078  | TNS=0.000  | WHS=-0.118 | THS=-126.375|
+
+
+Phase 2.5 Update Timing for Bus Skew
+
+Phase 2.5.1 Update Timing
+Phase 2.5.1 Update Timing | Checksum: 1f2929aac
+
+Time (s): cpu = 00:11:26 ; elapsed = 00:02:15 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1630 ; free virtual = 19929
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.078  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 2.5 Update Timing for Bus Skew | Checksum: 1e3955f1f
+
+Time (s): cpu = 00:11:27 ; elapsed = 00:02:15 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1630 ; free virtual = 19932
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 0.00112615 %
+  Global Horizontal Routing Utilization  = 0.000237793 %
+  Routable Net Status*
+Phase 12 Resolve XTalk | Checksum: 184f811d4
+
+Time (s): cpu = 00:50:37 ; elapsed = 00:11:23 . Memory (MB): peak = 8251.430 ; gain = 188.047 ; free physical = 1508 ; free virtual = 19589
+
+Phase 13 Post Router Timing
+INFO: [Route 35-20] Post Routing Timing Summary | WNS=0.006  | TNS=0.000  | WHS=0.010  | THS=0.000  |
+
+Phase 13 Post Router Timing | Checksum: 19b8a6c65
+
+Time (s): cpu = 00:55:26 ; elapsed = 00:12:14 . Memory (MB): peak = 8275.441 ; gain = 212.059 ; free physical = 1511 ; free virtual = 19592
+Time taken to check if laguna hold fix is required (in secs): 0
+Skip PhysOpt in Router because non-negative WNS value: 6.26521e-12 .
+
+Phase 14 Route finalize
+Phase 14 Route finalize | Checksum: 19b8a6c65
+
+Time (s): cpu = 00:55:26 ; elapsed = 00:12:14 . Memory (MB): peak = 8275.441 ; gain = 212.059 ; free physical = 1511 ; free virtual = 19593
+INFO: [Route 35-61] The design met the timing requirement.
+INFO: [Route 35-16] Router Completed Successfully
+
+Phase 15 Post-Route Event Processing
+Phase 15 Post-Route Event Processing | Checksum: d99b26ca
+
+Time (s): cpu = 00:55:32 ; elapsed = 00:12:20 . Memory (MB): peak = 8275.441 ; gain = 212.059 ; free physical = 1508 ; free virtual = 19590
+Ending Routing Task | Checksum: d99b26ca
+
+Time (s): cpu = 00:55:37 ; elapsed = 00:12:24 . Memory (MB): peak = 8275.441 ; gain = 212.059 ; free physical = 1506 ; free virtual = 19588
+
+Routing Is Done.
+INFO: [Common 17-83] Releasing license: Implementation
+360 Infos, 316 Warnings, 0 Critical Warnings and 0 Errors encountered.
+route_design completed successfully
+route_design: Time (s): cpu = 00:55:53 ; elapsed = 00:13:52 . Memory (MB): peak = 8275.441 ; gain = 220.062 ; free physical = 1505 ; free virtual = 19587
+INFO: [runtcl-4] Executing : report_drc -file d_1_wrapper_drc_routed.rpt -pb d_1_wrapper_drc_routed.pb -rpx d_1_wrapper_drc_routed.rpx
+Command: report_drc -file d_1_wrapper_drc_routed.rpt -pb d_1_wrapper_drc_routed.pb -rpx d_1_wrapper_drc_routed.rpx
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [Memdata 28-208] The XPM instance: <d_1_i/axi_dma_buf/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/GEN_ENABLE_INDET_BTT_SF.I_INDET_BTT/I_DATA_FIFO/BLK_MEM.I_SYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_sync_inst/xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst> is part of IP: <d_1_i/axi_dma_buf>. This XPM instance will be excluded from the .mmi because updatemem is prohibited from making changes to an XPM that is part of an IP.
+INFO: [Memdata 28-167] Found XPM memory block d_1_i/axi_dma_avg/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/GEN_ENABLE_INDET_BTT_SF.I_INDET_BTT/I_XD_FIFO/NON_BLK_MEM.I_SYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_sync_inst/xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst with a P_MEMORY_PRIMITIVE property set to auto. A value of block is required. You will not be able to use the updatemem program to update the bitstream with new data for the d_1_i/axi_dma_avg/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/GEN_ENABLE_INDET_BTT_SF.I_INDET_BTT/I_XD_FIFO/NON_BLK_MEM.I_SYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_sync_inst/xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst block.
+INFO: [Memdata 28-208] The XPM instance: <d_1_i/axi_dma_avg/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/GEN_ENABLE_INDET_BTT_SF.I_INDET_BTT/I_DATA_FIFO/BLK_MEM.I_SYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_sync_inst/xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst> is part of IP: <d_1_i/axi_dma_avg>. This XPM instance will be excluded from the .mmi because updatemem is prohibited from making changes to an XPM that is part of an IP.
+Command: write_bitstream -force d_1_wrapper.bit
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+Running DRC as a precondition to command write_bitstream
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 8 threads
+WARNING: [DRC AVAL-318] DSP_dynamic_PCIN_tieoff_only_on_bottom_sites: The DSP48E2 d_1_i/qick_processor_0/inst/QPROC/QPER_ARITH.ARITH/ARITH_DSP/U0/i_synth/i_synth_option.i_synth_model/opt_8series.i_uniwrap/i_primitive is not placed on a bottom site of the device, has OPMODE[5:4] driven by active nets (value '01' uses PCIN bus), and ties some or all of its PCIN bus pin(s) to GND, but that connectivity is only available for the bottom DSP site. Care should be taken for the effect on that PCIN if the DSP site below it is used.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[1].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[1].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[1].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[1].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[2].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[2].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[2].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[2].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[3].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[3].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[3].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[3].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[4].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[4].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[4].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[4].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[5].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[5].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[5].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[5].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[6].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[6].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[6].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[6].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+WARNING: [DRC DPIP-2] Input pipelining: DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[7].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[7].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+INFO: [Memdata 28-144] Successfully populated the BRAM INIT strings from the following elf files: /home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.gen/sources_1/bd/d_1/ip/d_1_ddr4_0_0/sw/calibration_0/Debug/calibration_ddr.elf 
+INFO: [Designutils 20-2272] Running write_bitstream with 8 threads.
+Loading data files...
+Loading site data...
+Loading route data...
+Processing options...
+Creating bitmap...
+Creating bitstream...
+Writing bitstream ./d_1_wrapper.bit...
+INFO: [Vivado 12-1842] Bitgen Completed Successfully.
+INFO: [Common 17-83] Releasing license: Implementation
+409 Infos, 77 Warnings, 0 Critical Warnings and 0 Errors encountered.
+write_bitstream completed successfully
+write_bitstream: Time (s): cpu = 00:02:15 ; elapsed = 00:02:17 . Memory (MB): peak = 8403.023 ; gain = 95.566 ; free physical = 1312 ; free virtual = 19381
+INFO: [Common 17-206] Exiting Vivado at Wed Jul  1 20:36:05 2026...

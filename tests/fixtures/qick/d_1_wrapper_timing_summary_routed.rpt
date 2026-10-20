@@ -1,0 +1,260 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version      : Vivado v.2023.2 (lin64) Build 4029153 Fri Oct 13 20:13:54 MDT 2023
+| Date              : Wed Jul  1 20:33:00 2026
+| Host              : 192.0.2.10 running 64-bit Arch Linux
+| Command           : report_timing_summary -max_paths 10 -report_unconstrained -file d_1_wrapper_timing_summary_routed.rpt -pb d_1_wrapper_timing_summary_routed.pb -rpx d_1_wrapper_timing_summary_routed.rpx -warn_on_violation
+| Design            : d_1_wrapper
+| Device            : xczu48dr-ffvg1517
+| Speed File        : -2  PRODUCTION 1.32 01-31-2021
+| Design State      : Routed
+| Temperature Grade : E
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Summary Report
+
+------------------------------------------------------------------------------------------------
+| Timer Settings
+| --------------
+------------------------------------------------------------------------------------------------
+
+  Enable Multi Corner Analysis               :  Yes
+  Enable Pessimism Removal                   :  Yes
+  Pessimism Removal Resolution               :  Nearest Common Node
+  Enable Input Delay Default Clock           :  No
+  Enable Preset / Clear Arcs                 :  No
+  Disable Flight Delays                      :  No
+  Ignore I/O Paths                           :  No
+  Timing Early Launch at Borrowing Latches   :  No
+  Borrow Time for Max Delay Exceptions       :  Yes
+  Merge Timing Exceptions                    :  Yes
+  Inter-SLR Compensation                     :  Conservative
+
+  Corner  Analyze    Analyze    
+  Name    Max Paths  Min Paths  
+  ------  ---------  ---------  
+  Slow    Yes        Yes        
+  Fast    Yes        Yes        
+
+
+------------------------------------------------------------------------------------------------
+| Report Methodology
+| ------------------
+------------------------------------------------------------------------------------------------
+
+Rule       Severity  Description                                                                                            Violations  
+---------  --------  -----------------------------------------------------------------------------------------------------  ----------  
+LUTAR-1    Warning   LUT drives async reset alert                                                                           9           
+TIMING-9   Warning   Unknown CDC Logic                                                                                      1           
+TIMING-18  Warning   Missing input or output delay                                                                          8           
+TIMING-24  Warning   Overridden Max delay datapath only                                                                     58          
+TIMING-47  Warning   False path, asynchronous clock group or max delay datapath only constraint between synchronous clocks  2           
+CLKC-56    Advisory  MMCME4 with global clock driver has no LOC                                                             2           
+XDCB-6     Advisory  Timing constraint pointing to hierarchical pins                                                        1           
+
+Note: This report is based on the most recent report_methodology run and may not be up-to-date. Run report_methodology on the current design for the latest report.
+
+
+
+check_timing report
+
+Table of Contents
+-----------------
+1. checking no_clock (0)
+2. checking constant_clock (0)
+3. checking pulse_width_clock (0)
+4. checking unconstrained_internal_endpoints (0)
+5. checking no_input_delay (1)
+6. checking no_output_delay (10)
+7. checking multiple_clock (0)
+8. checking generated_clocks (0)
+9. checking loops (0)
+10. checking partial_input_delay (0)
+11. checking partial_output_delay (0)
+12. checking latch_loops (0)
+
+1. checking no_clock (0)
+------------------------
+ There are 0 register/latch pins with no clock.
+
+
+2. checking constant_clock (0)
+------------------------------
+ There are 0 register/latch pins with constant_clock.
+
+
+3. checking pulse_width_clock (0)
+---------------------------------
+ There are 0 register/latch pins which need pulse_width check
+
+
+4. checking unconstrained_internal_endpoints (0)
+------------------------------------------------
+ There are 0 pins that are not constrained for maximum delay.
+
+ There are 0 pins that are not constrained for maximum delay due to constant clock.
+
+
+5. checking no_input_delay (1)
+------------------------------
+ There is 1 input port with no input delay specified. (HIGH)
+
+ There are 0 input ports with no input delay but user has a false path constraint.
+
+
+6. checking no_output_delay (10)
+--------------------------------
+ There are 10 ports with no output delay specified. (HIGH)
+
+ There are 0 ports with no output delay but user has a false path constraint
+
+ There are 0 ports with no output delay but with a timing clock defined on it or propagating through it
+
+
+7. checking multiple_clock (0)
+------------------------------
+ There are 0 register/latch pins with multiple clocks.
+
+
+8. checking generated_clocks (0)
+--------------------------------
+ There are 0 generated clocks that are not connected to a clock source.
+
+
+9. checking loops (0)
+---------------------
+ There are 0 combinational loops in the design.
+
+
+10. checking partial_input_delay (0)
+------------------------------------
+ There are 0 input ports with partial input delay specified.
+
+
+11. checking partial_output_delay (0)
+-------------------------------------
+ There are 0 ports with partial output delay specified.
+
+
+12. checking latch_loops (0)
+----------------------------
+ There are 0 combinational latch loops in the design through latch input
+
+
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+      0.006        0.000                      0               483741        0.010        0.000                      0               482991        0.039        0.000                       0                165172  
+
+
+All user specified timing constraints are met.
+
+
+------------------------------------------------------------------------------------------------
+| Clock Summary
+| -------------
+------------------------------------------------------------------------------------------------
+
+Clock                                                                                                Waveform(ns)           Period(ns)      Frequency(MHz)
+-----                                                                                                ------------           ----------      --------------
+RFADC0_CLK                                                                                           {0.000 21.701}         43.403          23.040          
+  clk_out1_d_1_clk_adc0_x2_0                                                                         {0.000 0.904}          1.808           552.957         
+RFADC1_CLK                                                                                           {0.000 5.000}          10.000          100.000         
+RFADC2_CLK                                                                                           {0.000 21.701}         43.403          23.040          
+RFADC3_CLK                                                                                           {0.000 5.000}          10.000          100.000         
+RFDAC0_CLK                                                                                           {0.000 1.628}          3.255           307.220         
+RFDAC1_CLK                                                                                           {0.000 5.000}          10.000          100.000         
+RFDAC2_CLK                                                                                           {0.000 1.628}          3.255           307.220         
+  clk_out1_d_1_clk_core_0                                                                            {0.000 2.441}          4.883           204.813         
+RFDAC3_CLK                                                                                           {0.000 5.000}          10.000          100.000         
+clk_pl_0                                                                                             {0.000 5.000}          10.000          100.000         
+dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_inst/SERIES7_BSCAN.bscan_inst/INTERNAL_TCK  {0.000 25.000}         50.000          20.000          
+sys_clk_ddr4_clk_p                                                                                   {0.000 2.499}          4.998           200.080         
+  mmcm_clkout0                                                                                       {0.000 1.666}          3.332           300.120         
+    pll_clk[0]                                                                                       {0.000 0.208}          0.417           2400.960        
+      pll_clk[0]_DIV                                                                                 {0.000 1.666}          3.332           300.120         
+    pll_clk[1]                                                                                       {0.000 0.208}          0.417           2400.960        
+      pll_clk[1]_DIV                                                                                 {0.000 1.666}          3.332           300.120         
+    pll_clk[2]                                                                                       {0.000 0.208}          0.417           2400.960        
+      pll_clk[2]_DIV                                                                                 {0.000 1.666}          3.332           300.120         
+  mmcm_clkout5                                                                                       {0.000 6.664}          13.328          75.030          
+  mmcm_clkout6                                                                                       {0.000 3.332}          6.664           150.060         
+
+
+------------------------------------------------------------------------------------------------
+| Intra Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+Clock                                                                                                    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+-----                                                                                                    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+RFADC0_CLK                                                                                                42.694        0.000                      0                   46        0.020        0.000                      0                   46       10.851        0.000                       0                    37  
+  clk_out1_d_1_clk_adc0_x2_0                                                                               0.006        0.000                      0               194133        0.010        0.000                      0               194133        0.182        0.000                       0                 62563  
+RFDAC2_CLK                                                                                                 0.043        0.000                      0                36201        0.010        0.000                      0                36201        0.488        0.000                       0                 13688  
+  clk_out1_d_1_clk_core_0                                                                                  0.228        0.000                      0                12592        0.010        0.000                      0                12592        1.899        0.000                       0                  4735  
+clk_pl_0                                                                                                   1.230        0.000                      0               118877        0.010        0.000                      0               118877        3.400        0.000                       0                 38849  
+dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_inst/SERIES7_BSCAN.bscan_inst/INTERNAL_TCK       12.455        0.000                      0                  997        0.016        0.000                      0                  997       24.468        0.000                       0                   483  
+sys_clk_ddr4_clk_p                                                                                         3.116        0.000                      0                   23        0.050        0.000                      0                   23        0.750        0.000                       0                    19  
+  mmcm_clkout0                                                                                             0.110        0.000                      0               109786        0.010        0.000                      0               109786        0.166        0.000                       0                 41320  
+    pll_clk[0]                                                                                                                                                                                                                                         0.039        0.000                       0                     9  
+      pll_clk[0]_DIV                                                                                                                                                                                                                                   0.466        0.000                       0                    40  
+    pll_clk[1]                                                                                                                                                                                                                                         0.039        0.000                       0                     9  
+      pll_clk[1]_DIV                                                                                                                                                                                                                                   0.466        0.000                       0                    25  
+    pll_clk[2]                                                                                                                                                                                                                                         0.039        0.000                       0                     9  
+      pll_clk[2]_DIV                                                                                                                                                                                                                                   0.466        0.000                       0                    40  
+  mmcm_clkout5                                                                                            10.521        0.000                      0                 2393        0.017        0.000                      0                 2393        6.122        0.000                       0                  1599  
+  mmcm_clkout6                                                                                             1.875        0.000                      0                 5713        0.014        0.000                      0                 5185        1.078        0.000                       0                  1747  
+
+
+------------------------------------------------------------------------------------------------
+| Inter Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+From Clock                                                                                           To Clock                                                                                                 WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------                                                                                           --------                                                                                                 -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+mmcm_clkout5                                                                                         dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_inst/SERIES7_BSCAN.bscan_inst/INTERNAL_TCK       12.893        0.000                      0                    8                                                                        
+mmcm_clkout5                                                                                         mmcm_clkout0                                                                                               2.221        0.000                      0                   28                                                                        
+mmcm_clkout6                                                                                         mmcm_clkout0                                                                                               1.928        0.000                      0                  133                                                                        
+mmcm_clkout0                                                                                         pll_clk[0]_DIV                                                                                             0.579        0.000                      0                  352        0.739        0.000                      0                  352  
+mmcm_clkout0                                                                                         pll_clk[1]_DIV                                                                                             0.496        0.000                      0                  224        0.713        0.000                      0                  224  
+mmcm_clkout0                                                                                         pll_clk[2]_DIV                                                                                             0.746        0.000                      0                  352        0.546        0.000                      0                  352  
+dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_inst/SERIES7_BSCAN.bscan_inst/INTERNAL_TCK  mmcm_clkout5                                                                                              49.536        0.000                      0                    8                                                                        
+mmcm_clkout0                                                                                         mmcm_clkout5                                                                                              11.356        0.000                      0                   10                                                                        
+mmcm_clkout0                                                                                         mmcm_clkout6                                                                                               1.816        0.000                      0                   36        0.166        0.000                      0                    1  
+
+
+------------------------------------------------------------------------------------------------
+| Other Path Groups Table
+| -----------------------
+------------------------------------------------------------------------------------------------
+
+Path Group                                                                                           From Clock                                                                                           To Clock                                                                                                 WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------                                                                                           ----------                                                                                           --------                                                                                                 -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+**async_default**                                                                                    clk_out1_d_1_clk_adc0_x2_0                                                                           clk_out1_d_1_clk_adc0_x2_0                                                                                 0.330        0.000                      0                    4        0.564        0.000                      0                    4  
+**async_default**                                                                                    clk_out1_d_1_clk_core_0                                                                              clk_out1_d_1_clk_core_0                                                                                    1.742        0.000                      0                 1452        0.116        0.000                      0                 1452  
+**async_default**                                                                                    clk_pl_0                                                                                             clk_pl_0                                                                                                   3.348        0.000                      0                  162        0.164        0.000                      0                  162  
+**async_default**                                                                                    dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_inst/SERIES7_BSCAN.bscan_inst/INTERNAL_TCK  dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_inst/SERIES7_BSCAN.bscan_inst/INTERNAL_TCK       45.976        0.000                      0                  100        0.117        0.000                      0                  100  
+**async_default**                                                                                    mmcm_clkout5                                                                                         mmcm_clkout5                                                                                              12.245        0.000                      0                  111        0.117        0.000                      0                  111  
+
+
+------------------------------------------------------------------------------------------------
+| User Ignored Path Table
+| -----------------------
+------------------------------------------------------------------------------------------------
+
+Path Group                                                                                           From Clock                                                                                           To Clock                                                                                           
+----------                                                                                           ----------                                                                                           --------                                                                                           
+(none)                                                                                               RFDAC2_CLK                                                                                                                                                                                                
+(none)                                                                                                                                                                                                    RFADC0_CLK                                                                                           
+(none)                                                                                                                                                                                                    RFDAC2_CLK                                                                                           
+(none)                                                                                               RFDAC2_CLK                                                                                           RFDAC2_CLK                                                                                           
+(none)                                                                                               clk_out1_d_1_clk_adc0_x2_0                                                                           RFDAC2_CLK                                                                                           
+(none)                                                                                               clk_out1_d_1_clk_core_0                                                                              RFDAC2_CLK                                                                                           
+(none)                                                                                               clk_pl_0                                                                                             RFDAC2_CLK                                                                                           
+(none)                                                                                                                                                                                                    clk_out1_d_1_clk_adc0_x2_0                                                                           

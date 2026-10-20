@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vmon"
+version = "0.1.0"
+description = "Live web monitor for Xilinx Vivado firmware builds"
+requires-python = ">=3.11"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Rodolfo Carobene"}]
+keywords = ["vivado", "xilinx", "fpga", "monitor", "build", "log-parser"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: System :: Monitoring",
+]
+dependencies = []
+
+# [project.urls]
+# Homepage = "https://github.com/<user>/vivado-monitor"
+# Issues = "https://github.com/<user>/vivado-monitor/issues"
+
+[project.scripts]
+vmon = "vmon.cli:main"
+
+[tool.setuptools]
+packages = ["vmon"]
+
+[tool.setuptools.package-data]
+vmon = ["flows.toml", "static/*", "static/mock/*", "catalog/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

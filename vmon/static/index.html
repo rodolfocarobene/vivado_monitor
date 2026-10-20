@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vmon · Vivado monitor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%236ea8ff'/%3E%3Cpath d='M5 13h3l2-6 4 11 2-5h3' stroke='%230d1117' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--accent)"/><path d="M5 13h3l2-6 4 11 2-5h3" stroke="var(--on-accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>vmon</span>
+  </div>
+  <div id="conn" class="conn" data-state="connecting" title="Connection"><i></i><span>connecting</span></div>
+  <div class="liveinfo">
+    <span id="updated" class="updated" title="Time since the backend last produced a snapshot">updated —</span>
+    <label class="ivl" title="How often the backend refreshes"><span>every</span>
+      <select id="ivl" aria-label="Update interval"><option value="0.5">0.5 s</option><option value="1" selected>1 s</option><option value="2">2 s</option><option value="5">5 s</option><option value="10">10 s</option><option value="30">30 s</option></select></label>
+  </div>
+  <div id="meters" class="meters" aria-label="System load"></div>
+  <form id="watch-form" class="watch" autocomplete="off">
+    <input id="watch-input" type="text" placeholder="Watch a .runs dir, .xpr or log path…" spellcheck="false">
+    <button type="button" id="explore-btn" class="explore-btn" data-act="explore" title="Browse folders to pick a build to watch"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Explore</span></button>
+    <button type="submit">Watch</button>
+  </form>
+  <div class="bellwrap">
+    <button id="notify-btn" class="icon-btn" data-act="pop-toggle" aria-label="Notifications" title="Notifications"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></button>
+    <span id="bell-badge" class="bell-badge" hidden>0</span>
+    <div id="notif-pop" class="popover" hidden role="dialog" aria-label="Notifications"></div>
+  </div>
+  <button id="theme-btn" class="icon-btn" title="Toggle theme" aria-label="Toggle theme"></button>
+</header>
+<nav id="tabs" class="tabs" role="tablist"></nav>
+<div id="sumbar" class="sumbar" aria-label="Build summary"></div>
+<main id="main"></main>
+<div id="toast" class="toast" hidden></div>
+<script>window.addEventListener("error",function(e){var d=document.createElement("pre");d.style.cssText="position:fixed;bottom:0;left:0;right:0;background:#600;color:#fff;padding:8px;margin:0;z-index:99;font-size:12px";d.textContent="JS error: "+e.message+" ("+(e.filename||"").split("/").pop()+":"+e.lineno+")";document.body.appendChild(d);});</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

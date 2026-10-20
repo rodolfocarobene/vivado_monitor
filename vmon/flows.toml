@@ -1,0 +1,841 @@
+# All Vivado-specific knowledge for vmon lives here. Override or extend by creating
+# ~/.config/vmon/flows.toml (tables are deep-merged, lists/scalars replaced).
+# Every [x.<name>] table with an `order` is sorted by it, so you can add new entries
+# (a step, a rule, a timing pattern, a report type) without touching Python.
+
+[severity]            # log prefix -> severity key
+"INFO" = "info"
+"WARNING" = "warning"
+"CRITICAL WARNING" = "critical"
+"ERROR" = "error"
+
+# ---------------------------------------------------------------- log line rules
+# prefix: list of line prefixes (cheap pre-filter); first = string of allowed first chars;
+# contains: substring pre-filter; stop=false lets later rules also see the line.
+[rules.wallclock]
+order = 5
+action = "wallclock"
+prefix = ["["]
+re = '^\[(\w{3} \w{3} +\d+ [\d:]+ \d{4})\]'
+stop = false
+
+[rules.command]
+order = 10
+action = "command"
+prefix = ["Command: "]
+re = '^Command: (\S+)(.*)$'
+
+[rules.command_failed_error]
+order = 12
+action = "command_failed"
+prefix = ["ERROR: "]
+contains = "Command failed"
+re = '^ERROR: \[Common 17-69\] Command failed: .*'
+stop = false
+
+[rules.command_failed]
+order = 13
+action = "command_failed"
+contains = " failed"
+re = '^(\w+) failed\b'
+stop = false
+
+[rules.message]
+order = 30
+action = "message"
+prefix = ["INFO: ", "WARNING: ", "CRITICAL WARNING: ", "ERROR: "]
+re = '^(INFO|WARNING|CRITICAL WARNING|ERROR): (?:\[([^\]]+)\] )?(.*)$'
+
+[rules.phase]
+order = 40
+action = "phase"
+prefix = ["Phase "]
+re = '^Phase (\d+(?:\.\d+)*) (.+?)( \| Checksum: \w+)?\s*$'
+
+[rules.task_close]
+order = 41
+action = "task_close"
+prefix = ["Ending "]
+re = '^Ending (.+?) Task\b'
+
+[rules.task_open]
+order = 42
+action = "task_open"
+prefix = ["Starting "]
+re = '^Starting (.+?) Task\s*$'
+
+[rules.start_timed]
+order = 43
+action = "start_timed"
+prefix = ["Starting "]
+re = '^Starting (.+?) : Time \(s\)'
+
+[rules.pair_open]
+order = 44
+action = "pair_open"
+prefix = ["Start "]
+re = '^Start (.+?)\s*$'
+
+[rules.pair_close]
+order = 45
+action = "pair_close"
+prefix = ["Finished "]
+re = '^Finished (.+?)( : Time \(s\).*)?\s*$'
+
+[rules.time_line]
+order = 50
+action = "time_line"
+prefix = ["Time (s)"]
+re = '^Time \(s\)'
+
+[rules.summary]
+order = 60
+action = "summary"
+first = "0123456789"
+contains = " Infos, "
+re = '^(\d+) Infos, (\d+) Warnings, (\d+) Critical Warnings and (\d+) Errors encountered\.'
+
+[rules.completed]
+order = 61
+action = "completed"
+contains = " completed successfully"
+re = '^(\w+) completed successfully'
+
+[rules.named_time]
+order = 62
+action = "named_time"
+contains = ": Time (s)"
+re = '^([\w.]+): Time \(s\)'
+
+[parse]
+time_re = 'Time \(s\): cpu = (\S+) ; elapsed = (\S+) \. Memory \(MB\): peak = ([\d.]+)'
+wallclock_format = "%a %b %d %H:%M:%S %Y"
+tcl_start_step_re = '^start_step (\w+)'
+open_project_re = 'open_project\s+(?:\{([^}]+)\}|"([^"]+)"|(\S+\.xpr))'
+version_re = 'Vivado v(\d+\.\d+)'
+max_messages = 300000
+
+# ---------------------------------------------------------------- timing log patterns
+# groups map positionally to `fields`; "N/A" -> null.
+[timing.patterns.estimated]
+order = 10
+label = "Estimated"
+contains = "Estimated Timing Summary"
+re = 'Estimated Timing Summary \| WNS=(\S+) \| TNS=(\S+) \|'
+fields = ["wns", "tns"]
+
+[timing.patterns.post_placement]
+order = 20
+label = "Post Placement"
+contains = "Post Placement Timing Summary"
+re = 'Post Placement Timing Summary WNS=(-?[\d.]*\d|N/A)'
+fields = ["wns"]
+
+[timing.patterns.intermediate]
+order = 30
+label = "Intermediate"
+contains = "Intermediate Timing Summary"
+re = 'Intermediate Timing Summary \| WNS=(\S+)\s*\| TNS=(\S+)\s*\| WHS=(\S+)\s*\| THS=(\S+)\s*\|'
+fields = ["wns", "tns", "whs", "ths"]
+
+[timing.patterns.post_routing]
+order = 40
+label = "Post Routing"
+contains = "Post Routing Timing Summary"
+re = 'Post Routing Timing Summary \| WNS=(\S+)\s*\| TNS=(\S+)\s*\| WHS=(\S+)\s*\| THS=(\S+)\s*\|'
+fields = ["wns", "tns", "whs", "ths"]
+
+[timing.patterns.post_physopt]
+order = 50
+label = "Post Physical Optimization"
+contains = "Post Physical Optimization Timing Summary"
+re = 'Post Physical Optimization Timing Summary \| WNS=(\S+) \| TNS=(\S+) \|'
+fields = ["wns", "tns"]
+
+# ---------------------------------------------------------------- flow steps
+# commands: Vivado commands that open this step (ambiguous commands are assigned in order).
+
+[steps.synth_design]
+order = 10
+label = "Synthesis"
+flow = "synth"
+commands = ["synth_design"]
+
+[steps.init_design]
+order = 20
+label = "Init Design"
+flow = "impl"
+commands = ["link_design"]
+
+[steps.opt_design]
+order = 30
+label = "Opt Design"
+flow = "impl"
+commands = ["opt_design"]
+
+[steps.power_opt_design]
+order = 35
+label = "Power Opt"
+flow = "impl"
+commands = ["power_opt_design"]
+
+[steps.place_design]
+order = 40
+label = "Place Design"
+flow = "impl"
+commands = ["place_design"]
+
+[steps.post_place_power_opt_design]
+order = 45
+label = "Post-Place Power Opt"
+flow = "impl"
+commands = ["power_opt_design"]
+
+[steps.phys_opt_design]
+order = 50
+label = "Phys Opt Design"
+flow = "impl"
+commands = ["phys_opt_design"]
+
+[steps.route_design]
+order = 60
+label = "Route Design"
+flow = "impl"
+commands = ["route_design"]
+
+[steps.post_route_phys_opt_design]
+order = 70
+label = "Post-Route Phys Opt"
+flow = "impl"
+commands = ["phys_opt_design"]
+
+[steps.write_bitstream]
+order = 80
+label = "Write Bitstream"
+flow = "impl"
+commands = ["write_bitstream", "write_device_image"]
+
+# ---------------------------------------------------------------- run classification
+[runs.classes.synth]
+order = 10
+pattern = '^synth_\d+$'
+kind = "synth"
+
+[runs.classes.ooc]
+order = 20
+pattern = '.+_synth_\d+$'
+kind = "ooc"
+
+[runs.classes.impl]
+order = 30
+pattern = '^impl_\d+$'
+kind = "impl"
+
+[runs.flow_ids]       # fallback when no pattern matches
+Vivado_Synthesis = "synth"
+Vivado_Implementation = "impl"
+
+[runs]
+queue_markers_glob = ".*.queue.rst"
+synth_complete_file = "__synthesis_is_complete__"
+jobs_dir = ".jobs"
+jobs_glob = "vrs_config_*.xml"
+
+[layout]
+synth_stage_label = "Synthesis"
+ooc_group_label = "IP out-of-context ({n})"
+ooc_collapse_children_above = 8   # done OOC runs omit phase children beyond this count
+
+# ---------------------------------------------------------------- reports registry
+# pattern: regex on the filename with the "<top>_" prefix removed; parser: python parser name;
+# label: short name shown in the UI; step: step that produced it ("*synth*" = the synthesis run node).
+[reports.types.utilization_synth]
+label = "Utilization"
+order = 10
+pattern = '^utilization_synth\.rpt$'
+kind = "utilization"
+parser = "utilization"
+step = "synth_design"
+
+[reports.types.utilization_placed]
+label = "Utilization"
+order = 11
+pattern = '^utilization_placed\.rpt$'
+kind = "utilization"
+parser = "utilization"
+step = "place_design"
+
+[reports.types.utilization_routed]
+label = "Utilization"
+order = 12
+pattern = '^utilization_routed\.rpt$'
+kind = "utilization"
+parser = "utilization"
+step = "route_design"
+
+[reports.types.control_sets]
+label = "Control sets"
+order = 20
+pattern = '^control_sets_(placed|routed)\.rpt$'
+kind = "control_sets"
+parser = "control_sets"
+step = "place_design"
+
+[reports.types.io_placed]
+label = "IO"
+order = 21
+pattern = '^io_placed\.rpt$'
+kind = "io"
+parser = "generic"
+step = "place_design"
+
+[reports.types.drc_opted]
+label = "DRC"
+order = 30
+pattern = '^drc_opted\.rpt$'
+kind = "drc"
+parser = "drc"
+step = "opt_design"
+
+[reports.types.drc_routed]
+label = "DRC"
+order = 31
+pattern = '^drc_routed\.rpt$'
+kind = "drc"
+parser = "drc"
+step = "route_design"
+
+[reports.types.methodology]
+label = "Methodology"
+order = 32
+pattern = '^methodology_drc_routed\.rpt$'
+kind = "methodology"
+parser = "drc"
+step = "route_design"
+
+[reports.types.timing_placed]
+label = "Timing"
+order = 40
+pattern = '^timing_summary_placed\.rpt$'
+kind = "timing_summary"
+parser = "timing"
+step = "place_design"
+
+[reports.types.timing_physopted]
+label = "Timing"
+order = 41
+pattern = '^timing_summary_physopted\.rpt$'
+kind = "timing_summary"
+parser = "timing"
+step = "phys_opt_design"
+
+[reports.types.timing_routed]
+label = "Timing"
+order = 42
+pattern = '^timing_summary_routed\.rpt$'
+kind = "timing_summary"
+parser = "timing"
+step = "route_design"
+
+[reports.types.timing_postroute]
+label = "Timing"
+order = 43
+pattern = '^timing_summary_postroute_physopted\.rpt$'
+kind = "timing_summary"
+parser = "timing"
+step = "post_route_phys_opt_design"
+
+[reports.types.route_status]
+label = "Route status"
+order = 50
+pattern = '^route_status\.rpt$'
+kind = "route_status"
+parser = "route_status"
+step = "route_design"
+
+[reports.types.power]
+label = "Power"
+order = 51
+pattern = '^power_routed\.rpt$'
+kind = "power"
+parser = "power"
+step = "route_design"
+
+[reports.types.clock_utilization]
+label = "Clocks"
+order = 52
+pattern = '^clock_utilization_routed\.rpt$'
+kind = "clock_utilization"
+parser = "clock_utilization"
+step = "route_design"
+
+[reports.types.bus_skew]
+label = "Bus skew"
+order = 53
+pattern = '^bus_skew_routed\.rpt$'
+kind = "bus_skew"
+parser = "generic"
+step = "route_design"
+
+[reports.types.incremental_reuse]
+label = "Incremental reuse"
+order = 54
+pattern = '^incremental_reuse_(routed|placed)\.rpt$'
+kind = "incremental_reuse"
+parser = "generic"
+step = "route_design"
+
+[reports.utilization]   # table row label regex -> short name
+LUT = '^(CLB|Slice) LUTs'
+FF = '^(CLB|Slice) Registers'
+BRAM = '^Block RAM Tile'
+URAM = '^URAM'
+DSP = '^DSPs'
+IO = '^Bonded IOB'
+BUFG = '^(GLOBAL CLOCK BUFFERs|BUFGCE)$'
+
+[reports.timing_columns]   # header text -> field
+"WNS(ns)" = "wns"
+"TNS(ns)" = "tns"
+"TNS Failing Endpoints" = "tns_fail"
+"TNS Total Endpoints" = "tns_total"
+"WHS(ns)" = "whs"
+"THS(ns)" = "ths"
+"THS Failing Endpoints" = "ths_fail"
+"THS Total Endpoints" = "ths_total"
+"WPWS(ns)" = "wpws"
+"TPWS(ns)" = "tpws"
+"TPWS Failing Endpoints" = "tpws_fail"
+"TPWS Total Endpoints" = "tpws_total"
+
+# ---------------------------------------------------------------- alerts
+[alerts]
+stall_minutes = 20
+utilization_pct = 90
+timing_error_steps = ["route_design", "post_route_phys_opt_design", "write_bitstream"]   # timing is final once one of these is done
+timing_final_steps = ["route_design", "post_route_phys_opt_design"]   # their timing_summary reports are final results
+
+# ---------------------------------------------------------------- documentation links
+# Templates only; edit freely in ~/.config/vmon/flows.toml. A value that is a bare Tcl command name is expanded
+# with tcl_command; a value containing "://" is used as is. {query} is URL-encoded.
+[docs]
+tcl_command = "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/{command}"   # UG835, one page per command
+# docs.amd.com is a script-driven site without a stable search URL, so use a site-restricted web search.
+message_search = "https://www.google.com/search?q=site%3Adocs.amd.com+%22{query}%22"
+
+[docs.steps]          # step id -> page (UG904 Implementation, UG901 Synthesis, else UG835)
+synth_design = "https://docs.amd.com/r/en-US/ug901-vivado-synthesis/Running-Synthesis"
+init_design = "link_design"
+opt_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/opt_design"
+power_opt_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/power_opt_design"
+place_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/place_design-for-UltraScale-and-7-Series"
+post_place_power_opt_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/power_opt_design"
+phys_opt_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/phys_opt_design"
+route_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/route_design"
+post_route_phys_opt_design = "https://docs.amd.com/r/en-US/ug904-vivado-implementation/phys_opt_design"
+write_bitstream = "write_bitstream"
+
+[docs.reports]        # report kind -> Tcl command (UG835 page)
+utilization = "report_utilization"
+control_sets = "report_control_sets"
+io = "report_io"
+drc = "report_drc"
+methodology = "report_methodology"
+timing_summary = "report_timing_summary"
+route_status = "report_route_status"
+power = "report_power"
+clock_utilization = "report_clock_utilization"
+bus_skew = "report_bus_skew"
+incremental_reuse = "report_incremental_reuse"
+
+# ---------------------------------------------------------------- UI
+[ui]
+headline_resources = ["LUT", "FF", "BRAM", "URAM", "DSP", "IO", "BUFG"]
+
+# ---------------------------------------------------------------- message triage
+# First matching rule wins (id regex is searched in "Tool N-M"; optional severity = list of severities).
+# priority: critical|high|medium|low|mute.
+# score = severity_base + priority_bonus + keyword bonuses (capped) + rarity + novelty.
+[messages.scoring]
+severity_base = { error = 100, critical = 40, warning = 10, info = 0 }
+priority_bonus = { critical = 90, high = 55, medium = 25, low = -15, mute = 0 }
+keyword_cap = 30
+rarity = { once = 15, few = 8, few_max = 5, many_min = 100, many_penalty = -10, huge_min = 1000, huge_penalty = -20 }
+novelty = { new = 30, grew = 5 }
+
+[[messages.keywords]]
+pattern = 'latch'
+bonus = 15
+reason = "latch"
+
+[[messages.keywords]]
+pattern = 'multi-?driven'
+bonus = 15
+reason = "multi-driven"
+
+[[messages.keywords]]
+pattern = 'undriven'
+bonus = 12
+reason = "undriven"
+
+[[messages.keywords]]
+pattern = 'unconnected'
+bonus = 2
+reason = "unconnected"
+
+[[messages.keywords]]
+pattern = 'no clock'
+bonus = 10
+reason = "no clock"
+
+[[messages.keywords]]
+pattern = 'unconstrained'
+bonus = 12
+reason = "unconstrained"
+
+[[messages.keywords]]
+pattern = 'not found'
+bonus = 8
+reason = "not found"
+
+[[messages.keywords]]
+pattern = 'ignor'
+bonus = 8
+reason = "ignored"
+
+[[messages.keywords]]
+pattern = '(no|zero) (cells|pins|nets|objects|clocks|ports) (matched|found)'
+bonus = 12
+reason = "nothing matched"
+
+[[messages.keywords]]
+pattern = 'overrid'
+bonus = 6
+reason = "override"
+
+[[messages.keywords]]
+pattern = 'mismatch'
+bonus = 8
+reason = "mismatch"
+
+[[messages.keywords]]
+pattern = 'truncat'
+bonus = 8
+reason = "truncated"
+
+[[messages.keywords]]
+pattern = '\bCDC\b'
+bonus = 8
+reason = "CDC"
+
+[[messages.keywords]]
+pattern = 'failed'
+bonus = 10
+reason = "failed"
+
+[[messages.keywords]]
+pattern = 'unsafe'
+bonus = 10
+reason = "unsafe"
+
+[[messages.keywords]]
+pattern = 'combinational loop'
+bonus = 15
+reason = "combinational loop"
+
+[[messages.rules]]
+match_id = '^Timing 38-282$'
+priority = "critical"
+reason = "design failed to meet timing"
+
+[[messages.rules]]
+match_id = '^Route 35-39$'
+priority = "critical"
+reason = "routed design did not meet timing"
+
+[[messages.rules]]
+match_id = '^Route 35-328$'
+priority = "critical"
+reason = "router could not meet timing / unrouted"
+
+[[messages.rules]]
+match_id = '^Synth 8-6859$'
+priority = "critical"
+reason = "multi-driven net"
+
+[[messages.rules]]
+match_id = '^Synth 8-3352$'
+priority = "critical"
+reason = "multi-driven net"
+
+[[messages.rules]]
+match_id = '^Synth 8-327$'
+priority = "high"
+reason = "latch inferred"
+
+[[messages.rules]]
+match_id = '^Vivado 12-180$'
+priority = "high"
+reason = "no cells matched: constraint not applied"
+
+[[messages.rules]]
+match_id = '^Vivado 12-508$'
+priority = "high"
+reason = "no pins matched: constraint not applied"
+
+[[messages.rules]]
+match_id = '^Vivado 12-1387$'
+priority = "high"
+reason = "no ports/nets matched: constraint not applied"
+
+[[messages.rules]]
+match_id = '^Vivado 12-4739$'
+priority = "high"
+reason = "clock/cell not found: constraint not applied"
+
+[[messages.rules]]
+match_id = '^Vivado 12-584$'
+priority = "high"
+reason = "no clocks matched: constraint not applied"
+
+[[messages.rules]]
+match_id = '^Common 17-55$'
+priority = "high"
+reason = "get_* returned an empty object"
+
+[[messages.rules]]
+match_id = '^Constraints 18-.*$'
+priority = "high"
+reason = "XDC constraint problem"
+
+[[messages.rules]]
+match_id = '^Synth 8-689$'
+priority = "high"
+reason = "port/signal width mismatch"
+
+[[messages.rules]]
+match_id = '^Synth 8-6090$'
+priority = "high"
+reason = "assignment/port issue"
+
+[[messages.rules]]
+match_id = '^Synth 8-87$'
+priority = "high"
+reason = "assignment/port issue"
+
+[[messages.rules]]
+match_id = '^Synth 8-5858$'
+priority = "high"
+reason = "undriven net"
+
+[[messages.rules]]
+match_id = '^Synth 8-3848$'
+priority = "high"
+reason = "net or output has no driver"
+
+[[messages.rules]]
+match_id = '^Synth 8-324$'
+priority = "high"
+reason = "index out of range"
+
+[[messages.rules]]
+match_id = '^Place 30-574$'
+priority = "high"
+reason = "poor IO to BUFG placement"
+
+[[messages.rules]]
+match_id = '^Place 30-.*$'
+priority = "medium"
+reason = "placer note"
+
+[[messages.rules]]
+match_id = '^DRC .*$'
+severity = ["critical", "error"]
+priority = "high"
+reason = "design rule violation"
+
+[[messages.rules]]
+match_id = '^DRC (DPIP|DPOP|AVAL|PDCN|RTSTAT|REQP-19\d\d)'
+priority = "low"
+reason = "DRC advisory (pipelining / tie-off / no loads)"
+
+[[messages.rules]]
+match_id = '^DRC .*$'
+priority = "medium"
+reason = "design rule advisory"
+
+[[messages.rules]]
+match_id = '^TIMING-6$'
+priority = "high"
+reason = "no common primary clock between related clocks"
+
+[[messages.rules]]
+match_id = '^TIMING-7$'
+priority = "high"
+reason = "no common node between related clocks (CDC)"
+
+[[messages.rules]]
+match_id = '^TIMING-17$'
+priority = "high"
+reason = "non-clocked sequential cell"
+
+[[messages.rules]]
+match_id = '^TIMING-9$'
+priority = "high"
+reason = "unknown CDC logic"
+
+[[messages.rules]]
+match_id = '^TIMING-10$'
+priority = "high"
+reason = "missing synchronizer / unsafe CDC"
+
+[[messages.rules]]
+match_id = '^Timing 38-242$'
+priority = "high"
+reason = "timing constraint problem"
+
+[[messages.rules]]
+match_id = '^Designutils 20-1280$'
+priority = "high"
+reason = "module/cell could not be found"
+
+[[messages.rules]]
+match_id = '^Synth 8-3295$'
+priority = "medium"
+reason = "undriven pin tied to constant"
+
+[[messages.rules]]
+match_id = '^Synth 8-7023$'
+priority = "medium"
+reason = "instance has fewer connections than declared"
+
+[[messages.rules]]
+match_id = '^IP_Flow 19-.*$'
+match_text = 'upgrade|locked|out-of-date|newer version|not found'
+priority = "medium"
+reason = "IP upgrade / locked IP notice"
+
+[[messages.rules]]
+match_id = '^IP_Flow 19-.*$'
+priority = "low"
+reason = "IP flow note"
+
+[[messages.rules]]
+match_id = '^TIMING-18$'
+priority = "medium"
+reason = "missing input or output delay"
+
+[[messages.rules]]
+match_id = '^Vivado 12-3523$'
+priority = "medium"
+reason = "constraint scoping issue"
+
+[[messages.rules]]
+match_id = '^Synth 8-3936$'
+priority = "medium"
+reason = "sequential element unused"
+
+[[messages.rules]]
+match_id = '^Synth 8-6901$'
+priority = "medium"
+reason = "identifier used before declaration"
+
+[[messages.rules]]
+match_id = '^Synth 8-5640$'
+priority = "medium"
+reason = "port missing in component declaration"
+
+[[messages.rules]]
+match_id = '^Synth 8-6040$'
+priority = "medium"
+reason = "ROM address register cannot be packed in BRAM"
+
+[[messages.rules]]
+match_id = '^Synth 8-7129$'
+priority = "low"
+reason = "unused port or unconnected signal"
+
+[[messages.rules]]
+match_id = '^Synth 8-3331$'
+priority = "low"
+reason = "unused port"
+
+[[messages.rules]]
+match_id = '^Synth 8-7071$'
+priority = "low"
+reason = "port left unconnected on instance"
+
+[[messages.rules]]
+match_id = '^Synth 8-3332$'
+priority = "low"
+reason = "sequential element removed"
+
+[[messages.rules]]
+match_id = '^Synth 8-6014$'
+priority = "low"
+reason = "unused sequential element removed"
+
+[[messages.rules]]
+match_id = '^Synth 8-7080$'
+priority = "low"
+reason = "parallel synthesis criteria not met"
+
+[[messages.rules]]
+match_id = '^Synth 8-3917$'
+priority = "low"
+reason = "port driven by constant"
+
+[[messages.rules]]
+match_id = '^Synth 8-589$'
+priority = "low"
+reason = "case equality operator replaced"
+
+[[messages.rules]]
+match_id = '^Common 17-1361$'
+priority = "low"
+reason = "message rule replaced"
+
+[[messages.rules]]
+match_id = '^Power 33-.*$'
+priority = "low"
+reason = "power estimation note"
+
+[[messages.rules]]
+match_id = '^Timing 38-316$'
+priority = "low"
+reason = "clock period mismatch from IP"
+
+[[messages.rules]]
+match_id = '^Timing 38-436$'
+priority = "low"
+reason = "reminder: bus skew constraints present"
+
+[[messages.rules]]
+match_id = '^Opt 31-.*$'
+priority = "low"
+reason = "optimizer note"
+
+[[messages.rules]]
+match_id = '^Vivado_Tcl 4-9(19|21)$'
+priority = "low"
+reason = "CDC waiver with empty list"
+
+[[messages.rules]]
+match_id = '^filemgmt 56-443$'
+priority = "low"
+reason = "ECC default"
+
+[[messages.rules]]
+match_id = '^Memdata 28-361$'
+priority = "low"
+reason = "updatemem limitation"
+
+[[messages.rules]]
+match_id = '^Netlist 29-1115$'
+priority = "low"
+reason = "netlist note"
+
+[[messages.rules]]
+match_id = '^BD 41-2576$'
+priority = "low"
+reason = "block design note"

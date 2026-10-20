@@ -1,0 +1,3 @@
+{
+ "text": "Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.\n| Tool Version : Vivado v.2022.2\n| Design       : top\n----------------------------------------\n\nReport Utilization\n\n+----------------+-------+-------+-----------+-------+\n|    Site Type   |  Used | Fixed | Available | Util% |\n+----------------+-------+-------+-----------+-------+\n| CLB LUTs       | 41233 |     0 |    230400 | 17.90 |\n| CLB Registers  | 55801 |     0 |    460800 | 12.11 |\n+----------------+-------+-------+-----------+-------+\n"
+}

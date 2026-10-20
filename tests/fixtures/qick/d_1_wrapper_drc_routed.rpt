@@ -1,0 +1,70 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2 (lin64) Build 4029153 Fri Oct 13 20:13:54 MDT 2023
+| Date         : Wed Jul  1 20:30:48 2026
+| Host         : 192.0.2.10 running 64-bit Arch Linux
+| Command      : report_drc -file d_1_wrapper_drc_routed.rpt -pb d_1_wrapper_drc_routed.pb -rpx d_1_wrapper_drc_routed.rpx
+| Design       : d_1_wrapper
+| Device       : xczu48dr-ffvg1517-2-e
+| Speed File   : -2
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max violations: <unlimited>
+             Violations found: 332
++-----------+----------+---------------------------------------------------------------------+------------+
+| Rule      | Severity | Description                                                         | Violations |
++-----------+----------+---------------------------------------------------------------------+------------+
+| AVAL-318  | Warning  | DSP_dynamic_PCIN_tieoff_only_on_bottom_sites                        | 1          |
+| DPIP-2    | Warning  | Input pipelining                                                    | 51         |
+| DPOP-4    | Warning  | MREG Output pipelining                                              | 3          |
+| PDCN-1569 | Warning  | LUT equation term check                                             | 6          |
+| REQP-1934 | Warning  | RAMB18E2_nochange_collision_advisory                                | 3          |
+| REQP-1935 | Warning  | RAMB36E2_nochange_collision_advisory                                | 11         |
+| RTSTAT-10 | Warning  | No routable loads                                                   | 1          |
+| AVAL-155  | Advisory | enum_AMULTSEL_BMULTSEL_enum_DREG_ADREG_0_connects_CED_CEAD_RSTD_GND | 81         |
+| AVAL-156  | Advisory | enum_USE_MULT_NONE__enum_DREG_ADREG_0_connects_CED_CEAD_RSTD_GND    | 81         |
+| REQP-1669 | Advisory | enum_AREG_0_connects_CEA1_GND_connects_CEA2_GND                     | 1          |
+| REQP-1673 | Advisory | enum_BREG_0_connects_CEB1_GND_connects_CEB2_GND                     | 1          |
+| REQP-1677 | Advisory | enum_USE_MULT_NONE_connects_CEM_GND                                 | 1          |
+| REQP-1678 | Advisory | enum_CREG_0_connects_CEC_GND                                        | 1          |
+| REQP-1679 | Advisory | enum_MREG_0_connects_CEM_GND                                        | 1          |
+| REQP-1681 | Advisory | with_OPMODE_USE_MULT_NONE                                           | 6          |
+| REQP-1701 | Advisory | enum_DREG_0_connects_CED_GND                                        | 81         |
+| REQP-1737 | Advisory | DSP_Abus_preadd_amult_sel_A_sign_bit_alert                          | 1          |
+| REQP-1738 | Advisory | DSP_Dbus_preadd_amult_sign_bit_alert                                | 1          |
++-----------+----------+---------------------------------------------------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+AVAL-318#1 Warning
+DSP_dynamic_PCIN_tieoff_only_on_bottom_sites  
+The DSP48E2 d_1_i/qick_processor_0/inst/QPROC/QPER_ARITH.ARITH/ARITH_DSP/U0/i_synth/i_synth_option.i_synth_model/opt_8series.i_uniwrap/i_primitive is not placed on a bottom site of the device, has OPMODE[5:4] driven by active nets (value '01' uses PCIN bus), and ties some or all of its PCIN bus pin(s) to GND, but that connectivity is only available for the bottom DSP site. Care should be taken for the effect on that PCIN if the DSP site below it is used.
+Related violations: <none>
+
+DPIP-2#1 Warning
+Input pipelining  
+DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-2#2 Warning
+Input pipelining  
+DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[0].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_use_DSP48.i_nontrivial.i_vx4_5.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-2#3 Warning
+Input pipelining  
+DSP d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[1].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP input d_1_i/axis_dyn_readout_v1_0/inst/readout_top_i/down_conversion_fir_i/down_conversion_i/GEN_dds[1].dds_i/U0/i_synth/i_dds/I_PHASEGEN.i_conventional_accum.i_accum/i_dsp48.i_struct.i_single_channel.I_DSP/I_VX5_6.I_DSP/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.

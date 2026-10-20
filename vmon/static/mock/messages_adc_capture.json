@@ -1,0 +1,1653 @@
+{
+ "node_id": "",
+ "groups": [
+  {
+   "id": "Synth 8-7080",
+   "severity": "warning",
+   "count": 45,
+   "text": "Parallel synthesis criteria is not met",
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-7080",
+   "first_line": 120,
+   "last_line": 5484
+  },
+  {
+   "id": "Synth 8-3332",
+   "severity": "warning",
+   "count": 25,
+   "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-3332",
+   "first_line": 5484,
+   "last_line": 10106
+  },
+  {
+   "id": "Synth 8-3917",
+   "severity": "warning",
+   "count": 36,
+   "text": "design <module> has port reg_N_q driven by constant 0",
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-3917",
+   "first_line": 10106,
+   "last_line": 17234
+  },
+  {
+   "id": "Constraints 18-5210",
+   "severity": "warning",
+   "count": 86,
+   "text": "No constraint will be written out.",
+   "doc_url": "https://docs.amd.com/search?q=Constraints%2018-5210",
+   "first_line": 17234,
+   "last_line": 22577
+  },
+  {
+   "id": "Timing 38-316",
+   "severity": "warning",
+   "count": 43,
+   "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
+   "doc_url": "https://docs.amd.com/search?q=Timing%2038-316",
+   "first_line": 22577,
+   "last_line": 28187
+  },
+  {
+   "id": "DRC RTSTAT-10",
+   "severity": "warning",
+   "count": 70,
+   "text": "No routable loads",
+   "doc_url": "https://docs.amd.com/search?q=DRC%20RTSTAT-10",
+   "first_line": 28187,
+   "last_line": 33523
+  },
+  {
+   "id": "Vivado 12-4739",
+   "severity": "critical",
+   "count": 2,
+   "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
+   "doc_url": "https://docs.amd.com/search?q=Vivado%2012-4739",
+   "first_line": 33523,
+   "last_line": 33888
+  },
+  {
+   "id": "Vivado 12-5201",
+   "severity": "critical",
+   "count": 2,
+   "text": "set_input_delay: no valid object found for -clock",
+   "doc_url": "https://docs.amd.com/search?q=Vivado%2012-5201",
+   "first_line": 33888,
+   "last_line": 34301
+  },
+  {
+   "id": "Synth 8-6157",
+   "severity": "info",
+   "count": 130,
+   "text": "synthesizing module '<module>'",
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-6157",
+   "first_line": 34301,
+   "last_line": 36019
+  },
+  {
+   "id": "Synth 8-256",
+   "severity": "info",
+   "count": 106,
+   "text": "done synthesizing module '<module>'",
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-256",
+   "first_line": 36019,
+   "last_line": 37665
+  },
+  {
+   "id": "Device 21-403",
+   "severity": "info",
+   "count": 119,
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "doc_url": "https://docs.amd.com/search?q=Device%2021-403",
+   "first_line": 37665,
+   "last_line": 39870
+  },
+  {
+   "id": "Project 1-570",
+   "severity": "info",
+   "count": 81,
+   "text": "Preparing netlist for logic optimization",
+   "doc_url": "https://docs.amd.com/search?q=Project%201-570",
+   "first_line": 39870,
+   "last_line": 41978
+  },
+  {
+   "id": "Timing 38-35",
+   "severity": "info",
+   "count": 73,
+   "text": "Done setting XDC timing constraints.",
+   "doc_url": "https://docs.amd.com/search?q=Timing%2038-35",
+   "first_line": 41978,
+   "last_line": 44350
+  },
+  {
+   "id": "Place 30-2005",
+   "severity": "info",
+   "count": 91,
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "doc_url": "https://docs.amd.com/search?q=Place%2030-2005",
+   "first_line": 44350,
+   "last_line": 47167
+  },
+  {
+   "id": "Route 35-368",
+   "severity": "error",
+   "count": 1,
+   "text": "Router was unable to route all nets; 143 nets remain unrouted.",
+   "first_line": 18110,
+   "last_line": 18110
+  }
+ ],
+ "items": [
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 162
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 223
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 439
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 693
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 934
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 1062
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 1370
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 1536
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 1792
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 1985
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 2025
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 2352
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 2666
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 2837
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 3087
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 3198
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 3264
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 3453
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 3738
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 3962
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 4247
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 4430
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 4689
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 4795
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 4966
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 5121
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 5167
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 5452
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 5479
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-7080",
+   "text": "Parallel synthesis criteria is not met",
+   "line": 5484
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_69_q) is unused and will be removed from module axis_sync.",
+   "line": 5742
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_18_q) is unused and will be removed from module axis_sync.",
+   "line": 6059
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_88_q) is unused and will be removed from module axis_sync.",
+   "line": 6417
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_27_q) is unused and will be removed from module lockin_core.",
+   "line": 6461
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_58_q) is unused and will be removed from module axis_sync.",
+   "line": 6787
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_84_q) is unused and will be removed from module lockin_core.",
+   "line": 6840
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_99_q) is unused and will be removed from module lockin_core.",
+   "line": 7057
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_47_q) is unused and will be removed from module lockin_core.",
+   "line": 7065
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_90_q) is unused and will be removed from module iq_mult.",
+   "line": 7354
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_53_q) is unused and will be removed from module lockin_core.",
+   "line": 7450
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_55_q) is unused and will be removed from module axis_sync.",
+   "line": 7462
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_6_q) is unused and will be removed from module iq_mult.",
+   "line": 7760
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_5_q) is unused and will be removed from module lockin_core.",
+   "line": 8029
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_89_q) is unused and will be removed from module iq_mult.",
+   "line": 8325
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_1_q) is unused and will be removed from module axis_sync.",
+   "line": 8361
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_75_q) is unused and will be removed from module axis_sync.",
+   "line": 8667
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_98_q) is unused and will be removed from module iq_mult.",
+   "line": 8912
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_10_q) is unused and will be removed from module axis_sync.",
+   "line": 8966
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_19_q) is unused and will be removed from module axis_sync.",
+   "line": 9076
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_0_q) is unused and will be removed from module lockin_core.",
+   "line": 9296
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_15_q) is unused and will be removed from module lockin_core.",
+   "line": 9640
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_16_q) is unused and will be removed from module iq_mult.",
+   "line": 9704
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_92_q) is unused and will be removed from module axis_sync.",
+   "line": 9847
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_93_q) is unused and will be removed from module axis_sync.",
+   "line": 10079
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3332",
+   "text": "Sequential element (reg_46_q) is unused and will be removed from module axis_sync.",
+   "line": 10106
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_10_q driven by constant 0",
+   "line": 10496
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_90_q driven by constant 0",
+   "line": 10783
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_32_q driven by constant 0",
+   "line": 11127
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_1_q driven by constant 0",
+   "line": 11145
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_87_q driven by constant 0",
+   "line": 11480
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_39_q driven by constant 0",
+   "line": 11681
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_21_q driven by constant 0",
+   "line": 11990
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_40_q driven by constant 0",
+   "line": 12022
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_56_q driven by constant 0",
+   "line": 12396
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_18_q driven by constant 0",
+   "line": 12483
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_20_q driven by constant 0",
+   "line": 12815
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_49_q driven by constant 0",
+   "line": 13061
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_72_q driven by constant 0",
+   "line": 13449
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_7_q driven by constant 0",
+   "line": 13594
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_76_q driven by constant 0",
+   "line": 13956
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_1_q driven by constant 0",
+   "line": 14329
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_74_q driven by constant 0",
+   "line": 14489
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_49_q driven by constant 0",
+   "line": 14683
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_98_q driven by constant 0",
+   "line": 14993
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_88_q driven by constant 0",
+   "line": 15140
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_34_q driven by constant 0",
+   "line": 15276
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_97_q driven by constant 0",
+   "line": 15578
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_73_q driven by constant 0",
+   "line": 15652
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_87_q driven by constant 0",
+   "line": 15934
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_10_q driven by constant 0",
+   "line": 16209
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design lockin_core has port reg_48_q driven by constant 0",
+   "line": 16459
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_39_q driven by constant 0",
+   "line": 16580
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design iq_mult has port reg_50_q driven by constant 0",
+   "line": 16928
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_32_q driven by constant 0",
+   "line": 17035
+  },
+  {
+   "severity": "warning",
+   "id": "Synth 8-3917",
+   "text": "design axis_sync has port reg_58_q driven by constant 0",
+   "line": 17234
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 17417
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 17622
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 17891
+  },
+  {
+   "severity": "error",
+   "id": "Route 35-368",
+   "text": "Router was unable to route all nets; 143 nets remain unrouted.",
+   "line": 18110
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18194
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18294
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18444
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18629
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18757
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18813
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18856
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 18873
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 19185
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 19291
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 19583
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 19803
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 20116
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 20291
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 20335
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 20622
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 20873
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 21078
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 21211
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 21541
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 21744
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 21935
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 22025
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 22057
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 22191
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 22524
+  },
+  {
+   "severity": "warning",
+   "id": "Constraints 18-5210",
+   "text": "No constraint will be written out.",
+   "line": 22577
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '4.0' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 22962
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 23189
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 23432
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 23633
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 23829
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 23904
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 24273
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 24387
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 24772
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 24971
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 25204
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 25450
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '4.0' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 25525
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 25556
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 25841
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 25979
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '4.0' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 26060
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 26213
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 26466
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '4.0' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 26715
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 26746
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27034
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27167
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27390
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27441
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27526
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27601
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 27862
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '3.2' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 28090
+  },
+  {
+   "severity": "warning",
+   "id": "Timing 38-316",
+   "text": "Clock period '2.5' specified during out-of-context synthesis of instance differs from the actual clock",
+   "line": 28187
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 28330
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 28424
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 28515
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 28561
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 28952
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 29024
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 29347
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 29452
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 29829
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 29859
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 30005
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 30014
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 30356
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 30646
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 31007
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 31011
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 31277
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 31644
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 31841
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 31898
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 32162
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 32232
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 32348
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 32402
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 32419
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 32799
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 33107
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 33376
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 33430
+  },
+  {
+   "severity": "warning",
+   "id": "DRC RTSTAT-10",
+   "text": "No routable loads",
+   "line": 33523
+  },
+  {
+   "severity": "critical",
+   "id": "Vivado 12-4739",
+   "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
+   "line": 33824
+  },
+  {
+   "severity": "critical",
+   "id": "Vivado 12-4739",
+   "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
+   "line": 33888
+  },
+  {
+   "severity": "critical",
+   "id": "Vivado 12-5201",
+   "text": "set_input_delay: no valid object found for -clock",
+   "line": 34006
+  },
+  {
+   "severity": "critical",
+   "id": "Vivado 12-5201",
+   "text": "set_input_delay: no valid object found for -clock",
+   "line": 34301
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'iq_mult'",
+   "line": 34312
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'axis_sync'",
+   "line": 34529
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'lockin_core'",
+   "line": 34549
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'lockin_core'",
+   "line": 34724
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'axis_sync'",
+   "line": 35092
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'lockin_core'",
+   "line": 35299
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'axis_sync'",
+   "line": 35565
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'axis_sync'",
+   "line": 35694
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'lockin_core'",
+   "line": 35701
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'iq_mult'",
+   "line": 35798
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'axis_sync'",
+   "line": 35902
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-6157",
+   "text": "synthesizing module 'iq_mult'",
+   "line": 36019
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'lockin_core'",
+   "line": 36044
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'axis_sync'",
+   "line": 36363
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'axis_sync'",
+   "line": 36504
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'iq_mult'",
+   "line": 36824
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'iq_mult'",
+   "line": 37092
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'lockin_core'",
+   "line": 37114
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'lockin_core'",
+   "line": 37293
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'axis_sync'",
+   "line": 37325
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'axis_sync'",
+   "line": 37370
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'lockin_core'",
+   "line": 37447
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'iq_mult'",
+   "line": 37516
+  },
+  {
+   "severity": "info",
+   "id": "Synth 8-256",
+   "text": "done synthesizing module 'lockin_core'",
+   "line": 37665
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 37946
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 38303
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 38502
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 38691
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39006
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39023
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39121
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39422
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39507
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39675
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39787
+  },
+  {
+   "severity": "info",
+   "id": "Device 21-403",
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "line": 39870
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 40208
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 40435
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 40703
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 40784
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 40966
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41283
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41333
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41472
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41834
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41838
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41900
+  },
+  {
+   "severity": "info",
+   "id": "Project 1-570",
+   "text": "Preparing netlist for logic optimization",
+   "line": 41978
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 42211
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 42583
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 42785
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 42983
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 43366
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 43521
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 43597
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 43896
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 44063
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 44169
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 44195
+  },
+  {
+   "severity": "info",
+   "id": "Timing 38-35",
+   "text": "Done setting XDC timing constraints.",
+   "line": 44350
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 44616
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 44817
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 45123
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 45130
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 45249
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 45507
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 45802
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 46053
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 46355
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 46739
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 46903
+  },
+  {
+   "severity": "info",
+   "id": "Place 30-2005",
+   "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
+   "line": 47167
+  }
+ ]
+}

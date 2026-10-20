@@ -1,0 +1,421 @@
+#-----------------------------------------------------------
+# Vivado v2023.2 (64-bit)
+# SW Build 4029153 on Fri Oct 13 20:13:54 MDT 2023
+# IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+# SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+# Start of session at: Tue Oct 20 12:38:49 2026
+# Process ID: 563188
+# Current directory: /home/user/projects/firmware/lockin/lockin.runs/impl_1
+# Command line: vivado -log main_wrapper.vdi -applog -product Vivado -messageDb vivado.pb -mode batch -source main_wrapper.tcl -notrace
+# Log file: /home/user/projects/firmware/lockin/lockin.runs/impl_1/main_wrapper.vdi
+# Journal file: /home/user/projects/firmware/lockin/lockin.runs/impl_1/vivado.jou
+# Running On: 192.0.2.10, OS: Linux, CPU Frequency: 824.021 MHz, CPU Physical cores: 4, Host memory: 16492 MB
+#-----------------------------------------------------------
+source main_wrapper.tcl -notrace
+WARNING: [Common 17-1361] You have specified a new message control rule that is equivalent to an existing rule with attributes ' -id {[BD 41-1271]}  -suppress '. The existing rule will be replaced.
+WARNING: [Common 17-1361] You have specified a new message control rule that is equivalent to an existing rule with attributes ' -id {[BD 41-1306]}  -suppress '. The existing rule will be replaced.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/home/user/projects/firmware/ip_repo/external_start_sync_1_0'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/home/user/projects/firmware/ip_repo/counters_1_0'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/home/user/projects/firmware/ip_repo/global_axi_control_1_0'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/home/user/projects/firmware/ip_repo/controller_lockin_1_0'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/home/user/projects/firmware/ip_repo/controller_lockin_1_0'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/opt/Xilinx/Vivado/2023.2/data/ip'.
+add_files: Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 1430.477 ; gain = 88.477 ; free physical = 2122 ; free virtual = 47425
+Command: link_design -top main_wrapper -part xczu48dr-ffvg1517-2-e
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+INFO: [Device 21-403] Loading part xczu48dr-ffvg1517-2-e
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_smc_2/main_axi_smc_2.dcp' for cell 'main_i/axi_smc'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_clk_wiz_0_0/main_clk_wiz_0_0.dcp' for cell 'main_i/clk_wiz'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_counters_0_0/main_counters_0_0.dcp' for cell 'main_i/counters'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_global_axi_control_0_0/main_global_axi_control_0_0.dcp' for cell 'main_i/global_axi_control'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_proc_sys_reset_0_0/main_proc_sys_reset_0_0.dcp' for cell 'main_i/proc_sys_reset_0'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_usp_rf_data_converter_0_0/main_usp_rf_data_converter_0_0.dcp' for cell 'main_i/rfdc'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_rst_ps8_0_99M_0/main_rst_ps8_0_99M_0.dcp' for cell 'main_i/rst_ps8_0_99M'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_external_start_sync_0_0/main_external_start_sync_0_0.dcp' for cell 'main_i/sync_start'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_zynq_ultra_ps_e_0_0/main_zynq_ultra_ps_e_0_0.dcp' for cell 'main_i/zynq_ultra_ps'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_avg12_0_0/main_avg12_0_0.dcp' for cell 'main_i/adc_224_0/avg12_0'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_3/main_axi_control_3.dcp' for cell 'main_i/adc_224_0/group_0/axi_control_0'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_controller_lockin_0_0/main_controller_lockin_0_0.dcp' for cell 'main_i/adc_224_0/group_0/axi_control_1'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_5/main_axi_control_5.dcp' for cell 'main_i/adc_224_0/group_0/axi_control_2'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_4/main_axi_control_4.dcp' for cell 'main_i/adc_224_0/group_0/axi_control_3'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axis_subset_converter_23/main_axis_subset_converter_23.dcp' for cell 'main_i/adc_224_0/group_0/axis_subset_converter'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_count_dropped_23/main_count_dropped_23.dcp' for cell 'main_i/adc_224_0/group_0/count_dropped'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_24/main_dma_24.dcp' for cell 'main_i/adc_224_0/group_0/dma'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dump_25/main_dump_25.dcp' for cell 'main_i/adc_224_0/group_0/dump'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_fifo_23/main_fifo_23.dcp' for cell 'main_i/adc_224_0/group_0/fifo'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_lockin_2/main_lockin_2.dcp' for cell 'main_i/adc_224_0/group_0/lockin_0'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_lockin_wrapper_0_2/main_lockin_wrapper_0_2.dcp' for cell 'main_i/adc_224_0/group_0/lockin_1'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_lockin_4/main_lockin_4.dcp' for cell 'main_i/adc_224_0/group_0/lockin_2'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_lockin_3/main_lockin_3.dcp' for cell 'main_i/adc_224_0/group_0/lockin_3'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_stop_if_fifo_full_23/main_stop_if_fifo_full_23.dcp' for cell 'main_i/adc_224_0/group_0/stop_if_fifo_full'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_0_0/main_axi_control_0_0.dcp' for cell 'main_i/adc_224_0/group_1/axi_control_0'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_1_0/main_axi_control_1_0.dcp' for cell 'main_i/adc_224_0/group_1/axi_control_1'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_2_0/main_axi_control_2_0.dcp' for cell 'main_i/adc_224_0/group_1/axi_control_2'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axi_control_3_0/main_axi_control_3_0.dcp' for cell 'main_i/adc_224_0/group_1/axi_control_3'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_axis_subset_converter_24/main_axis_subset_converter_24.dcp' for cell 'main_i/adc_224_0/group_1/axis_subset_converter'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_count_dropped_24/main_count_dropped_24.dcp' for cell 'main_i/adc_224_0/group_1/count_dropped'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_25/main_dma_25.dcp' for cell 'main_i/adc_224_0/group_1/dma'
+INFO: [Project 1-454] Reading design checkpoint '/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dump_26/main_dump_26.dcp' for cell 'main_i/adc_224_0/group_1/dump'
+Finished Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_30/main_dma_30_clocks.xdc] for cell 'main_i/adc_224_1/group_2/dma/U0'
+Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_31/main_dma_31_clocks.xdc] for cell 'main_i/adc_224_1/group_3/dma/U0'
+Finished Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_31/main_dma_31_clocks.xdc] for cell 'main_i/adc_224_1/group_3/dma/U0'
+Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_32/main_dma_32_clocks.xdc] for cell 'main_i/adc_226_0/group_0/dma/U0'
+Finished Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_32/main_dma_32_clocks.xdc] for cell 'main_i/adc_226_0/group_0/dma/U0'
+Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_33/main_dma_33_clocks.xdc] for cell 'main_i/adc_226_0/group_1/dma/U0'
+Finished Parsing XDC File [/home/user/projects/firmware/lockin/lockin.gen/sources_1/bd/main/ip/main_dma_33/main_dma_33_clocks.xdc] for cell 'main_i/adc_226_0/group_1/dma/U0'
+INFO: [Project 1-1714] 574 XPM XDC files have been applied to the design.
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+INFO: [Project 1-1687] 1735 scoped IP constraints or related sub-commands were skipped due to synthesis logic optimizations usually triggered by constant connectivity or unconnected output pins. To review the skipped constraints and messages, run the command 'set_param netlist.IPMsgFiltering false' before opening the design.
+Netlist sorting complete. Time (s): cpu = 00:00:08 ; elapsed = 00:00:10 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 152 ; free virtual = 28435
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 27344 instances were transformed.
+  DSP48E2 => DSP48E2 (DSP_ALU, DSP_A_B_DATA, DSP_C_DATA, DSP_MULTIPLIER, DSP_M_DATA, DSP_OUTPUT, DSP_PREADD, DSP_PREADD_DATA): 3763 instances
+  IBUF => IBUF (IBUFCTRL, INBUF): 1 instance 
+  RAM16X1D => RAM32X1D (RAMD32(x2)): 15380 instances
+  RAM32M => RAM32M (RAMD32(x6), RAMS32(x2)): 24 instances
+  RAM32M16 => RAM32M16 (RAMD32(x14), RAMS32(x2)): 462 instances
+  RAM32X1D => RAM32X1D (RAMD32(x2)): 7714 instances
+
+122 Infos, 113 Warnings, 0 Critical Warnings and 0 Errors encountered.
+link_design completed successfully
+link_design: Time (s): cpu = 01:37:19 ; elapsed = 01:23:19 . Memory (MB): peak = 20504.375 ; gain = 19073.898 ; free physical = 298 ; free virtual = 28321
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:20 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 204 ; free virtual = 26899
+
+Starting Cache Timing Information Task
+INFO: [Constraints 18-632] set_output_delay: No clock object specified, the clocks will be automatically identified [/home/user/projects/firmware/constraints/pins.xdc:2]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Cache Timing Information Task | Checksum: 1f2961b31
+
+Time (s): cpu = 00:15:20 ; elapsed = 00:03:34 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 238 ; free virtual = 26454
+
+Starting Logic Optimization Task
+
+Phase 1 Initialization
+
+Phase 1.1 Core Generation And Design Setup
+Phase 1.1 Core Generation And Design Setup | Checksum: 1f2961b31
+
+Time (s): cpu = 00:00:00.63 ; elapsed = 00:00:00.81 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 281 ; free virtual = 26352
+
+Phase 1.2 Setup Constraints And Sort Netlist
+Phase 1.2 Setup Constraints And Sort Netlist | Checksum: 1f2961b31
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:24 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 187 ; free virtual = 25509
+Phase 1 Initialization | Checksum: 1f2961b31
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:24 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 203 ; free virtual = 25528
+
+Phase 2 Timer Update And Timing Data Collection
+
+Phase 2.1 Timer Update
+Phase 2.1 Timer Update | Checksum: 1f2961b31
+
+Time (s): cpu = 00:07:00 ; elapsed = 00:02:43 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 410 ; free virtual = 26194
+
+Phase 2.2 Timing Data Collection
+Phase 2.2 Timing Data Collection | Checksum: 1f2961b31
+
+Time (s): cpu = 00:07:10 ; elapsed = 00:03:17 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 185 ; free virtual = 25680
+Phase 2 Timer Update And Timing Data Collection | Checksum: 1f2961b31
+
+Time (s): cpu = 00:07:10 ; elapsed = 00:03:17 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 194 ; free virtual = 25690
+
+Phase 3 Retarget
+INFO: [Opt 31-1566] Pulled 51 inverters resulting in an inversion of 356 pins
+INFO: [Opt 31-138] Pushed 345 inverter(s) to 15852 load pin(s).
+INFO: [Opt 31-49] Retargeted 0 cell(s).
+Phase 3 Retarget | Checksum: 1d83b4237
+
+Time (s): cpu = 00:07:44 ; elapsed = 00:04:48 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 186 ; free virtual = 25651
+Retarget | Checksum: 1d83b4237
+INFO: [Opt 31-389] Phase Retarget created 1074 cells and removed 1890 cells
+INFO: [Opt 31-1021] In phase Retarget, 474 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 4 Constant propagation
+INFO: [Opt 31-138] Pushed 10 inverter(s) to 40 load pin(s).
+Phase 4 Constant propagation | Checksum: 142c56bd8
+
+Time (s): cpu = 00:07:53 ; elapsed = 00:04:58 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 601 ; free virtual = 26229
+Constant propagation | Checksum: 142c56bd8
+INFO: [Opt 31-389] Phase Constant propagation created 560 cells and removed 3682 cells
+INFO: [Opt 31-1021] In phase Constant propagation, 474 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 5 Sweep
+Phase 5 Sweep | Checksum: f15ce92f
+
+Time (s): cpu = 00:09:02 ; elapsed = 00:06:30 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 264 ; free virtual = 26250
+Sweep | Checksum: f15ce92f
+INFO: [Opt 31-389] Phase Sweep created 3 cells and removed 18062 cells
+INFO: [Opt 31-1021] In phase Sweep, 1353 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 6 BUFG optimization
+INFO: [Opt 31-1077] Phase BUFG optimization inserted 0 global clock buffer(s) for CLOCK_LOW_FANOUT.
+Phase 6 BUFG optimization | Checksum: f15ce92f
+
+Time (s): cpu = 00:11:17 ; elapsed = 00:07:32 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 194 ; free virtual = 25717
+BUFG optimization | Checksum: f15ce92f
+INFO: [Opt 31-662] Phase BUFG optimization created 0 cells of which 0 are BUFGs and removed 0 cells.
+
+Phase 7 Shift Register Optimization
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s00_entry_pipeline/s00_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s00_entry_pipeline/s00_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s01_entry_pipeline/s01_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s01_entry_pipeline/s01_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s02_entry_pipeline/s02_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s02_entry_pipeline/s02_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s03_entry_pipeline/s03_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s03_entry_pipeline/s03_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s04_entry_pipeline/s04_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s04_entry_pipeline/s04_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s05_entry_pipeline/s05_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s05_entry_pipeline/s05_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s06_entry_pipeline/s06_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s06_entry_pipeline/s06_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s07_entry_pipeline/s07_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s07_entry_pipeline/s07_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s08_entry_pipeline/s08_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s08_entry_pipeline/s08_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s09_entry_pipeline/s09_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[0].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/axi_smc/inst/s09_entry_pipeline/s09_mmu/inst/gen_wroute_fifo.wroute_fifo/gen_srls[1].srl_nx1/shift_reg_reg[0]_srl16 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][0]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][10]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][11]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][12]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][13]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][14]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][15]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][16]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][17]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][18]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][19]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][1]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][20]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][21]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][22]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][23]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][24]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][25]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][26]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][27]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][28]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][29]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][2]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][30]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][31]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][32]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][33]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][3]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][4]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][5]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][6]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][7]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][8]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][9]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/transaction_fifo_0/memory_reg[31][0]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][0]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][1]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][2]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][3]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][4]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][5]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][6]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bid_fifo_0/memory_reg[3][7]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bresp_fifo_0/memory_reg[3][0]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i00_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.b_channel_0/bresp_fifo_0/memory_reg[3][1]_srl4 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][0]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][10]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][11]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][12]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][13]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][14]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][15]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][16]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][17]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][18]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][19]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][1]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][20]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][21]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][22]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][23]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][24]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][25]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][26]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][27]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][28]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][29]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][2]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][30]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][31]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][32]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][33]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][3]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][4]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][5]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][6]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][7]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][8]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/memory_reg[31][9]_srl32 due to none static srl address bits
+WARNING: [Opt 31-1131] Can not pull register out from main_i/zynq_ultra_ps_axi_periph/i01_couplers/auto_pc/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/transaction_fifo_0/memory_reg[31][0]_srl32 due to none static srl address bits
+INFO: [Common 17-14] Message 'Opt 31-1131' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+INFO: [Opt 31-1064] SRL Remap converted 0 SRLs to 0 registers and converted 0 registers of register chains to 0 SRLs
+Phase 7 Shift Register Optimization | Checksum: 11ca738b2
+
+Time (s): cpu = 00:11:59 ; elapsed = 00:08:18 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 270 ; free virtual = 25914
+Shift Register Optimization | Checksum: 11ca738b2
+INFO: [Opt 31-389] Phase Shift Register Optimization created 29760 cells and removed 59520 cells
+
+Phase 8 Post Processing Netlist
+Phase 8 Post Processing Netlist | Checksum: 145ba0361
+
+Time (s): cpu = 00:12:09 ; elapsed = 00:08:30 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 174 ; free virtual = 25723
+Post Processing Netlist | Checksum: 145ba0361
+INFO: [Opt 31-389] Phase Post Processing Netlist created 0 cells and removed 0 cells
+INFO: [Opt 31-1021] In phase Post Processing Netlist, 546 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 9 Finalization
+
+Phase 9.1 Finalizing Design Cores and Updating Shapes
+Phase 9.1 Finalizing Design Cores and Updating Shapes | Checksum: 99e4e9f0
+
+Time (s): cpu = 00:12:34 ; elapsed = 00:09:07 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 225 ; free virtual = 25556
+
+Phase 9.2 Verifying Netlist Connectivity
+
+Starting Connectivity Check Task
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 275 ; free virtual = 25711
+Phase 9.2 Verifying Netlist Connectivity | Checksum: 99e4e9f0
+
+Time (s): cpu = 00:12:38 ; elapsed = 00:09:11 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 275 ; free virtual = 25704
+Phase 9 Finalization | Checksum: 99e4e9f0
+
+Time (s): cpu = 00:12:38 ; elapsed = 00:09:11 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 295 ; free virtual = 25689
+Opt_design Change Summary
+=========================
+
+
+-------------------------------------------------------------------------------------------------------------------------
+|  Phase                        |  #Cells created  |  #Cells Removed  |  #Constrained objects preventing optimizations  |
+-------------------------------------------------------------------------------------------------------------------------
+|  Retarget                     |            1074  |            1890  |                                            474  |
+|  Constant propagation         |             560  |            3682  |                                            474  |
+|  Sweep                        |               3  |           18062  |                                           1353  |
+|  BUFG optimization            |               0  |               0  |                                              0  |
+|  Shift Register Optimization  |           29760  |           59520  |                                              0  |
+|  Post Processing Netlist      |               0  |               0  |                                            546  |
+-------------------------------------------------------------------------------------------------------------------------
+
+
+Ending Logic Optimization Task | Checksum: 99e4e9f0
+
+Time (s): cpu = 00:12:39 ; elapsed = 00:09:12 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 279 ; free virtual = 25607
+INFO: [Constraints 18-11670] Building netlist checker database with flags, 0x8
+Done building netlist checker database: Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 20504.375 ; gain = 0.000 ; free physical = 211 ; free virtual = 25460
+
+Starting Power Optimization Task
+INFO: [Pwropt 34-132] Skipping clock gating for clocks with a period < 2.00 ns.
+INFO: [Pwropt 34-9] Applying IDT optimizations ...
+INFO: [Pwropt 34-10] Applying ODC optimizations ...
+INFO: [Constraints 18-632] set_output_delay: No clock object specified, the clocks will be automatically identified [/home/user/projects/firmware/constraints/pins.xdc:2]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Running Vector-less Activity Propagation...
+
+Finished Running Vector-less Activity Propagation
+
+
+Starting PowerOpt Patch Enables Task
+INFO: [Pwropt 34-162] WRITE_MODE attribute of 0 BRAM(s) out of a total of 830 has been updated to save power. Run report_power_opt to get a complete listing of the BRAMs updated.
+INFO: [Pwropt 34-201] Structural ODC has moved 90 WE to EN ports
+Number of BRAM Ports augmented: 20 newly gated: 90 Total Ports: 1660
+Ending PowerOpt Patch Enables Task | Checksum: ad7a8572
+
+Time (s): cpu = 00:00:08 ; elapsed = 00:00:38 . Memory (MB): peak = 24245.934 ; gain = 0.000 ; free physical = 258 ; free virtual = 25622
+Ending Power Optimization Task | Checksum: ad7a8572
+
+Time (s): cpu = 00:27:36 ; elapsed = 00:10:58 . Memory (MB): peak = 24245.934 ; gain = 3741.559 ; free physical = 331 ; free virtual = 25827
+
+Starting Final Cleanup Task
+Ending Final Cleanup Task | Checksum: ad7a8572
+
+Time (s): cpu = 00:00:00.13 ; elapsed = 00:00:00.13 . Memory (MB): peak = 24245.934 ; gain = 0.000 ; free physical = 331 ; free virtual = 25827
+
+Starting Netlist Obfuscation Task
+Netlist sorting complete. Time (s): cpu = 00:00:06 ; elapsed = 00:00:31 . Memory (MB): peak = 24245.934 ; gain = 0.000 ; free physical = 281 ; free virtual = 25344
+Ending Netlist Obfuscation Task | Checksum: f9a434a1
+
+Time (s): cpu = 00:00:06 ; elapsed = 00:00:31 . Memory (MB): peak = 24245.934 ; gain = 0.000 ; free physical = 298 ; free virtual = 25339
+INFO: [Common 17-83] Releasing license: Implementation
+155 Infos, 213 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:56:14 ; elapsed = 00:26:31 . Memory (MB): peak = 24245.934 ; gain = 3741.559 ; free physical = 184 ; free virtual = 25297
+INFO: [runtcl-4] Executing : report_drc -file main_wrapper_drc_opted.rpt -pb main_wrapper_drc_opted.pb -rpx main_wrapper_drc_opted.rpx
+Command: report_drc -file main_wrapper_drc_opted.rpt -pb main_wrapper_drc_opted.pb -rpx main_wrapper_drc_opted.rpx
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 2-168] The results of DRC are in file /home/user/projects/firmware/lockin/lockin.runs/impl_1/main_wrapper_drc_opted.rpt.
+report_drc completed successfully
+report_drc: Time (s): cpu = 00:03:55 ; elapsed = 00:02:13 . Memory (MB): peak = 24277.949 ; gain = 32.016 ; free physical = 824 ; free virtual = 26190
+INFO: [Constraints 18-632] set_output_delay: No clock object specified, the clocks will be automatically identified [/home/user/projects/firmware/constraints/pins.xdc:2]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00.16 ; elapsed = 00:00:00.11 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 249 ; free virtual = 25269
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 246 ; free virtual = 25267
+Writing XDEF routing.
+Write ShapeDB Complete: Time (s): cpu = 00:00:18 ; elapsed = 00:00:22 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 797 ; free virtual = 25692
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:57 ; elapsed = 00:00:41 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 187 ; free virtual = 25738
+Wrote Netlist Cache: Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 186 ; free virtual = 25736
+Wrote Device Cache: Time (s): cpu = 00:00:00.09 ; elapsed = 00:00:00.12 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 240 ; free virtual = 25788
+Write Physdb Complete: Time (s): cpu = 00:00:57 ; elapsed = 00:00:42 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 266 ; free virtual = 25817
+INFO: [Common 17-1381] The checkpoint '/home/user/projects/firmware/lockin/lockin.runs/impl_1/main_wrapper_opt.dcp' has been generated.
+write_checkpoint: Time (s): cpu = 00:20:33 ; elapsed = 00:08:32 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 1791 ; free virtual = 25741
+Command: place_design
+Attempting to get a license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xczu48dr'
+INFO: [Common 17-1540] The version limit for your license is '2024.04' and has expired for new software. A version limit expiration means that, although you may be able to continue to use the current version of tools or IP with this license, you will not be eligible for new releases.
+INFO: [Common 17-83] Releasing license: Implementation
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+Running DRC as a precondition to command place_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+INFO: [Place 30-611] Multithreading enabled for place_design using a maximum of 8 CPUs
+
+Starting Placer Task
+
+Phase 1 Placer Initialization
+
+Phase 1.1 Placer Initialization Netlist Sorting
+Netlist sorting complete. Time (s): cpu = 00:00:07 ; elapsed = 00:00:37 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 389 ; free virtual = 25308
+Phase 1.1 Placer Initialization Netlist Sorting | Checksum: 90553f59
+
+Time (s): cpu = 00:00:08 ; elapsed = 00:00:47 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 287 ; free virtual = 25250
+Netlist sorting complete. Time (s): cpu = 00:00:04 ; elapsed = 00:00:04 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 167 ; free virtual = 25452
+
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device | Checksum: 1522ce94c
+
+Time (s): cpu = 00:03:38 ; elapsed = 00:04:03 . Memory (MB): peak = 24277.949 ; gain = 0.000 ; free physical = 272 ; free virtual = 24957
+
+Phase 1.3 Build Placer Netlist Model
+Phase 1.3 Build Placer Netlist Model | Checksum: 19ba40c7a
+
+Time (s): cpu = 00:27:00 ; elapsed = 00:19:58 . Memory (MB): peak = 27070.652 ; gain = 2792.703 ; free physical = 149 ; free virtual = 23489
+

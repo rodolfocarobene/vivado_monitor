@@ -1,0 +1,233 @@
+{
+ "home": "/home/user",
+ "dirs": {
+  "/home/user": [
+   {
+    "name": "Desktop",
+    "path": "/home/user/Desktop",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759996400.0,
+    "live": false
+   },
+   {
+    "name": "Documents",
+    "path": "/home/user/Documents",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759999100.0,
+    "live": false
+   },
+   {
+    "name": "Downloads",
+    "path": "/home/user/Downloads",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759992800.0,
+    "live": false
+   },
+   {
+    "name": "projects",
+    "path": "/home/user/projects",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759999940.0,
+    "live": false
+   },
+   {
+    "name": "notes.log",
+    "path": "/home/user/notes.log",
+    "type": "file",
+    "kind": "log",
+    "mtime": 1759910000.0,
+    "live": false
+   }
+  ],
+  "/home/user/Documents": [
+   {
+    "name": "thesis",
+    "path": "/home/user/Documents/thesis",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759996400.0,
+    "live": false
+   }
+  ],
+  "/home/user/projects": [
+   {
+    "name": "firmware",
+    "path": "/home/user/projects/firmware",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759999940.0,
+    "live": false
+   },
+   {
+    "name": "adc_capture",
+    "path": "/home/user/projects/adc_capture",
+    "type": "dir",
+    "kind": "project_dir",
+    "mtime": 1759996300.0,
+    "live": false
+   },
+   {
+    "name": "pcie_dma",
+    "path": "/home/user/projects/pcie_dma",
+    "type": "dir",
+    "kind": "project_dir",
+    "mtime": 1759970000.0,
+    "live": false
+   },
+   {
+    "name": "qick_firmwares",
+    "path": "/home/user/projects/qick_firmwares",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759950000.0,
+    "live": false
+   },
+   {
+    "name": "scripts",
+    "path": "/home/user/projects/scripts",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759996400.0,
+    "live": false
+   }
+  ],
+  "/home/user/projects/adc_capture": [
+   {
+    "name": "adc_capture.runs",
+    "path": "/home/user/projects/adc_capture/adc_capture.runs",
+    "type": "dir",
+    "kind": "runs",
+    "mtime": 1759996300.0,
+    "live": false
+   },
+   {
+    "name": "adc_capture.srcs",
+    "path": "/home/user/projects/adc_capture/adc_capture.srcs",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759996400.0,
+    "live": false
+   },
+   {
+    "name": "adc_capture.xpr",
+    "path": "/home/user/projects/adc_capture/adc_capture.xpr",
+    "type": "file",
+    "kind": "xpr",
+    "mtime": 1759996200.0,
+    "live": false
+   }
+  ],
+  "/home/user/projects/adc_capture/adc_capture.runs": [
+   {
+    "name": "impl_1",
+    "path": "/home/user/projects/adc_capture/adc_capture.runs/impl_1",
+    "type": "dir",
+    "kind": "run",
+    "mtime": 1759996300.0,
+    "live": false
+   },
+   {
+    "name": "synth_1",
+    "path": "/home/user/projects/adc_capture/adc_capture.runs/synth_1",
+    "type": "dir",
+    "kind": "run",
+    "mtime": 1759994000.0,
+    "live": false
+   }
+  ],
+  "/home/user/projects/qick_firmwares": [
+   {
+    "name": "4x2_tprocv2r26",
+    "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26",
+    "type": "dir",
+    "kind": "project_dir",
+    "mtime": 1759979000.0,
+    "live": false
+   }
+  ],
+  "/home/user/projects/firmware": [
+   {
+    "name": "lockin",
+    "path": "/home/user/projects/firmware/lockin",
+    "type": "dir",
+    "kind": "project_dir",
+    "mtime": 1759999970.0,
+    "live": true
+   },
+   {
+    "name": "legacy",
+    "path": "/home/user/projects/firmware/legacy",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759100000.0,
+    "live": false
+   }
+  ],
+  "/home/user/projects/firmware/lockin": [
+   {
+    "name": "lockin.runs",
+    "path": "/home/user/projects/firmware/lockin/lockin.runs",
+    "type": "dir",
+    "kind": "runs",
+    "mtime": 1759999970.0,
+    "live": true
+   },
+   {
+    "name": "lockin.srcs",
+    "path": "/home/user/projects/firmware/lockin/lockin.srcs",
+    "type": "dir",
+    "kind": null,
+    "mtime": 1759996400.0,
+    "live": false
+   },
+   {
+    "name": "lockin.xpr",
+    "path": "/home/user/projects/firmware/lockin/lockin.xpr",
+    "type": "file",
+    "kind": "xpr",
+    "mtime": 1759996000.0,
+    "live": false
+   },
+   {
+    "name": "vivado.log",
+    "path": "/home/user/projects/firmware/lockin/vivado.log",
+    "type": "file",
+    "kind": "log",
+    "mtime": 1759999960.0,
+    "live": true
+   }
+  ],
+  "/home/user/projects/firmware/lockin/lockin.runs": [
+   {
+    "name": "impl_1",
+    "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1",
+    "type": "dir",
+    "kind": "run",
+    "mtime": 1759999970.0,
+    "live": true
+   },
+   {
+    "name": "synth_1",
+    "path": "/home/user/projects/firmware/lockin/lockin.runs/synth_1",
+    "type": "dir",
+    "kind": "run",
+    "mtime": 1759998700.0,
+    "live": false
+   }
+  ],
+  "/home/user/Desktop": [],
+  "/home/user/Downloads": [],
+  "/home/user/Documents/thesis": [],
+  "/home/user/projects/scripts": [],
+  "/home/user/projects/firmware/legacy": []
+ },
+ "recent": [
+  "/home/user/projects/firmware/lockin/lockin.runs",
+  "/home/user/projects/adc_capture/adc_capture.runs",
+  "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs"
+ ]
+}

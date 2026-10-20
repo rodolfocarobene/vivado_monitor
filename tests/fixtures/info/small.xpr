@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project Product="Vivado" Version="7" Minor="65">
+  <Configuration>
+    <Option Name="Part" Val="xczu48dr-ffvg1517-2-e"/>
+    <Option Name="BoardPart" Val="realdigital.org:rfsoc4x2:part0:1.0"/>
+  </Configuration>
+  <FileSets Version="1" Minor="31">
+    <FileSet Name="sources_1" Type="DesignSrcs"/>
+  </FileSets>
+  <Runs Version="1" Minor="21">
+    <Run Id="synth_1" Type="Ft3:Synth" Part="xczu48dr-ffvg1517-2-e" State="current">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Flow_PerfOptimized_high" Flow="Vivado Synthesis 2023"/>
+        <Step Id="synth_design"/>
+      </Strategy>
+    </Run>
+    <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xczu48dr-ffvg1517-2-e" SynthRun="synth_1" LaunchOptions="-jobs 4 ">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Performance_NetDelay_high" Flow="Vivado Implementation 2023"/>
+        <Step Id="place_design"/>
+      </Strategy>
+    </Run>
+  </Runs>
+</Project>

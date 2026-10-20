@@ -1,0 +1,692 @@
+# vmon catalog: every step / phase / task a Vivado 2023.2 project-mode run can go through.
+# Mined from 8 impl logs (.vdi, UltraScale+ RFSoC parts) and ~400 synth logs (.vds), plus
+# Vivado's own strategy file (strategies/VDI2023.psg) and the generated run tcl files.
+# See README.md for the schema. Phase NUMBERS are not stable (they shift with directive and
+# device), so everything is matched on the phase NAME, never on the number.
+#
+# evidence = "log"      seen in real logs on this machine
+#            "install"  seen in Vivado install files / run tcl, never in a log here
+#            "doc"      from AMD documentation / general knowledge, unverified
+# weight   = rough share of the parent's wall-clock time (0-100, siblings sum to ~100),
+#            from median elapsed times across the mined logs; weight_src says how it was obtained.
+
+[catalog]
+schema = 1
+vivado = "2023.2"
+families_seen = ["zynquplus-rfsoc"]       # xczu48dr, xczu49dr, xczu28dr
+logs_mined = { impl = 8, synth = 400 }
+
+# ---------------------------------------------------------------------------------------------
+# Step-level notes
+#   command        text after "Command: " in the log that opens the step (synth_design, opt_design...)
+#   run            "synth" or "impl"
+#   enable         run property that turns the step on/off (impl only); default_enabled = state with the
+#                  "Vivado Implementation Defaults" strategy
+#   plan_mode      "static": phase list is known ahead, show unseen phases as pending
+#                  "dynamic": phase list depends on directive/timing; show only the high-level
+#                  expectation (min_phases) and add phases as they appear
+#   weight         share of the whole impl run (steps sum to 100 over the enabled ones; renormalise)
+# ---------------------------------------------------------------------------------------------
+
+# =============================== SYNTHESIS (run = synth_N) ===================================
+[[step]]
+id = "synth_design"
+run = "synth"
+command = "synth_design"
+label = "Synthesis"
+description = "Elaborates the RTL, applies constraints, optimises and maps the design to device primitives, producing the synthesized netlist checkpoint."
+optional = false
+plan_mode = "static"
+weight = 100
+weight_src = "measured"
+# Section timers inside the log cover only ~20% of the synth_design wall time (the rest is source
+# reading / IP loading / checkpoint writing before and after), so use weights only for ordering the bar.
+start_marker = '^Starting synth_design'
+end_marker = '^synth_design completed successfully|^Synth Design complete'
+# IP out-of-context synth runs often just copy a cached netlist and have NO sections at all:
+cached_marker = '^INFO: \[IP_Flow 19-4838\] Using cached IP synthesis design for IP (?P<ip>\S+)'
+reports = [
+  { file = "{top}_utilization_synth.rpt", generated_by = "report_utilization", optional = false, desc = "Post-synthesis resource utilisation (LUT/FF/BRAM/URAM/DSP/IO).", metrics = ["Slice LUTs used/%", "Slice Registers used/%", "Block RAM Tile used/%", "URAM used/%", "DSPs used/%"] },
+]
+# kind: "section" = log lines  Start <name> ... Finished <name> : Time (s) ...
+#       marker: "both" (Start+Finished), "finish_only" (only a Finished line), "starting" (Starting+Finished)
+sections = [
+  { name = "RTL Elaboration", marker = "starting", optional = false, weight = 8, desc = "Parses and elaborates the HDL/netlist sources into an RTL hierarchy." },
+  { name = "Handling Custom Attributes", marker = "both", optional = false, weight = 0, desc = "Processes HDL attributes such as keep, dont_touch, ram_style." },
+  { name = "RTL Optimization Phase 1", marker = "finish_only", optional = false, weight = 0, desc = "Early RTL optimisation, before constraints are loaded." },
+  { name = "Constraint Validation", marker = "finish_only", optional = false, weight = 40, desc = "Reads IP/user XDC and validates constraints against the netlist (loads part, parses XDC files)." },
+  { name = "Loading Part and Timing Information", marker = "both", optional = false, weight = 0, desc = "Loads device and timing data for the target part." },
+  { name = "Applying 'set_property' XDC Constraints", marker = "both", finish_name = "applying 'set_property' XDC Constraints", optional = false, weight = 0, desc = "Applies set_property constraints (LOC, IOSTANDARD, ...) from XDC." },
+  { name = "RTL Optimization Phase 2", marker = "finish_only", optional = false, weight = 1, desc = "RTL optimisation with constraints applied." },
+  { name = "RTL Component Statistics", marker = "both", optional = false, weight = 0, desc = "Counts adders, registers, muxes, memories found in the RTL." },
+  { name = "Part Resource Summary", marker = "both", optional = false, weight = 0, desc = "Resources available in the target part." },
+  { name = "Cross Boundary and Area Optimization", marker = "both", optional = false, weight = 5, desc = "Optimises across hierarchy boundaries and reduces area (constant propagation, sweeping)." },
+  { name = "Applying XDC Timing Constraints", marker = "both", optional = false, weight = 1, desc = "Applies timing constraints (clocks, delays) to the synthesised netlist." },
+  { name = "ROM, RAM, DSP, Shift Register and Retiming Reporting", marker = "both", optional = true, weight = 0, desc = "Reports inferred ROMs/RAMs/DSPs/shift registers and retiming moves; present only for some designs." },
+  { name = "Timing Optimization", marker = "both", optional = false, weight = 21, desc = "Timing-driven logic restructuring (the main synthesis optimisation)." },
+  { name = "Technology Mapping", marker = "both", optional = false, weight = 3, desc = "Maps generic logic to LUTs, flip-flops, carry chains and DSP/RAM primitives." },
+  { name = "IO Insertion", marker = "both", optional = false, weight = 10, desc = "Inserts IO buffers on top-level ports." },
+  { name = "Flattening Before IO Insertion", marker = "both", parent = "IO Insertion", optional = false, weight = 0, desc = "Flattens the hierarchy ahead of buffer insertion." },
+  { name = "Final Netlist Cleanup", marker = "both", parent = "IO Insertion", optional = false, weight = 0, desc = "Removes leftover unused cells and nets." },
+  { name = "Renaming Generated Instances", marker = "both", optional = false, weight = 1, desc = "Gives generated instances stable names." },
+  { name = "Rebuilding User Hierarchy", marker = "both", optional = false, weight = 1, desc = "Restores the user hierarchy after flattening." },
+  { name = "Renaming Generated Ports", marker = "both", optional = false, weight = 0, desc = "Gives generated ports stable names." },
+  { name = "Handling Custom Attributes", marker = "both", occurrence = 2, optional = false, weight = 0, desc = "Second custom-attribute pass, after renaming." },
+  { name = "Renaming Generated Nets", marker = "both", optional = false, weight = 0, desc = "Gives generated nets stable names." },
+  { name = "Writing Synthesis Report", marker = "both", optional = false, weight = 1, desc = "Prints black-box and cell-usage reports at the end of the log." },
+]
+# repeatable sub-events inside Constraint Validation (not phases, shown as counters only)
+events = [
+  { id = "xdc_parse", start = '^Parsing XDC File \[(?P<file>[^\]]+)\]', end = '^Finished Parsing XDC File \[', desc = "One XDC file being parsed (many for IP-heavy designs)." },
+]
+
+# =============================== IMPLEMENTATION (run = impl_N) ===============================
+[[step]]
+id = "init_design"
+run = "impl"
+command = "link_design"
+label = "Init Design"
+description = "Opens the synthesized netlist (link_design): loads the part, resolves IP cores, reads all XDC constraints."
+optional = false
+enable = ""                                 # cannot be disabled
+plan_mode = "static"
+weight = 7
+weight_src = "measured"                     # median ~250 s on large RFSoC designs, ~30-150 s on small ones
+reports = []
+# link_design has no Phase/Task lines; progress is only the Parsing XDC counter + the end line.
+events = [
+  { id = "xdc_parse", start = '^Parsing XDC File \[(?P<file>[^\]]+)\]', end = '^Finished Parsing XDC File \[', desc = "One XDC file being parsed." },
+]
+phases = []
+end_marker = '^link_design completed successfully'
+
+[[step]]
+id = "opt_design"
+run = "impl"
+command = "opt_design"
+label = "Logic Optimization"
+description = "Netlist-level optimisation before placement: retargeting, constant propagation, sweeping unused logic, BUFG and shift-register optimisation."
+optional = false
+enable = "STEPS.OPT_DESIGN.IS_ENABLED"
+default_enabled = true
+plan_mode = "static"
+weight = 12
+weight_src = "measured"
+reports = [
+  { file = "{top}_drc_opted.rpt", generated_by = "report_drc", optional = false, desc = "Design rule check after opt_design.", metrics = ["Violations by severity (Error/Critical Warning/Warning/Advisory)", "Rule ids with counts"] },
+  { file = "{top}_opt.dcp", generated_by = "write_checkpoint", optional = false, report = false, desc = "Checkpoint after opt_design." },
+]
+# Tasks, in log order ("Starting <name> Task" ... "Ending <name> Task | Checksum").
+tasks = [
+  { name = "DRC", optional = false, desc = "Pre-optimisation design rule check." },
+  { name = "Cache Timing Information", optional = true, desc = "Caches timing data for the optimisation tasks (not always printed)." },
+  { name = "Logic Optimization", optional = false, desc = "Main netlist optimisation (phases 1-9 below)." },
+  { name = "Connectivity Check", parent = "Logic Optimization", optional = false, desc = "Verifies netlist connectivity." },
+  { name = "Power Optimization", optional = true, desc = "Clock-gating based dynamic power reduction (runs only in some designs)." },
+  { name = "PowerOpt Patch Enables", parent = "Power Optimization", optional = true, desc = "Applies the clock-enable changes found by power optimisation." },
+  { name = "Final Cleanup", optional = true, desc = "Last cleanup pass after power optimisation." },
+  { name = "Netlist Obfuscation", optional = false, desc = "Netlist obfuscation (no-op unless encrypted IP is present)." },
+]
+phases = [
+  { n = "1", name = "Initialization", level = 1, optional = false, weight = 60, desc = "Generates cores and prepares the design (can dominate when MIG/debug cores are present)." },
+  { n = "1.1", name = "Core Generation And Design Setup", level = 2, parent = "Initialization", optional = false, desc = "Generates and synthesises delayed cores, sets up the design." },
+  { n = "1.1.1", name = "Generate And Synthesize MIG Cores", level = 3, parent = "Core Generation And Design Setup", optional = true, desc = "Synthesises memory-interface cores; only with MIG/DDR IP." },
+  { n = "1.1.2", name = "Generate And Synthesize Debug Cores", level = 3, parent = "Core Generation And Design Setup", optional = true, desc = "Synthesises ILA/VIO debug cores; only with debug hub." },
+  { n = "1.2", name = "Setup Constraints And Sort Netlist", level = 2, parent = "Initialization", optional = false, desc = "Applies constraints and sorts the netlist." },
+  { n = "2", name = "Timer Update And Timing Data Collection", level = 1, optional = false, weight = 10, desc = "Updates the timing engine and gathers data for timing-driven optimisation." },
+  { n = "2.1", name = "Timer Update", level = 2, parent = "Timer Update And Timing Data Collection", optional = false, desc = "Timing graph update." },
+  { n = "2.2", name = "Timing Data Collection", level = 2, parent = "Timer Update And Timing Data Collection", optional = false, desc = "Collects slack data." },
+  { n = "3", name = "Retarget", level = 1, optional = false, weight = 6, desc = "Retargets cells to better device primitives (e.g. inverter absorption)." },
+  { n = "4", name = "Constant propagation", level = 1, optional = false, weight = 3, desc = "Propagates constants through the logic." },
+  { n = "5", name = "Sweep", level = 1, optional = false, weight = 8, desc = "Removes cells and nets with no loads." },
+  { n = "6", name = "BUFG optimization", level = 1, optional = false, weight = 4, desc = "Removes redundant global clock buffers." },
+  { n = "7", name = "Shift Register Optimization", level = 1, optional = false, weight = 2, desc = "Packs register chains into SRLs." },
+  { n = "8", name = "Remap", level = 1, optional = true, weight = 20, desc = "LUT remapping; only with -remap or the Explore*Remap directives (shifts later phase numbers by one)." },
+  { n = "8", name = "Post Processing Netlist", level = 1, optional = false, weight = 1, alt_numbers = ["9"], desc = "Cleans up the netlist after optimisation." },
+  { n = "9", name = "Finalization", level = 1, optional = false, weight = 6, alt_numbers = ["10"], desc = "Finalises cores and shapes and verifies connectivity." },
+  { n = "9.1", name = "Finalizing Design Cores and Updating Shapes", level = 2, parent = "Finalization", optional = false, alt_numbers = ["10.1"], desc = "Finalises cores." },
+  { n = "9.2", name = "Verifying Netlist Connectivity", level = 2, parent = "Finalization", optional = false, alt_numbers = ["10.2"], desc = "Connectivity sanity check." },
+]
+
+[[step]]
+id = "power_opt_design"
+run = "impl"
+command = "power_opt_design"
+label = "Power Opt"
+description = "Optional dynamic-power optimisation by clock gating (power_opt_design) before placement."
+optional = true
+enable = "STEPS.POWER_OPT_DESIGN.IS_ENABLED"
+default_enabled = false
+enabled_by_strategies = ["Power_DefaultOpt", "Power_ExploreArea"]
+plan_mode = "dynamic"
+weight = 2
+weight_src = "guess"
+evidence = "install"                         # step exists in VDI2023.psg; no log on this machine contains it
+reports = [
+  { file = "{top}_power_opt.dcp", generated_by = "write_checkpoint", optional = true, report = false, desc = "Checkpoint after power_opt_design." },
+]
+tasks = [
+  { name = "Power Optimization", optional = false, desc = "Clock-gating based power reduction." },
+  { name = "PowerOpt Patch Enables", parent = "Power Optimization", optional = false, desc = "Applies clock-enable changes." },
+]
+phases = []
+
+[[step]]
+id = "place_design"
+run = "impl"
+command = "place_design"
+label = "Place"
+description = "Assigns every cell to a device site: IO and clock placement, global placement, detail placement and post-placement timing optimisation."
+optional = false
+enable = "STEPS.PLACE_DESIGN.IS_ENABLED"
+default_enabled = true
+plan_mode = "static"
+weight = 40
+weight_src = "measured"                      # largest step: median ~25 min on big RFSoC designs
+reports = [
+  { file = "{top}_io_placed.rpt", generated_by = "report_io", optional = false, desc = "IO bank/pin assignment after placement.", metrics = ["IO standards per bank", "Bank VCCO conflicts"] },
+  { file = "{top}_utilization_placed.rpt", generated_by = "report_utilization", optional = false, desc = "Resource utilisation after placement.", metrics = ["CLB LUTs/Registers %", "Block RAM/URAM/DSP %", "CLB Distribution (LUT per CLB, control sets)", "Clock regions use"] },
+  { file = "{top}_control_sets_placed.rpt", generated_by = "report_control_sets", optional = false, desc = "Distinct clock/set/reset/enable control sets.", metrics = ["Total control sets", "Number of unique control sets", "Control sets with fanout < 4"] },
+  { file = "{top}_timing_summary_placed.rpt", generated_by = "report_timing_summary", optional = true, desc = "Timing after placement; written only for some strategies (the Performance_* ones add it).", metrics = ["WNS", "TNS", "TNS Failing Endpoints", "WHS", "THS", "WPWS", "TPWS"] },
+  { file = "{top}_placed.dcp", generated_by = "write_checkpoint", optional = false, report = false, desc = "Checkpoint after place_design." },
+]
+tasks = [
+  { name = "Placer", optional = false, desc = "The whole placer (phases 1-4 below)." },
+  { name = "Physical Synthesis", parent = "Placer", optional = true, desc = "Timing-driven physical optimisation inside the placer (only for some directives)." },
+]
+phases = [
+  { n = "1", name = "Placer Initialization", level = 1, optional = false, weight = 7, desc = "Loads the placer device model and netlist; places IO and clocks." },
+  { n = "1.1", name = "Placer Initialization Netlist Sorting", level = 2, parent = "Placer Initialization", optional = false, desc = "Sorts the netlist for deterministic placement." },
+  { n = "1.2", name = "IO Placement/ Clock Placement/ Build Placer Device", level = 2, parent = "Placer Initialization", optional = false, desc = "Places IO and clock primitives and builds the device graph (ILP clock placer)." },
+  { n = "1.3", name = "Build Placer Netlist Model", level = 2, parent = "Placer Initialization", optional = false, desc = "Builds the placer's internal netlist model." },
+  { n = "1.4", name = "Constrain Clocks/Macros", level = 2, parent = "Placer Initialization", optional = false, desc = "Applies clock and macro placement constraints." },
+  { n = "2", name = "Global Placement", level = 1, optional = false, weight = 25, desc = "Coarse placement: floorplanning then global placement of all cells." },
+  { n = "2.1", name = "Floorplanning", level = 2, parent = "Global Placement", optional = false, desc = "Partition-driven floorplan across clock regions." },
+  { n = "2.1.1", name = "Partition Driven Placement", level = 3, parent = "Floorplanning", optional = false, desc = "PBP: iterative bisection placement." },
+  { n = "2.1.1.1", name = "PBP: Partition Driven Placement", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
+  { n = "2.1.1.2", name = "PBP: Clock Region Placement", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
+  { n = "2.1.1.3", name = "PBP: Discrete Incremental", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
+  { n = "2.1.1.4", name = "PBP: Compute Congestion", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
+  { n = "2.1.1.5", name = "PBP: Macro Placement", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
+  { n = "2.1.1.6", name = "PBP: UpdateTiming", level = 4, parent = "Partition Driven Placement", optional = true, desc = "" },
+  { n = "2.1.1.7", name = "PBP: Add part constraints", level = 4, parent = "Partition Driven Placement", optional = true, desc = "" },
+  { n = "2.2", name = "Physical Synthesis After Floorplan", level = 2, parent = "Global Placement", optional = true, desc = "Physical optimisation after floorplanning; only with some directives (shifts following numbers)." },
+  { n = "2.2", name = "Update Timing before SLR Path Opt", level = 2, parent = "Global Placement", optional = true, alt_names = ["Update Timing before SLR Path Opt"], desc = "Timing update before SLR crossing optimisation." },
+  { n = "2.3", name = "Post-Processing in Floorplanning", level = 2, parent = "Global Placement", optional = true, desc = "" },
+  { n = "2.4", name = "Global Placement Core", level = 2, parent = "Global Placement", optional = true, desc = "The analytical placement core." },
+  { n = "2.4.1", name = "UpdateTiming Before Physical Synthesis", level = 3, parent = "Global Placement Core", optional = true, desc = "" },
+  { n = "2.4.2", name = "Physical Synthesis In Placer", level = 3, parent = "Global Placement Core", optional = true, desc = "In-placer timing optimisation." },
+  { n = "3", name = "Detail Placement", level = 1, optional = false, weight = 12, desc = "Legalises and refines the placement." },
+  { n = "3.1", name = "Commit Multi Column Macros", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "3.2", name = "Commit Most Macros & LUTRAMs", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "3.3", name = "Small Shape DP", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "3.3.1", name = "Small Shape Clustering", level = 3, parent = "Small Shape DP", optional = false, desc = "" },
+  { n = "3.3.2", name = "Slice Area Swap", level = 3, parent = "Small Shape DP", optional = false, desc = "" },
+  { n = "3.3.2.1", name = "Slice Area Swap Initial", level = 4, parent = "Slice Area Swap", optional = false, desc = "" },
+  { n = "3.4", name = "Re-assign LUT pins", level = 2, parent = "Detail Placement", optional = false, desc = "Swaps LUT inputs for timing." },
+  { n = "3.5", name = "Pipeline Register Optimization", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "3.6", name = "Fast Optimization", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "4", name = "Post Placement Optimization and Clean-Up", level = 1, optional = false, weight = 56, desc = "Timing-driven optimisation of the placed design (longest phase) and final cleanup." },
+  { n = "4.1", name = "Post Commit Optimization", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = false, desc = "" },
+  { n = "4.1.1", name = "Post Placement Optimization", level = 3, parent = "Post Commit Optimization", optional = false, desc = "" },
+  { n = "4.1.1.1", name = "BUFG Insertion", level = 4, parent = "Post Placement Optimization", optional = true, desc = "Inserts BUFGs on high-fanout nets (logs a count even when 0)." },
+  { n = "4.1.1.2", name = "Post Placement Timing Optimization", level = 4, parent = "Post Placement Optimization", optional = false, desc = "Iterative timing-driven moves (prints Post Placement Timing Summary)." },
+  { n = "4.2", name = "Physical Synthesis Initialization", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = true, desc = "Starts the Physical Synthesis task (numbering shifts the following phases by one)." },
+  { n = "4.3", name = "Pipeline to Shift Register Optimization", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = true, desc = "" },
+  { n = "4.2", name = "Post Placement Cleanup", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = false, alt_numbers = ["4.4"], desc = "" },
+  { n = "4.3", name = "Placer Reporting", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = false, alt_numbers = ["4.5"], desc = "Prints estimated congestion." },
+  { n = "4.3.1", name = "Print Estimated Congestion", level = 3, parent = "Placer Reporting", optional = false, alt_numbers = ["4.5.1"], desc = "Prints the Post-Placement Estimated Congestion table." },
+  { n = "4.4", name = "Final Placement Cleanup", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = false, alt_numbers = ["4.6"], desc = "" },
+]
+
+[[step]]
+id = "post_place_power_opt_design"
+run = "impl"
+command = "power_opt_design"                  # same command as power_opt_design; disambiguated by start_step name in the run tcl
+label = "Post-Place Power Opt"
+description = "Optional power optimisation after placement (post_place_power_opt_design)."
+optional = true
+enable = "STEPS.POST_PLACE_POWER_OPT_DESIGN.IS_ENABLED"
+default_enabled = false
+plan_mode = "dynamic"
+weight = 2
+weight_src = "guess"
+evidence = "install"
+reports = [
+  { file = "{top}_postplace_power_opt.dcp", generated_by = "write_checkpoint", optional = true, report = false, desc = "Checkpoint after the step." },
+]
+tasks = [
+  { name = "Power Optimization", optional = false, desc = "Clock-gating based power reduction on the placed design." },
+  { name = "PowerOpt Patch Enables", parent = "Power Optimization", optional = false, desc = "" },
+]
+phases = []
+
+[[step]]
+id = "phys_opt_design"
+run = "impl"
+command = "phys_opt_design"
+label = "Physical Optimization"
+description = "Post-placement, timing-driven physical optimisation: fanout, placement, rewiring, register moves; may do nothing when there are no violations."
+optional = true
+enable = "STEPS.PHYS_OPT_DESIGN.IS_ENABLED"
+default_enabled = false                       # Performance_* strategies (and Flow_RunPhysOpt) enable it
+enabled_by_strategies = ["Performance_*", "Flow_RunPhysOpt", "Flow_RunPostRoutePhysOpt", "Congestion_*"]
+disabled_by_strategies = ["Area_*", "Vivado Implementation Defaults"]
+plan_mode = "dynamic"
+weight = 4
+weight_src = "measured"
+min_phases = 0
+reports = [
+  { file = "{top}_timing_summary_physopted.rpt", generated_by = "report_timing_summary", optional = true, desc = "Timing after phys_opt (only some strategies add this report).", metrics = ["WNS", "TNS", "TNS Failing Endpoints", "WHS", "THS", "WPWS"] },
+  { file = "{top}_physopt.dcp", generated_by = "write_checkpoint", optional = false, report = false, desc = "Checkpoint after phys_opt_design." },
+]
+tasks = [
+  { name = "Initial Update Timing", optional = false, desc = "Computes the starting timing; when there are no violations the step ends right after it." },
+  { name = "Physical Synthesis", optional = true, desc = "The optimisation passes (phases below); only when violations exist." },
+]
+# The pass sequence depends on the directive. The list below is the AggressiveExplore sequence (33 phases),
+# the longest seen; the default directive runs a prefix/subset. Names repeat: match by order and name.
+# Repeats are all the same pass run again, so treat every phase here as optional/dynamic.
+phases = [
+  { n = "1", name = "Physical Synthesis Initialization", level = 1, optional = false, weight = 20, desc = "Prepares the physical synthesis passes." },
+  { n = "2", name = "SLR Crossing Optimization", level = 1, optional = true, repeat = 3, weight = 2, desc = "Optimises nets crossing SLR boundaries (SSI devices; may be no-op on monolithic parts)." },
+  { n = "3", name = "Fanout Optimization", level = 1, optional = true, repeat = 3, weight = 5, desc = "Replicates drivers of high-fanout critical nets." },
+  { n = "4", name = "Single Cell Placement Optimization", level = 1, optional = true, repeat = 4, weight = 12, desc = "Moves single cells to improve slack." },
+  { n = "5", name = "Multi Cell Placement Optimization", level = 1, optional = true, repeat = 4, weight = 2, desc = "Moves groups of cells together." },
+  { n = "6", name = "Rewire", level = 1, optional = true, repeat = 3, weight = 2, desc = "Swaps LUT inputs / rewires for timing." },
+  { n = "7", name = "Critical Cell Optimization", level = 1, optional = true, repeat = 3, weight = 2, desc = "Targets cells on the worst paths." },
+  { n = "19", name = "DSP Register Optimization", level = 1, optional = true, repeat = 2, weight = 35, desc = "Moves registers into DSP pipeline stages." },
+  { n = "20", name = "BRAM Register Optimization", level = 1, optional = true, repeat = 2, weight = 8, desc = "Moves registers into BRAM output registers." },
+  { n = "21", name = "URAM Register Optimization", level = 1, optional = true, repeat = 2, weight = 0, desc = "Moves registers into URAM pipeline stages." },
+  { n = "22", name = "Shift Register Optimization", level = 1, optional = true, repeat = 2, weight = 0, desc = "Moves shift-register stages to improve timing." },
+  { n = "27", name = "Critical Pin Optimization", level = 1, optional = true, weight = 1, desc = "Swaps critical nets onto faster LUT pins." },
+  { n = "28", name = "Very High Fanout Optimization", level = 1, optional = true, weight = 12, desc = "Special handling of very-high-fanout nets." },
+  { n = "32", name = "Critical Path Optimization", level = 1, optional = true, weight = 2, desc = "Final pass on remaining critical paths." },
+  { n = "33", name = "BRAM Enable Optimization", level = 1, optional = true, weight = 0, desc = "Restructures BRAM enable logic." },
+  { n = "2", name = "Hold Fix Optimization", level = 1, optional = true, weight = 20, desc = "Fixes hold violations (post-route phys_opt with -hold_fix)." },
+]
+
+[[step]]
+id = "route_design"
+run = "impl"
+command = "route_design"
+label = "Route"
+description = "Connects all placed cells with device routing resources, iterating until no overlaps remain, then optimises delay/skew and fixes hold."
+optional = false
+enable = "STEPS.ROUTE_DESIGN.IS_ENABLED"
+default_enabled = true
+plan_mode = "static"
+weight = 26
+weight_src = "measured"
+reports = [
+  { file = "{top}_drc_routed.rpt", generated_by = "report_drc", optional = false, desc = "Design rule check after routing.", metrics = ["Violations by severity", "Rule ids with counts"] },
+  { file = "{top}_methodology_drc_routed.rpt", generated_by = "report_methodology", optional = false, desc = "Methodology (timing-closure) checks.", metrics = ["TIMING-xx critical warnings and counts", "Rule ids with counts"] },
+  { file = "{top}_power_routed.rpt", generated_by = "report_power", optional = false, desc = "Power estimate on the routed design.", metrics = ["Total On-Chip Power (W)", "Dynamic (W)", "Device Static (W)", "Junction Temperature (C)", "Confidence level", "Power by block (Clocks, Signals, Logic, BRAM, DSP, IO)"] },
+  { file = "{top}_route_status.rpt", generated_by = "report_route_status", optional = false, desc = "Net routing status.", metrics = ["# of nets with routing errors", "# of unrouted nets", "# of nets with no loads/drivers", "Number of fully routed nets"] },
+  { file = "{top}_timing_summary_routed.rpt", generated_by = "report_timing_summary", optional = false, desc = "Final post-route timing.", metrics = ["WNS", "TNS", "TNS Failing Endpoints", "TNS Total Endpoints", "WHS", "THS", "THS Failing Endpoints", "WPWS", "TPWS", "'All user specified timing constraints are met'"] },
+  { file = "{top}_incremental_reuse_routed.rpt", generated_by = "report_incremental_reuse", optional = true, desc = "Reuse statistics for incremental flows (near-empty otherwise).", metrics = ["Fully reused routed nets %"] },
+  { file = "{top}_clock_utilization_routed.rpt", generated_by = "report_clock_utilization", optional = false, desc = "Clock buffer and clock region usage.", metrics = ["Global clocks used/available", "Clock region fanout/loads", "BUFG/BUFGCE counts"] },
+  { file = "{top}_bus_skew_routed.rpt", generated_by = "report_bus_skew", optional = false, desc = "Bus skew constraints (set_bus_skew).", metrics = ["Number of violated bus skew constraints", "Worst slack"] },
+  { file = "{top}_routed.dcp", generated_by = "write_checkpoint", optional = false, report = false, desc = "Routed checkpoint; on failure {top}_routed_error.dcp is written instead." },
+]
+tasks = [
+  { name = "Routing", optional = false, desc = "The whole router (phases below)." },
+]
+phases = [
+  { n = "1", name = "Build RT Design", level = 1, optional = false, weight = 5, desc = "Builds the routing graph for the design." },
+  { n = "2", name = "Router Initialization", level = 1, optional = false, weight = 17, desc = "Fixes topology constraints, routes global clocks, updates timing." },
+  { n = "2.1", name = "Fix Topology Constraints", level = 2, parent = "Router Initialization", optional = false, desc = "" },
+  { n = "2.2", name = "Pre Route Cleanup", level = 2, parent = "Router Initialization", optional = false, desc = "" },
+  { n = "2.3", name = "Global Clock Net Routing", level = 2, parent = "Router Initialization", optional = false, desc = "Routes clock nets first (prints node overlaps)." },
+  { n = "2.4", name = "Update Timing", level = 2, parent = "Router Initialization", optional = false, desc = "First timing update (prints an Intermediate Timing Summary)." },
+  { n = "2.5", name = "Update Timing for Bus Skew", level = 2, parent = "Router Initialization", optional = false, desc = "" },
+  { n = "2.5.1", name = "Update Timing", level = 3, parent = "Update Timing for Bus Skew", optional = false, desc = "" },
+  { n = "3", name = "Initial Routing", level = 1, optional = false, weight = 6, desc = "First routing pass (usually with overlaps)." },
+  { n = "3.1", name = "Global Routing", level = 2, parent = "Initial Routing", optional = false, desc = "" },
+  { n = "3.2", name = "Initial Net Routing", level = 2, parent = "Initial Routing", optional = false, desc = "" },
+  { n = "4", name = "Rip-up And Reroute", level = 1, optional = false, weight = 51, desc = "Iteratively rips up congested nets and reroutes until zero overlaps (longest phase)." },
+  { n = "4.1", name = "Global Iteration 0", level = 2, parent = "Rip-up And Reroute", optional = false, desc = "" },
+  { n = "4.2", name = "Global Iteration N", level = 2, parent = "Rip-up And Reroute", optional = true, pattern = '^Global Iteration (\d+)$', repeat_max = 10, desc = "Further iterations (Global Iteration 1, 2, ...) while overlaps or timing violations remain." },
+  { n = "4.x", name = "Additional Iteration for Hold", level = 2, parent = "Rip-up And Reroute", optional = true, desc = "Extra iteration for hold violations." },
+  { n = "5", name = "Delay and Skew Optimization", level = 1, optional = false, weight = 8, desc = "Reduces setup violations by balancing delay and clock skew." },
+  { n = "5.1", name = "Delay CleanUp", level = 2, parent = "Delay and Skew Optimization", optional = true, desc = "" },
+  { n = "5.1", name = "TNS Cleanup", level = 2, parent = "Delay and Skew Optimization", optional = true, desc = "Older variant name." },
+  { n = "5.2", name = "Clock Skew Optimization", level = 2, parent = "Delay and Skew Optimization", optional = false, desc = "" },
+  { n = "6", name = "Post Hold Fix", level = 1, optional = false, weight = 3, desc = "Fixes hold violations introduced or left over." },
+  { n = "6.1", name = "Hold Fix Iter", level = 2, parent = "Post Hold Fix", optional = false, desc = "" },
+  { n = "7", name = "Route finalize", level = 1, optional = false, weight = 0, desc = "Final routing status (prints Router Utilization Summary). Appears twice when other phases run in between." },
+  { n = "8", name = "Verifying routed nets", level = 1, optional = false, weight = 0, desc = "Checks all nets are legally routed." },
+  { n = "9", name = "Leaf Clock Prog Delay Opt", level = 1, optional = true, weight = 0, desc = "Leaf-clock programmable delay optimisation (UltraScale+ clock skew); runs only for some designs. Has sub-phases Optimize Skews / Post SkewOpt Delay Cleanup / Post SkewOpt Hold Fix." },
+  { n = "9.1", name = "Optimize Skews", level = 2, parent = "Leaf Clock Prog Delay Opt", optional = true, desc = "" },
+  { n = "9.1.1", name = "Leaf ClockOpt Init", level = 3, parent = "Optimize Skews", optional = true, desc = "" },
+  { n = "9.2", name = "Post SkewOpt Delay Cleanup", level = 2, parent = "Leaf Clock Prog Delay Opt", optional = true, desc = "" },
+  { n = "9.3", name = "Post SkewOpt Hold Fix", level = 2, parent = "Leaf Clock Prog Delay Opt", optional = true, desc = "" },
+  { n = "9", name = "Depositing Routes", level = 1, optional = false, weight = 1, desc = "Writes routes into the design database." },
+  { n = "10", name = "Resolve XTalk", level = 1, optional = false, weight = 0, desc = "Crosstalk resolution." },
+  { n = "11", name = "Route finalize", level = 1, optional = false, weight = 0, occurrence = 2, desc = "Second finalisation." },
+  { n = "12", name = "Post Router Timing", level = 1, optional = false, weight = 7, desc = "Final timing update (prints Post Routing Timing Summary)." },
+  { n = "13", name = "Post-Route Event Processing", level = 1, optional = false, weight = 1, desc = "Run-time events after routing." },
+  { n = "14", name = "Physical Synthesis in Router", level = 1, optional = true, weight = 0, desc = "In-router phys_opt (some directives)." },
+  { n = "14.1", name = "Physical Synthesis Initialization", level = 2, parent = "Physical Synthesis in Router", optional = true, desc = "" },
+  { n = "14.2", name = "Critical Path Optimization", level = 2, parent = "Physical Synthesis in Router", optional = true, desc = "" },
+]
+
+[[step]]
+id = "post_route_phys_opt_design"
+run = "impl"
+command = "phys_opt_design"
+label = "Post-Route Phys Opt"
+description = "Optional physical optimisation on the routed design: fixes remaining setup/hold violations with minimal re-routing."
+optional = true
+enable = "STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED"
+default_enabled = false
+enabled_by_strategies = ["Performance_ExplorePostRoutePhysOpt", "Flow_RunPostRoutePhysOpt", "Performance_ExtraTimingOpt"]
+plan_mode = "dynamic"
+weight = 5
+weight_src = "guess"
+min_phases = 0
+# shares phase names with phys_opt_design (reuse its list) and often just prints
+# "Initial Update Timing" + one or two phases (e.g. Hold Fix Optimization)
+reuse_phases_of = "phys_opt_design"
+reports = [
+  { file = "{top}_timing_summary_postroute_physopted.rpt", generated_by = "report_timing_summary", optional = false, desc = "Timing after post-route phys_opt.", metrics = ["WNS", "TNS", "WHS", "THS", "TNS Failing Endpoints", "WPWS"] },
+  { file = "{top}_bus_skew_postroute_physopted.rpt", generated_by = "report_bus_skew", optional = false, desc = "Bus skew after post-route phys_opt.", metrics = ["Number of violated bus skew constraints"] },
+  { file = "{top}_postroute_physopt.dcp", generated_by = "write_checkpoint", optional = false, report = false, desc = "Checkpoint after post-route phys_opt." },
+]
+tasks = [
+  { name = "Initial Update Timing", optional = false, desc = "Starting timing update." },
+  { name = "Physical Synthesis", optional = true, desc = "The optimisation passes, when violations remain." },
+]
+phases = []
+
+[[step]]
+id = "write_bitstream"
+run = "impl"
+command = "write_bitstream"
+label = "Write Bitstream"
+description = "Runs a final DRC, then generates the .bit programming file (plus .ltx debug probes and .mmi memory map)."
+optional = false
+enable = "STEPS.WRITE_BITSTREAM.IS_ENABLED"
+default_enabled = true
+plan_mode = "static"
+weight = 4
+weight_src = "measured"
+reports = [
+  { file = "{top}.bit", generated_by = "write_bitstream", optional = false, report = false, desc = "Bitstream." },
+  { file = "{top}.ltx", generated_by = "write_debug_probes", optional = true, report = false, desc = "Debug probes (only with debug cores)." },
+  { file = "{top}.mmi", generated_by = "write_mem_info", optional = true, report = false, desc = "Memory map info." },
+]
+# No Phase/Task lines: stages are plain log lines. 'match' is a regex on the whole line.
+stages = [
+  { name = "Running DRC", match = '^Running DRC as a precondition to command write_bitstream', optional = false, weight = 10, desc = "Precondition DRC (a DRC error here aborts the bitstream)." },
+  { name = "Merged BMM / BRAM init", match = '^Generating merged BMM file', optional = true, weight = 3, desc = "Merges BMM and populates BRAM INIT from ELF files; only with software in BRAM." },
+  { name = "Loading data files", match = '^Loading data files\.\.\.', optional = false, weight = 10, desc = "" },
+  { name = "Loading site data", match = '^Loading site data\.\.\.', optional = false, weight = 5, desc = "" },
+  { name = "Loading route data", match = '^Loading route data\.\.\.', optional = false, weight = 10, desc = "" },
+  { name = "Processing options", match = '^Processing options\.\.\.', optional = false, weight = 2, desc = "" },
+  { name = "Creating bitmap", match = '^Creating bitmap\.\.\.', optional = false, weight = 20, desc = "" },
+  { name = "Creating bitstream", match = '^Creating bitstream\.\.\.', optional = false, weight = 38, desc = "" },
+  { name = "Writing bitstream", match = '^Writing bitstream (?P<file>\S+)\.\.\.', optional = false, weight = 2, desc = "" },
+  { name = "Bitgen completed", match = '^INFO: \[Vivado 12-1842\] Bitgen Completed Successfully', optional = false, weight = 0, desc = "" },
+]
+end_marker = '^write_bitstream completed successfully'
+
+[[step]]
+id = "write_device_image"
+run = "impl"
+command = "write_device_image"
+label = "Write Device Image"
+description = "Versal equivalent of write_bitstream: generates the PDI device image."
+optional = true
+enable = "STEPS.WRITE_DEVICE_IMAGE.IS_ENABLED"
+default_enabled = true
+device_families = ["versal"]
+plan_mode = "dynamic"
+weight = 6
+weight_src = "guess"
+evidence = "doc"
+reports = [
+  { file = "{top}.pdi", generated_by = "write_device_image", optional = false, report = false, desc = "Programmable device image." },
+]
+stages = []
+phases = []
+
+# =============================== PATTERNS ====================================================
+# Python re syntax. Named groups are the values to extract. "N/A" values mean "not available yet".
+# `applies_to` lists step ids where the line appears; `keep` says how to store it.
+[[pattern]]
+id = "timing_estimated_physopt"
+kind = "timing"
+label = "Estimated Timing Summary"
+applies_to = ["place_design", "phys_opt_design", "post_route_phys_opt_design"]
+regex = '^INFO: \[Physopt 32-(?:619|668)\] Estimated Timing Summary \| WNS=(?P<wns>[^\s|]+)\s*\| TNS=(?P<tns>[^\s|]+)\s*\|(?:\s*WHS=(?P<whs>[^\s|]+)\s*\| THS=(?P<ths>[^\s|]+)\s*\|)?'
+note = "32-619 carries only WNS/TNS (setup); 32-668 also WHS/THS. Printed at the start of physical synthesis, also inside place_design."
+example = "INFO: [Physopt 32-619] Estimated Timing Summary | WNS=-0.132 | TNS=-10.875 |"
+
+[[pattern]]
+id = "timing_current_physopt"
+kind = "timing"
+label = "Current Timing Summary"
+applies_to = ["phys_opt_design", "post_route_phys_opt_design"]
+regex = '^INFO: \[Physopt 32-668\] Current Timing Summary \| WNS=(?P<wns>[^\s|]+)\s*\| TNS=(?P<tns>[^\s|]+)\s*\| WHS=(?P<whs>[^\s|]+)\s*\| THS=(?P<ths>[^\s|]+)\s*\|'
+example = "INFO: [Physopt 32-668] Current Timing Summary | WNS=0.041 | TNS=0.000 | WHS=0.010 | THS=0.000 |"
+
+[[pattern]]
+id = "timing_post_physopt"
+kind = "timing"
+label = "Post Physical Optimization Timing Summary"
+applies_to = ["phys_opt_design", "post_route_phys_opt_design", "place_design"]
+regex = '^INFO: \[Physopt 32-(?:603|669)\] Post Physical Optimization Timing Summary \| WNS=(?P<wns>[^\s|]+)\s*\| TNS=(?P<tns>[^\s|]+)\s*\|(?:\s*WHS=(?P<whs>[^\s|]+)\s*\| THS=(?P<ths>[^\s|]+)\s*\|)?'
+note = "Final timing of a phys_opt step; 32-603 has no hold values, 32-669 has."
+example = "INFO: [Physopt 32-669] Post Physical Optimization Timing Summary | WNS=0.012 | TNS=0.000 | WHS=0.011 | THS=0.000 |"
+
+[[pattern]]
+id = "timing_post_placement"
+kind = "timing"
+label = "Post Placement Timing Summary"
+applies_to = ["place_design"]
+regex = '^INFO: \[Place 30-746\] Post Placement Timing Summary WNS=(?P<wns>-?\d+(?:\.\d+)?|N/A)\.'
+note = "Only WNS is given, and the value is followed by a literal period."
+example = "INFO: [Place 30-746] Post Placement Timing Summary WNS=0.038. For the most accurate timing information please run report_timing."
+
+[[pattern]]
+id = "timing_route_intermediate"
+kind = "timing"
+label = "Intermediate Timing Summary"
+applies_to = ["route_design"]
+regex = '^INFO: \[Route 35-416\] Intermediate Timing Summary \| WNS=(?P<wns>[^\s|]+)\s*\| TNS=(?P<tns>[^\s|]+)\s*\| WHS=(?P<whs>[^\s|]+)\s*\| THS=(?P<ths>[^\s|]+)\s*\|'
+note = "Printed after every router timing update (up to ~15 times). WHS/THS are N/A until the hold-aware phase."
+example = "INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.078  | TNS=0.000  | WHS=N/A    | THS=N/A    |"
+
+[[pattern]]
+id = "timing_route_final"
+kind = "timing"
+label = "Post Routing Timing Summary"
+applies_to = ["route_design"]
+final = true
+regex = '^INFO: \[Route 35-20\] Post Routing Timing Summary \| WNS=(?P<wns>[^\s|]+)\s*\| TNS=(?P<tns>[^\s|]+)\s*\| WHS=(?P<whs>[^\s|]+)\s*\| THS=(?P<ths>[^\s|]+)\s*\|'
+example = "INFO: [Route 35-20] Post Routing Timing Summary | WNS=0.006  | TNS=0.000  | WHS=0.010  | THS=0.000  |"
+
+[[pattern]]
+id = "route_timing_met"
+kind = "flag"
+applies_to = ["route_design"]
+regex = '^INFO: \[Route 35-61\] The design met the timing requirement\.'
+sets = "timing_met = true"
+note = "When not met, Vivado prints a CRITICAL WARNING [Route 35-39] 'The design did not meet timing requirements' (not seen in local logs)."
+
+[[pattern]]
+id = "route_completed"
+kind = "flag"
+applies_to = ["route_design"]
+regex = '^INFO: \[Route 35-16\] Router Completed Successfully'
+
+[[pattern]]
+id = "route_node_overlaps"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s*Number of Nodes with overlaps = (?P<overlaps>\d+)'
+note = "Printed in Global Clock Net Routing and after each Rip-up iteration; should decrease to 0."
+example = " Number of Nodes with overlaps = 39"
+
+[[pattern]]
+id = "route_util_vertical"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s+Global Vertical Routing Utilization\s+= (?P<vertical_pct>[-\d.eE+]+) %'
+example = "  Global Vertical Routing Utilization    = 10.7753 %"
+
+[[pattern]]
+id = "route_util_horizontal"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s+Global Horizontal Routing Utilization\s+= (?P<horizontal_pct>[-\d.eE+]+) %'
+example = "  Global Horizontal Routing Utilization  = 7.71269 %"
+
+[[pattern]]
+id = "route_failed_nets"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s+Number of Failed Nets\s+= (?P<failed_nets>\d+)'
+note = "Failed = unrouted + partially routed. Part of the 'Router Utilization Summary' block (printed in Router Initialization, each iteration and Route finalize)."
+
+[[pattern]]
+id = "route_unrouted_nets"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s+Number of Unrouted Nets\s+= (?P<unrouted_nets>\d+)'
+example = "  Number of Unrouted Nets             = 190106"
+
+[[pattern]]
+id = "route_partial_nets"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s+Number of Partially Routed Nets\s+= (?P<partial_nets>\d+)'
+
+[[pattern]]
+id = "route_node_overlaps_summary"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^\s+Number of Node Overlaps\s+= (?P<node_overlaps>\d+)'
+
+[[pattern]]
+id = "route_summary_block"
+kind = "block_start"
+applies_to = ["route_design"]
+regex = '^Router Utilization Summary\s*$'
+note = "Starts the 4-line block above (utilisation H/V, failed/unrouted/partial nets, node overlaps)."
+
+[[pattern]]
+id = "route_congestion_level"
+kind = "metric"
+applies_to = ["route_design"]
+regex = '^INFO: \[Route 35-581\] Estimated Timing congestion is level (?P<level>\d+) \((?P<w>\d+)x(?P<h>\d+)\)\. Congestion levels of (?P<threshold>\d+) and greater may impact timing closure'
+note = "Present only when congestion level >= threshold (a warning sign)."
+
+[[pattern]]
+id = "congestion_table_start"
+kind = "block_start"
+applies_to = ["route_design", "place_design"]
+regex = '^INFO: \[(?:Route 35-449|Place 30-612)\] (?P<which>Initial|Post-Placement) Estimated Congestion'
+note = "Followed by a table; rows match congestion_row."
+
+[[pattern]]
+id = "congestion_row"
+kind = "metric"
+applies_to = ["route_design", "place_design"]
+regex = '^\|\s+(?P<dir>North|South|East|West)\|\s*(?P<global>\d+x\d+)\|\s*(?P<long>\d+x\d+)\|\s*(?P<short>\d+x\d+)\|'
+example = "|      North|                1x1|              16x16|                4x4|"
+
+[[pattern]]
+id = "place_bufg_insertion"
+kind = "metric"
+applies_to = ["place_design"]
+regex = '^INFO: \[Place 46-56\] BUFG insertion identified (?P<candidates>\d+) candidate nets\. Inserted BUFG: (?P<inserted>\d+), Replicated BUFG Driver: (?P<replicated>\d+)'
+
+[[pattern]]
+id = "directive_used"
+kind = "info"
+applies_to = ["place_design", "route_design"]
+regex = "^INFO: \\[(?:Place 30-\\d+|Route 35-270)\\] (?:The placer was invoked with the '|Using Router directive ')(?P<directive>[^']+)'"
+
+[[pattern]]
+id = "threads_used"
+kind = "info"
+applies_to = ["place_design", "route_design", "phys_opt_design", "write_bitstream"]
+regex = '^INFO: \[(?:Place 30-\d+|Route 35-\d+|Physopt 32-\d+)\] Multithreading enabled for \w+ using a maximum of (?P<threads>\d+) CPUs'
+
+[[pattern]]
+id = "physopt_no_violation"
+kind = "info"
+applies_to = ["phys_opt_design", "post_route_phys_opt_design"]
+regex = '^INFO: \[Physopt 32-\d+\] No setup violation found\.\s+(?P<pass>.+?) was not performed\.'
+note = "A pass skipped because timing is already met; the step then finishes quickly."
+
+# ---- generic structure patterns (shared by all steps) ----
+[[pattern]]
+id = "command_start"
+kind = "structure"
+regex = '^Command: (?P<command>\w+)(?: (?P<args>.*))?$'
+
+[[pattern]]
+id = "phase_start"
+kind = "structure"
+regex = '^Phase (?P<num>\d+(?:\.\d+)*) (?P<name>.+?)\s*$'
+note = "A line without '| Checksum:' opens the phase; the same number and name followed by ' | Checksum: <hex>' closes it."
+
+[[pattern]]
+id = "phase_end"
+kind = "structure"
+regex = '^Phase (?P<num>\d+(?:\.\d+)*) (?P<name>.+?) \| Checksum: (?P<checksum>\w+)\s*$'
+
+[[pattern]]
+id = "task_start"
+kind = "structure"
+regex = '^Starting (?P<name>.+) Task\s*$'
+
+[[pattern]]
+id = "task_end"
+kind = "structure"
+regex = '^Ending (?P<name>.+) Task \| Checksum: (?P<checksum>\w+)\s*$'
+
+[[pattern]]
+id = "elapsed_line"
+kind = "resource"
+regex = 'Time \(s\): cpu = (?P<cpu>[\d:.]+) ; elapsed = (?P<elapsed>[\d:.]+) \. Memory \(MB\): peak = (?P<peak_mb>[\d.]+)'
+note = "Follows each phase/task end and each command. elapsed is cumulative since the START OF THE STEP, not per phase: subtract the previous value at the same nesting level to get the phase duration."
+
+[[pattern]]
+id = "step_counts"
+kind = "structure"
+regex = '^(?P<infos>\d+) Infos, (?P<warnings>\d+) Warnings, (?P<critical>\d+) Critical Warnings and (?P<errors>\d+) Errors encountered\.'
+
+[[pattern]]
+id = "step_result"
+kind = "structure"
+regex = '^(?P<command>\w+) (?P<result>completed successfully|failed)'
+
+[[pattern]]
+id = "synth_start_section"
+kind = "structure"
+applies_to = ["synth_design"]
+regex = '^Start (?P<name>.+?)\s*$'
+note = "RTL Elaboration uses 'Starting RTL Elaboration : Time (s): ...' instead."
+
+[[pattern]]
+id = "synth_end_section"
+kind = "structure"
+applies_to = ["synth_design"]
+regex = '^Finished (?P<name>.+?)(?: : Time \(s\): cpu = (?P<cpu>[\d:.]+) ; elapsed = (?P<elapsed>[\d:.]+).*)?\s*$'
+note = "The Time part is absent on a few (RTL Component Statistics, Part Resource Summary, Flattening/Final Netlist Cleanup). 'applying set_property' is lower-case on the Finished line. 'Finished Parsing XDC File [...]' is NOT a section; exclude it."
+
+[[pattern]]
+id = "synth_cached_ip"
+kind = "flag"
+applies_to = ["synth_design"]
+regex = '^INFO: \[IP_Flow 19-4838\] Using cached IP synthesis design for IP (?P<ip>\S+)'
+note = "Out-of-context IP run satisfied from the IP cache: the run has no sections and finishes in seconds."
+
+[[pattern]]
+id = "wall_clock"
+kind = "structure"
+regex = '^\[(?P<ts>\w{3} \w{3} +\d+ [\d:]+ \d{4})\]'
