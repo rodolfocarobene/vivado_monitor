@@ -9,7 +9,7 @@ const ICON = {
   running: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" style="fill:var(--bg);stroke:var(--line-dim);stroke-width:2"/><g class="spin"><path d="M12 2.5a9.5 9.5 0 0 1 9.5 9.5" style="fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linecap:round"/></g><circle cx="12" cy="12" r="3" style="fill:var(--accent)"/></svg>',
   pending: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" style="fill:var(--bg);stroke:var(--queued);stroke-width:2"/></svg>',
   queued: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" style="fill:var(--bg);stroke:var(--queued);stroke-width:2;stroke-dasharray:3 3"/><circle cx="12" cy="12" r="2" style="fill:var(--queued)"/></svg>',
-  failed: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" style="fill:var(--err)"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" style="fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round"/></svg>',
+  failed: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" style="fill:var(--err)"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" style="fill:none;stroke:var(--on-status);stroke-width:2.2;stroke-linecap:round"/></svg>',
   skipped: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" style="fill:var(--bg);stroke:var(--queued);stroke-width:2"/><path d="M8 12h8" style="stroke:var(--queued);stroke-width:2;stroke-linecap:round"/></svg>',
   stopped: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" style="fill:var(--stopped)"/><path d="M9.5 8v8M14.5 8v8" style="fill:none;stroke:var(--on-accent);stroke-width:2.4;stroke-linecap:round"/></svg>',
 };
@@ -20,6 +20,10 @@ const STATUS = {
   stopped: { icon: ICON.stopped, label: 'Stopped' }, idle: { icon: ICON.pending, label: 'Idle' },
 };
 const statusInfo = (s) => STATUS[s] || STATUS.pending;
+// "Done" only says the flow ran to the end; when final timing failed, the outcome is what matters.
+const outcomeOf = (fw) => (fw.status === 'done' && fw.timing && fw.timing.final && fw.timing.met === false
+  ? { key: 'done-fail', label: 'Timing not met', pill: 'Finished, timing not met' }
+  : { key: fw.status, label: statusInfo(fw.status).label, pill: fw.status });
 // order = display order; cls maps to .sev-* in style.css
 const SEVERITIES = [
   { key: 'error', short: 'E', label: 'Errors', cls: 'sev-error', var: '--err' },
@@ -29,7 +33,7 @@ const SEVERITIES = [
 ];
 const sevInfo = (k) => SEVERITIES.find((s) => s.key === k) || SEVERITIES[3];
 const ALERT_ICON = {
-  error: '<svg viewBox="0 0 20 20" class="aicon"><circle cx="10" cy="10" r="9" style="fill:var(--err)"/><path d="M10 5.5v5.5M10 13.6v.9" style="stroke:#fff;stroke-width:2;stroke-linecap:round"/></svg>',
+  error: '<svg viewBox="0 0 20 20" class="aicon"><circle cx="10" cy="10" r="9" style="fill:var(--err)"/><path d="M10 5.5v5.5M10 13.6v.9" style="stroke:var(--on-status);stroke-width:2;stroke-linecap:round"/></svg>',
   warning: '<svg viewBox="0 0 20 20" class="aicon"><path d="M10 2L19 18H1z" style="fill:var(--warn);stroke:var(--warn);stroke-width:1.5;stroke-linejoin:round"/><path d="M10 8v4.5M10 14.6v.8" style="stroke:var(--on-accent);stroke-width:2;stroke-linecap:round"/></svg>',
 };
 const alertIcon = (lvl) => ALERT_ICON[lvl] || ALERT_ICON.warning;
@@ -404,6 +408,9 @@ const EVENT_KINDS = [['step_done', 'Step finished'], ['step_failed', 'Step faile
 const ALERT_CODES = [['timing_fail', 'Timing not met'], ['critical_warning', 'Critical warnings'], ['error', 'Errors'], ['drc', 'DRC issues'],
   ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['route_not_converging', 'Router not converging'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
 const CODE_ALIAS = { utilization: 'util_high', step_failed: 'step_failed' };
+const ALERT_NAME = { timing_fail: 'Timing', critical_warning: 'Critical warnings', error: 'Errors', drc: 'DRC', unrouted: 'Unrouted nets',
+  util_high: 'Utilization', utilization: 'Utilization', stalled: 'Stalled', route_not_converging: 'Router', process_gone: 'Process gone', step_failed: 'Step failed' };
+const alertName = (a) => ALERT_NAME[a.code] || (a.code ? a.code.replace(/_/g, ' ') : a.level);
 const NOTIF_DEFAULTS = {
   kinds: { step_done: false, step_failed: true, run_done: true, run_failed: true },
   codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, process_gone: true, other: true },
@@ -431,6 +438,14 @@ function eventBody(fw, ev) {
   return step && !msg.startsWith(step) ? `${step}: ${msg}` : msg;
 }
 
+const liveEl = $('#sr-live');
+let liveT = null;
+function announce(text) { // polite, batched: several events in one poll are read as one message
+  clearTimeout(liveT);
+  liveEl._q = (liveEl._q || []).concat(text);
+  liveT = setTimeout(() => { liveEl.textContent = liveEl._q.join(' '); liveEl._q = []; }, 400);
+}
+
 function processEvents() {
   let added = false;
   for (const fw of state.firmwares) {
@@ -440,7 +455,7 @@ function processEvents() {
       notif.seen.add(key);
       if (ev.t < PAGE_T || !eventWanted(ev)) continue;
       const entry = { fw: fw.id, fwName: fw.name, t: ev.t, level: ev.level, title: `vmon · ${fw.name} — ${ev.title}`, evTitle: ev.title, body: eventBody(fw, ev), node_id: ev.node_id, read: false };
-      notif.log.unshift(entry); added = true;
+      notif.log.unshift(entry); added = true; announce(`${fw.name}: ${ev.title}. ${entry.body}`);
       if ('Notification' in window && Notification.permission === 'granted') {
         try {
           const n = new Notification(entry.title, { body: entry.body, tag: key });
@@ -472,27 +487,38 @@ function openEntry(e) {
 const tabsEl = $('#tabs');
 const mainEl = $('#main');
 
+// Fade the strip edge where more tabs are hidden, so a clipped firmware tab reads as "scroll for more".
+function syncTabsOverflow() {
+  const more = tabsEl.scrollWidth - tabsEl.clientWidth;
+  tabsEl.dataset.more = more <= 1 ? '' : [tabsEl.scrollLeft > 1 ? 'left' : '', tabsEl.scrollLeft < more - 1 ? 'right' : ''].join(' ').trim();
+}
+tabsEl.addEventListener('scroll', syncTabsOverflow, { passive: true });
+window.addEventListener('resize', syncTabsOverflow);
+
 function createTab(fw) {
-  const el = h('div', 'tab', '<span class="sdot"></span><span class="t-main"><span class="t-name"></span><span class="t-sub"></span></span><span class="abadge" hidden></span><button class="t-x" title="Close" aria-label="Close tab"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>');
-  el.setAttribute('role', 'tab');
+  const el = h('div', 'tab', '<span class="sdot"></span><span class="t-main"><span class="t-name"></span><span class="t-sub"></span></span><span class="abadge" hidden></span><button class="t-x" title="Stop watching (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>');
+  el.setAttribute('role', 'tab'); el.tabIndex = -1;
   el._r = { dot: $('.sdot', el), name: $('.t-name', el), sub: $('.t-sub', el), ab: $('.abadge', el), x: $('.t-x', el) };
   el.dataset.act = 'tab';
   return el;
 }
 function updateTab(el, fw) {
   const r = el._r;
-  setAttr(r.dot, 'data-status', fw.status);
+  const oc = outcomeOf(fw);
+  setAttr(r.dot, 'data-status', oc.key);
   setText(r.name, fw.name);
   let sub;
   if (fw.status === 'running') {
     const cur = fw.current ? esc(fw.current.label) : 'running';
     sub = `${cur} · <span data-start="${fw.started_at ?? ''}">${fmtDur(fw.started_at ? nowS() - fw.started_at : fw.elapsed_s)}</span>${fw.resources ? ` · <span class="t-res" title="Vivado CPU / RSS">${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</span>` : ''}`;
-  } else sub = `${statusInfo(fw.status).label} · ${fmtDur(fw.elapsed_s)}`;
+  } else sub = `${oc.label} · ${fmtDur(fw.elapsed_s)}`;
   if (fw.attempt && fw.attempt.n > 1) sub = `<span class="t-att">attempt ${fw.attempt.n}</span> · ${sub}`;
   setHTML(r.sub, sub);
   const al = fwAlerts(fw); const lvl = topLevel(al);
   r.ab.hidden = !al.length; setText(r.ab, String(al.length)); setAttr(r.ab, 'data-level', lvl || 'warning');
-  el.classList.toggle('active', fw.id === selected);
+  el.classList.toggle('active', fw.id === selected); setAttr(el, 'aria-selected', String(fw.id === selected));
+  el.tabIndex = fw.id === selected ? 0 : -1; // roving tabindex: one tab stop for the whole strip
+  setAttr(el, 'aria-keyshortcuts', fw.live ? '' : 'Delete');
   r.x.hidden = !!fw.live;
   el.title = fw.path || fw.name;
 }
@@ -533,8 +559,13 @@ function timingLevel(t) {
   if (t.met) return t.final ? 'ok' : 'track';
   return t.final ? 'fail' : 'warn';
 }
-function timingBadge(t) {
-  const tl = timingLevel(t);
+// A build that crashed or was stopped never produced final timing: its last estimate is history, not a verdict.
+function fwTimingLevel(fw) {
+  const tl = timingLevel(fw.timing);
+  return tl === 'warn' && ['failed', 'stopped'].includes(fw.status) ? 'halted' : tl;
+}
+function timingBadge(t, tl = timingLevel(t)) {
+  if (tl === 'halted') return ['INCOMPLETE', ''];
   if (tl === 'ok') return ['MET', 'met'];
   if (tl === 'track') return ['ON TRACK', 'met'];
   if (tl === 'fail') return ['NOT MET', 'notmet'];
@@ -556,8 +587,8 @@ function timingFrom(fw) {
 
 function timingCardHTML(fw) {
   const t = fw.timing;
-  const tl = timingLevel(t);
-  const [bl, bc] = timingBadge(t);
+  const tl = fwTimingLevel(fw);
+  const [bl, bc] = timingBadge(t, tl);
   const badge = `<span class="met-badge ${bc}">${bl}</span>`;
   const cells = TIMING_FIELDS.map(([k, lbl]) => {
     const c = carriedOf(t, k);
@@ -571,7 +602,8 @@ function timingCardHTML(fw) {
   const stageRow = t ? `<div class="tc-stage"><b>${esc(stage)}</b><span class="fin ${t.final ? 'is' : ''}">${t.final ? 'final' : 'not final'}</span></div>` : '';
   const nums = `${t && t.wns != null && t.wns < 0 ? `WNS ${fmtNs(t.wns)} ns` : ''}${t && t.whs != null && t.whs < 0 ? `${t.wns != null && t.wns < 0 ? ', ' : ''}WHS ${fmtNs(t.whs)} ns` : ''}`;
   const verdict = tl === 'fail' ? `<div class="tc-verdict">Final timing fails${from ? ' at <b>' + esc(from.label) + '</b>' : ''}${nums ? ' — ' + nums : ''}</div>`
-    : tl === 'warn' ? `<div class="tc-verdict soft">Failing for now${nums ? ': ' + nums : ''} — later steps may still fix it</div>` : '';
+    : tl === 'warn' ? `<div class="tc-verdict soft">Failing for now${nums ? ': ' + nums : ''} — later steps may still fix it</div>`
+    : tl === 'halted' ? `<div class="tc-verdict soft">Build ${fw.status === 'stopped' ? 'stopped' : 'failed'} before final timing${nums ? '; last estimate ' + nums : ''}</div>` : '';
   const pc = t && t.report && t.path_counts && t.path_counts.total ? t.path_counts : null;
   const plural = (n, w) => `${fmtInt(n)} ${w}${n === 1 ? '' : 's'}`;
   const pathLine = !pc ? '' : pc.failing
@@ -588,23 +620,27 @@ function countsHTML(c) {
 }
 
 let head = null;
-let infoOpen = lsGet('vmon.infoOpen') !== '0';
+let infoOpen = lsGet('vmon.infoOpen') === '1'; // closed by default: keeps the stage flow above the fold
 function buildView() {
   mainEl.innerHTML = '';
   head = h('section', 'fw-head', `
     <div class="fwl">
-      <div class="fw-title"><h1></h1><span class="pill"></span><span class="est" hidden></span>
-        <div class="seg viewseg" role="tablist"><button data-act="view" data-view="flow">Flow</button><button data-act="view" data-view="messages">Messages</button><button data-act="view" data-view="timing">Timing</button></div></div>
-      <div class="eprog" hidden><i></i></div>
+      <div class="fw-title"><h1></h1><span class="pill"></span>
+        <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div></div>
       <div class="fw-path mono"></div>
       <div class="fw-attempt" hidden></div>
+      <div class="now">
+        <div class="cur"></div>
+        <div class="now-run">
+          <div class="kv"><div class="k">Elapsed</div><div class="v num el"></div></div>
+          <div class="now-bar"><div class="eprog" hidden><i></i></div><span class="est" hidden></span></div>
+          <div class="kv eta-wrap"><div class="k etak">Expected end</div><div class="v num eta"></div><div class="sub2 etasub"></div></div>
+        </div>
+      </div>
       <div class="fw-meta">
-        <div class="kv"><div class="k">Elapsed</div><div class="v num el"></div></div>
-        <div class="kv started-wrap"><div class="k">Started</div><div class="v sm num st"></div></div>
-        <div class="kv eta-wrap"><div class="k etak">Expected end</div><div class="v sm num eta"></div><div class="sub2 etasub"></div></div>
-        <div class="kv"><div class="k">Current</div><div class="v sm cur"></div></div>
-        <div class="kv res-wrap"><div class="k">Vivado</div><div class="v sm num res"></div></div>
         <div class="kv counts-wrap"><div class="k">Messages</div><div class="cnt"></div></div>
+        <div class="kv started-wrap"><div class="k">Started</div><div class="v sm num st"></div></div>
+        <div class="kv res-wrap"><div class="k">Vivado</div><div class="v sm num res"></div></div>
       </div>
       <div class="topissues" hidden></div>
     </div>
@@ -627,6 +663,9 @@ function buildView() {
   mainEl._r = { banner, seg: segWrap, split, stages: $('.stagelist', split), detail: $('.detail', split), followBtn: $('.followbtn', split), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
 }
 
+// Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
+const utilClass = (pct) => (pct == null ? '' : pct > 100 ? 'over' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '');
+const UTIL_BADGE = { over: ['OVER CAPACITY', 'notmet'], crit: ['VERY HIGH', 'critb'], warn: ['HIGH', 'warnb'] };
 function utilCardHTML(fw) {
   const u = fw.utilization;
   if (!u || !(u.rows || []).length) return '<div class="tc-top"><span class="tc-title">Utilization</span></div><div class="uc-none">No utilization report yet — shown after placement</div>';
@@ -634,18 +673,22 @@ function utilCardHTML(fw) {
   const src = `Report · ${step ? step.charAt(0).toUpperCase() + step.slice(1) + ' · ' : ''}${u.label || u.report || ''}`;
   const rows = u.rows.map((r) => {
     const pct = r.pct ?? (r.available ? (r.used / r.available) * 100 : null);
-    const cls = pct == null ? '' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '';
+    const cls = utilClass(pct);
     return `<div class="uc-row" title="${esc(r.name)}: ${fmtVal(r.used)} of ${fmtVal(r.available)}"><span class="un">${esc(r.name)}</span><div class="ubar ${cls}"><i style="width:${Math.min(100, pct || 0)}%"></i></div><span class="uv num">${fmtNum(r.used)}<span class="dim"> / ${fmtNum(r.available)}</span></span><span class="up num ${cls}">${pct == null ? '—' : pct.toFixed(pct < 10 ? 1 : 0) + '%'}</span></div>`;
   }).join('');
   const worst = Math.max(...u.rows.map((r) => r.pct ?? 0));
-  return `<div class="tc-top"><span class="tc-title">Utilization</span>${worst >= 80 ? `<span class="met-badge ${worst >= 90 ? 'notmet' : 'warnb'}">${worst >= 90 ? 'CRITICAL' : 'HIGH'}</span>` : ''}</div><div class="uc-rows">${rows}</div><div class="tc-foot"><span class="src" title="${esc(src)}">${esc(src)}</span></div>`;
+  const wb = UTIL_BADGE[utilClass(worst)];
+  return `<div class="tc-top"><span class="tc-title">Utilization</span>${wb ? `<span class="met-badge ${wb[1]}">${wb[0]}</span>` : ''}</div><div class="uc-rows">${rows}</div><div class="tc-foot"><span class="src" title="${esc(src)}">${esc(src)}</span></div>`;
 }
 
 function topIssuesHTML(fw) {
-  const tm = (fw.top_messages || []).slice(0, 5);
+  const all = fw.top_messages || [];
+  const tm = all.slice(0, TOP_ISSUES_SHOWN);
   if (!tm.length) return '';
-  return `<div class="ti-h">Top issues</div>${tm.map((g) => `<div class="ti" data-act="topissue" data-id="${esc(g.id)}" title="${esc(g.text)}"><span class="spill ${sevInfo(g.severity).cls}">${esc(SEV_WORD[g.severity] || g.severity)}</span><span class="gid mono">${esc(g.id)}</span><span class="ti-t">${esc(g.text)}</span>${g.new ? '<span class="ntag">NEW</span>' : ''}<span class="ti-c mono">${fmtNum(g.count)}</span></div>`).join('')}`;
+  const more = all.length > tm.length ? `<button class="linkbtn ti-more" data-act="view" data-view="messages">all messages →</button>` : '';
+  return `<div class="ti-h">Top issues${more}</div>${tm.map((g) => `<div class="ti" data-act="topissue" data-id="${esc(g.id)}" title="${esc(g.text)}"><span class="spill ${sevInfo(g.severity).cls}">${esc(SEV_WORD[g.severity] || g.severity)}</span><span class="gid mono">${esc(g.id)}</span><span class="ti-t">${esc(g.text)}</span>${g.new ? '<span class="ntag">NEW</span>' : ''}<span class="ti-c mono">${fmtNum(g.count)}</span></div>`).join('')}`;
 }
+const TOP_ISSUES_SHOWN = 3;
 const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
 
 const ETA_METHOD = { 'previous build': 'based on previous build', 'catalog weights': 'rough estimate' };
@@ -682,8 +725,9 @@ function attemptLineHTML(a) {
 function renderHeader(fw) {
   const r = head._r;
   setText(r.name, fw.name);
-  setAttr(r.pill, 'data-status', fw.status);
-  setText(r.pill, fw.status + (fw.kind === 'log' ? ' · log' : ''));
+  const oc = outcomeOf(fw);
+  setAttr(r.pill, 'data-status', oc.key);
+  setText(r.pill, oc.pill + (fw.kind === 'log' ? ' · log' : ''));
   setText(r.path, fw.path || '');
   const at = fw.attempt && fw.attempt.n > 1 ? fw.attempt : null;
   r.att.hidden = !at;
@@ -692,7 +736,8 @@ function renderHeader(fw) {
   r.el.dataset.start = running ? fw.started_at : '';
   if (!running) delete r.el.dataset.start;
   setText(r.el, fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s));
-  setText(r.cur, fw.current ? fw.current.label : fw.status === 'done' ? 'finished' : fw.status === 'failed' ? 'failed' : '—');
+  r.cur.hidden = !fw.current; // without a current step the status pill already says it all
+  setText(r.cur, fw.current ? fw.current.label : '');
   r.resWrap.hidden = !fw.resources;
   if (fw.resources) { r.res.title = 'Vivado process CPU (100% = one core) and resident memory'; setText(r.res, `${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}`); }
   setHTML(r.cnt, countsHTML(fw.counts));
@@ -710,7 +755,7 @@ function renderHeader(fw) {
   r.info.classList.toggle('closed', !infoOpen); setAttr(r.infoTog, 'aria-expanded', String(infoOpen));
   const pe = fw.progress_estimate;
   r.eprog.hidden = r.est.hidden = pe == null;
-  if (pe != null) { r.epbar.style.width = `${Math.round(pe * 100)}%`; setText(r.est, `~${Math.round(pe * 100)}% of flow`); setAttr(r.eprog, 'data-status', fw.status); }
+  if (pe != null) { r.epbar.style.width = `${Math.round(pe * 100)}%`; setText(r.est, `${['failed', 'stopped'].includes(fw.status) ? 'reached ' : ''}~${Math.round(pe * 100)}%`); r.eprog.title = r.est.title = 'Estimated share of the whole flow completed, from step weights'; setAttr(r.eprog, 'data-status', fw.status); }
   setAttr(head, 'data-health', fw.health || topLevel(fwAlerts(fw)) || 'ok');
   const tc = timingCardHTML(fw);
   setAttr(r.tc, 'data-tl', tc.tl);
@@ -719,7 +764,7 @@ function renderHeader(fw) {
   const ti = topIssuesHTML(fw);
   r.top.hidden = !ti; setHTML(r.top, ti);
   const view = curView(fw);
-  for (const b of r.seg.children) { b.classList.toggle('on', b.dataset.view === view); if (b.dataset.view === 'timing') b.hidden = !hasTimingView(fw) && view !== 'timing'; }
+  for (const b of r.seg.children) { b.classList.toggle('on', b.dataset.view === view); setAttr(b, 'aria-pressed', String(b.dataset.view === view)); if (b.dataset.view === 'timing') b.hidden = !hasTimingView(fw) && view !== 'timing'; }
 }
 
 /* ------------------------------------------------------------------ rendering: flow nodes */
@@ -851,10 +896,6 @@ function createDetail() {
 
 function renderDetail(el, n, fw) {
   updateNode(el, n, fw, 0);
-  const seen = new Set(); const rows = [];
-  const add = (a, nid) => { const k = `${a.code}|${a.message}`; if (!seen.has(k)) { seen.add(k); rows.push({ ...a, node_id: a.node_id || nid }); } };
-  walk([n], (x) => (x.alerts || []).forEach((a) => add(a, x.id)));
-  rows.sort((a, b) => (b.level === 'error') - (a.level === 'error'));
   if (hashFx) {
     const fl = [['cur', n.failure]]; attemptsOf(n).forEach((a) => fl.push([`a${a.n}`, a.failure]));
     for (const [tag, f] of fl) {
@@ -871,11 +912,7 @@ function renderDetail(el, n, fw) {
   if (el._r.dfail._h !== fbox) { setHTML(el._r.dfail, fbox); scrollExcerpts(el._r.dfail); }
   const atl = attemptsHTML(n, fw);
   if (el._r.dattempts._h !== atl) { setHTML(el._r.dattempts, atl); scrollExcerpts(el._r.dattempts); }
-  setHTML(el._r.alerts, rows.map((a) => {
-    const pn = a.node_id && findPath(fw, a.node_id);
-    const where = pn && pn.chain.length > 1 ? pn.chain.slice(1).map((x) => x.label).slice(-2).join(' / ') : '';
-    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<code class="acode">${esc(a.code || a.level)}</code><span class="amsg">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
-  }).join(''));
+  setHTML(el._r.alerts, ''); // the firmware banner above already lists these; the stage card keeps its alert icon
 }
 
 function scrollExcerpts(root) {
@@ -976,6 +1013,8 @@ function syncBody(el, n, fw, depth) {
   const r = el._r;
   const open = el._force || isOpen(fw, n);
   el.classList.toggle('open', open);
+  const card = el.querySelector(':scope > .main > .card');
+  if (card && card.getAttribute('role') === 'button') setAttr(card, 'aria-expanded', String(open));
   if (open) {
     clearTimeout(el._clearT); el._clearT = null;
     if (!r.panel) {
@@ -1130,7 +1169,7 @@ const REPORT_RENDERERS = {
     return `<table class="util">${rows.map((r) => {
       const name = r.name ?? r.resource; const used = r.used; const avail = r.available ?? r.total;
       const pct = r.pct ?? r.percent ?? r.util ?? (avail ? (used / avail) * 100 : null);
-      const cls = pct == null ? '' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '';
+      const cls = utilClass(pct);
       return `<tr><th>${esc(name)}</th><td class="num">${fmtVal(used)} <span class="dim">/ ${fmtVal(avail)}</span></td><td class="barcell"><div class="ubar ${cls}"><i style="width:${Math.min(100, pct || 0)}%"></i></div></td><td class="num pc ${cls}">${pct == null ? '—' : pct.toFixed(1) + '%'}</td></tr>`;
     }).join('')}</table>`;
   },
@@ -1179,8 +1218,10 @@ function renderReports(pane, n, key, fw) {
 function showModal(title, text) {
   let m = $('#modal');
   if (!m) { m = h('div', 'modal'); m.id = 'modal'; document.body.appendChild(m); m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('.mclose')) m.hidden = true; }); }
-  m.innerHTML = `<div class="mbox"><div class="mhead"><b>${esc(title)}</b><button class="mclose icon-btn">✕</button></div><pre>${esc(text)}</pre></div>`;
+  m.innerHTML = `<div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="mhead"><b>${esc(title)}</b><button class="mclose icon-btn" aria-label="Close">✕</button></div><pre>${esc(text)}</pre></div>`;
+  m._ret = document.activeElement;
   m.hidden = false;
+  $('.mclose', m).focus();
 }
 
 /* ---- details: timing history */
@@ -1288,7 +1329,7 @@ function msgRowHTML(fw, m, g) {
       ${g.new ? '<span class="ntag">NEW</span>' : '<span class="ntag ph"></span>'}
       <span class="mtxt">${esc(g.text)}</span>${docBtn(g.doc_url, `${g.id} documentation`)}${acts}${CHEV}
     </div>
-    <div class="mr-sub">${steps}${reasons}<span class="score mono" title="Importance score">score ${g.score != null ? g.score.toFixed(1) : '—'}</span></div>
+    <div class="mr-sub">${steps}${reasons}<span class="score mono" title="Triage score: severity, matching rules and keywords, rarity, and whether the message is new since the last build. Higher sorts first.">triage ${g.score != null ? g.score.toFixed(1) : '—'}</span></div>
     ${det}
   </div>`;
 }
@@ -1365,9 +1406,10 @@ function observeHead() {
 if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { syncOffsets(); if (head) observeHead(); }).observe(topbarEl);
 
 function renderSummary(fw, flow) {
-  setAttr(sr.dot, 'data-status', fw.status);
+  const oc = outcomeOf(fw);
+  setAttr(sr.dot, 'data-status', oc.key);
   setText(sr.name, fw.name);
-  setAttr(sr.pill, 'data-status', fw.status); setText(sr.pill, fw.status);
+  setAttr(sr.pill, 'data-status', oc.key); setText(sr.pill, oc.pill);
   const sat = fw.attempt && fw.attempt.n > 1 ? fw.attempt : null;
   sr.att.hidden = !sat; setText(sr.att, sat ? `att. ${sat.n}` : '');
   sr.att.title = sat ? `Attempt ${sat.n}${sat.mode === 'resume' ? ' (resumed from a checkpoint)' : ''}` : '';
@@ -1378,7 +1420,7 @@ function renderSummary(fw, flow) {
   const fin = ['done', 'failed', 'stopped'].includes(fw.status);
   setHTML(sr.time, `<span class="num" ${running ? `data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</span>${ep ? `<span class="sm-eta" title="${esc(ep.how)}">ETA ~${ep.clock} <span data-end="${ep.end}">${ep.inTxt}</span></span>` : fin && endedAt(fw) ? `<span class="sm-eta">ended ${fmtClock(endedAt(fw))}</span>` : ''}`);
   setHTML(sr.counts, badgesHTML(fw.counts));
-  const t = fw.timing; const tl = timingLevel(t);
+  const t = fw.timing; const tl = fwTimingLevel(fw);
   const tv = (k, l) => {
     const c = carriedOf(t, k);
     return t && t[k] != null ? `<span class="${t[k] < 0 ? 'neg' : 'pos'}${c ? ' carried' : ''}"${c ? ` title="${esc(l + ' ' + carriedTip(c))}"` : ''}>${l} ${t[k] > 0 ? '+' : ''}${fmtNs(t[k])}${c ? '<i class="ctag">stale</i>' : ''}</span>` : `<span class="nil">${l} —</span>`;
@@ -1386,12 +1428,12 @@ function renderSummary(fw, flow) {
   sr.tim.dataset.tl = tl;
   setAttr(sr.tim, 'data-tl', tl);
   setHTML(sr.tim, t ? `<i class="tdot"></i>${tv('wns', 'WNS')}${tv('whs', 'WHS')}` : '<span class="nil">timing —</span>');
-  sr.tim.title = t ? `${timingBadge(t)[0]} · ${t.stage || t.label || ''}${t.final ? ' · final' : ' · not final'}` : 'No timing data yet';
+  sr.tim.title = t ? `${timingBadge(t, tl)[0]} · ${t.stage || t.label || ''}${t.final ? ' · final' : ' · not final'}` : 'No timing data yet';
   sr.tim.title += t && t.carried ? Object.entries(t.carried).map(([k, c]) => `\n${k.toUpperCase()} ${carriedTip(c)}`).join('') : '';
   const rows = (fw.utilization && fw.utilization.rows) || [];
   const worst = rows.reduce((b, r) => { const p = r.pct ?? (r.available ? (r.used / r.available) * 100 : 0); return p > (b ? b.p : -1) ? { p, n: r.name } : b; }, null);
   sr.util.hidden = !worst;
-  if (worst) { setAttr(sr.util, 'data-lv', worst.p >= 90 ? 'crit' : worst.p >= 80 ? 'warn' : 'ok'); setHTML(sr.util, `util <b class="num">${worst.p.toFixed(0)}%</b> <small>${esc(worst.n)}</small>`); sr.util.title = `Highest utilization: ${worst.n} ${worst.p.toFixed(1)}%`; }
+  if (worst) { setAttr(sr.util, 'data-lv', utilClass(worst.p) || 'ok'); setHTML(sr.util, `util <b class="num">${worst.p.toFixed(0)}%</b> <small>${esc(worst.n)}</small>`); sr.util.title = `Highest utilization: ${worst.n} ${worst.p.toFixed(1)}%`; }
   const als = fwAlerts(fw); const lvl = topLevel(als) || (fw.health && fw.health !== 'ok' ? fw.health : '');
   setAttr(sr.al, 'data-lv', lvl || 'ok');
   setHTML(sr.al, lvl ? `${alertIcon(lvl === 'error' ? 'error' : 'warning')}<b class="num">${als.length}</b>` : '<span class="okmark">✓ no alerts</span>');
@@ -1418,11 +1460,12 @@ function render() {
   }
   if (fws.length) firstLoad = false;
   patchList(tabsEl, fws, (f) => f.id, createTab, updateTab);
+  syncTabsOverflow();
 
   const fw = curFw();
   if (!fw) {
     mainEl._r = null; head = null; hideSummary();
-    if (!mainEl.querySelector('.empty')) mainEl.innerHTML = '<div class="empty"><h2>No firmware runs yet</h2><p>Start a Vivado build, or enter a <code>.runs</code> directory, <code>.xpr</code> or log path above.</p></div>';
+    if (!mainEl.querySelector('.empty:not(.loading)')) mainEl.innerHTML = '<div class="empty"><h2>No firmware runs yet</h2><p>Start a Vivado build, or enter a <code>.runs</code> directory, <code>.xpr</code> or log path above.</p></div>';
     return;
   }
   if (!mainEl._r) { buildView(); observeHead(); }
@@ -1430,10 +1473,10 @@ function render() {
   if (v.fwId !== fw.id) { v.fwId = fw.id; v.stages.innerHTML = ''; v.detail.innerHTML = ''; v.detEl = null; v.selId = null; v.mvList._h = null; v.mvList.innerHTML = ''; v.tv._h = null; v.tv.innerHTML = ''; v.mvQ.value = mvOf(fw).q; }
   renderHeader(fw);
   const als = fwAlerts(fw);
-  setHTML(v.banner, als.length ? `<div class="alerts" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention</div>${als.map((a) => {
+  setHTML(v.banner, als.length ? `<div class="alerts${topLevel(als) === 'error' ? '' : ' compact'}" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention</div>${als.map((a) => {
     const pn = a.node_id && findPath(fw, a.node_id);
     const where = pn ? pn.chain.map((n) => n.label).slice(-2).join(' / ') : '';
-    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<code class="acode">${esc(a.code || a.level)}</code><span class="amsg">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
+    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<span class="acode" title="${esc(a.code || a.level)}">${esc(alertName(a))}</span><span class="amsg">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
   }).join('')}</div>` : '');
 
   const view = curView(fw);
@@ -1500,6 +1543,7 @@ document.addEventListener('click', async (ev) => {
       state = { ...state, firmwares: state.firmwares.filter((f) => f.id !== fw.id) };
       if (selected === fw.id) selected = null;
       render();
+      toast(`Stopped watching ${fw.name}. Add it again with Watch or Explore.`);
       return;
     }
     selected = el._key; lsSet('vmon.tab', selected); render();
@@ -1629,14 +1673,62 @@ document.addEventListener('input', (ev) => {
   clearTimeout(m.qT); m.qT = setTimeout(() => ensureTriage(fw), 350); // then ask the server too
 });
 
+function closeModal() {
+  const m = $('#modal'); if (!m || m.hidden) return false;
+  m.hidden = true; if (m._ret && m._ret.isConnected) m._ret.focus();
+  return true;
+}
+const SHORTCUTS = `1-9   switch firmware tab
+f     Flow view
+m     Messages view
+t     Timing view (when available)
+j / k next / previous stage
+n     jump to the next alert
+c     collapse all expanded steps
+Esc   close dialog or popover
+?     this help`;
+let alertCursor = -1;
+function moveStage(fw, d) {
+  const list = [...mainEl._r.stages.querySelectorAll('.stg')].filter((e) => e._node);
+  if (!list.length) return;
+  const i = list.findIndex((e) => e._node.id === mainEl._r.selId);
+  const nx = list[Math.max(0, Math.min(list.length - 1, (i < 0 ? 0 : i + d)))];
+  ui.sel.set(fw.id, { id: nx._node.id, follow: false }); render();
+  nx.scrollIntoView({ block: 'nearest' });
+}
 document.addEventListener('keydown', (ev) => {
   const tag = (ev.target.tagName || '').toLowerCase();
-  if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('card')) { ev.target.click(); return; }
-  if (tag === 'input' || tag === 'textarea' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
+  const role = ev.target.getAttribute && ev.target.getAttribute('role');
+  if ((ev.key === 'Enter' || ev.key === ' ') && (role === 'button' || role === 'tab') && tag !== 'button') { ev.preventDefault(); ev.target.click(); return; }
+  if (role === 'tab' && ['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Delete'].includes(ev.key)) {
+    const tabs = [...tabsEl.querySelectorAll('.tab')]; const i = tabs.indexOf(ev.target);
+    if (ev.key === 'Delete') { if (!ev.target._r.x.hidden) ev.target._r.x.click(); ev.preventDefault(); return; }
+    const j = ev.key === 'Home' ? 0 : ev.key === 'End' ? tabs.length - 1 : (i + (ev.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
+    return;
+  }
+  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } return; }
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
+  const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
     const f = state.firmwares[+ev.key - 1];
     if (f) { selected = f.id; lsSet('vmon.tab', selected); render(); }
-  } else if (ev.key === 'Escape') { const m = $('#modal'); if (m && !m.hidden) { m.hidden = true; return; } if (notif.open) { closePop(); return; } ui.open.clear(); ui.tab.clear(); hashOpen.clear(); render(); }
+  } else if (ev.key === '?') {
+    showModal('Keyboard shortcuts', SHORTCUTS);
+  } else if (!fw || !mainEl._r) {
+    return;
+  } else if (ev.key === 'f' || ev.key === 'm' || (ev.key === 't' && hasTimingView(fw))) {
+    ui.view.set(fw.id, { f: 'flow', m: 'messages', t: 'timing' }[ev.key]); render();
+  } else if ((ev.key === 'j' || ev.key === 'k') && curView(fw) === 'flow') {
+    moveStage(fw, ev.key === 'j' ? 1 : -1);
+  } else if (ev.key === 'n') {
+    const al = fwAlerts(fw).filter((a) => a.node_id);
+    if (!al.length) { toast('No alerts to jump to'); return; }
+    alertCursor = (alertCursor + 1) % al.length;
+    gotoNode(fw, al[alertCursor].node_id);
+  } else if (ev.key === 'c') {
+    ui.open.clear(); ui.tab.clear(); hashOpen.clear(); render();
+  }
 });
 window.addEventListener('hashchange', () => { parseHash(); ui.open.clear(); render(); });
 
@@ -1665,7 +1757,12 @@ setInterval(() => {
 
 /* ------------------------------------------------------------------ top bar */
 const connEl = $('#conn');
-function setConn(st, text) { setAttr(connEl, 'data-state', st); setText($('span', connEl), text); }
+function setConn(st, text) {
+  const was = connEl.dataset.state;
+  setAttr(connEl, 'data-state', st); setText($('span', connEl), text); document.body.dataset.conn = st;
+  if (st === 'down' && was !== 'down') announce('Connection to the vmon backend lost. Showing the last known state; retrying.');
+  else if (st === 'live' && was === 'down') announce('Reconnected to the vmon backend.');
+}
 
 function applyTheme(th) {
   document.documentElement.setAttribute('data-theme', th);
@@ -1917,6 +2014,7 @@ function syncBell() {
   const p = 'Notification' in window ? Notification.permission : 'unsupported';
   notifyBtn.dataset.on = p === 'granted' ? '1' : '0';
   notifyBtn.title = unread ? `${unread} unread notification${unread === 1 ? '' : 's'}` : 'Notifications';
+  notifyBtn.setAttribute('aria-label', notifyBtn.title);
 }
 function openPop() { notif.open = true; popEl.hidden = false; renderPop(); }
 function closePop() {
@@ -2210,7 +2308,7 @@ function deltaCell(cur, prev, bad) {
 }
 function clocksHTML(fw) {
   const ch = fw.clock_history;
-  if (!ch || !ch.clocks.length) return '<div class="none">Per-clock numbers appear once a timing summary report exists.</div>';
+  if (!ch || !ch.clocks.length) return '<div class="none">Per-clock numbers appear once Vivado writes a timing summary report, usually after place_design and route_design.</div>';
   const builds = ch.builds || [];
   const cur = builds.length ? builds[builds.length - 1] : null;
   const prev = builds.length > 1 ? builds[builds.length - 2] : null;
@@ -2246,7 +2344,7 @@ function clocksHTML(fw) {
 function timingViewHTML(fw) {
   const t = fw.timing;
   const rep = t && t.report ? reportOf(fw, t.report) : null;
-  const paths = rep ? pathsHTML(fw, t.report, rep.mtime, 'tv') : '<div class="none">No timing summary report with paths yet.</div>';
+  const paths = rep ? pathsHTML(fw, t.report, rep.mtime, 'tv') : '<div class="none">Worst paths appear once Vivado writes a timing summary report with path details, usually after route_design.</div>';
   return `<section class="tv-sec"><h3>Clocks <small>from timing summary reports</small></h3>${clocksHTML(fw)}</section>
     <section class="tv-sec">${rep ? '' : '<h3>Worst paths</h3>'}${paths}</section>`;
 }
