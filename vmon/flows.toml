@@ -1056,3 +1056,10 @@ access_token_env = ""
 enabled = false
 url = ""                           # receives the event as JSON (or url_env)
 url_env = ""
+
+# ---------------------------------------------------------------- remote vmon instances
+# Aggregate other vmons (usually behind an SSH tunnel: ssh -N -L 9001:127.0.0.1:8765 user@server).
+[remote]
+hosts = []                         # [{name = "buildsrv", url = "http://127.0.0.1:9001"}]; name: [A-Za-z0-9_-]{1,32}
+interval_s = 3                    # seconds between polls of each remote
+timeout_s = 5                      # per request to a remote

@@ -1269,6 +1269,179 @@
     }
    },
    "timing_clocks": null
+  },
+  {
+   "build": "1759982000",
+   "fw_id": "buildsrv~bs12",
+   "firmware": "beamformer",
+   "project": "/srv/build/beamformer/beamformer.runs",
+   "started_at": 1759978400.0,
+   "ended_at": 1759990460.0,
+   "duration_s": 12060,
+   "result": "met",
+   "failure": null,
+   "timing": {
+    "wns": 0.214,
+    "tns": 0.0,
+    "whs": 0.011,
+    "ths": 0.0,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 80179,
+     "available": 230400,
+     "pct": 34.8
+    },
+    "FF": {
+     "used": 101837,
+     "available": 460800,
+     "pct": 22.1
+    },
+    "BRAM": {
+     "used": 443,
+     "available": 1080,
+     "pct": 41.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 2486,
+     "available": 4272,
+     "pct": 58.2
+    },
+    "IO": {
+     "used": 108,
+     "available": 347,
+     "pct": 31.0
+    }
+   },
+   "part": "xczu48dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "counts": [
+    0,
+    6,
+    212,
+    3410
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/srv/build/beamformer/beamformer.runs/impl_1/d_1_wrapper_timing_summary_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 180000,
+     "current": true
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/srv/build/beamformer/beamformer.runs/impl_1/d_1_wrapper_utilization_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/srv/build/beamformer/beamformer.runs/impl_1/d_1_wrapper_drc_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/srv/build/beamformer/beamformer.runs/impl_1/d_1_wrapper_power_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "route_status",
+     "label": "Route status",
+     "step": "route_design",
+     "path": "/srv/build/beamformer/beamformer.runs/impl_1/d_1_wrapper_route_status.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/srv/build/beamformer/beamformer.runs/impl_1/d_1_wrapper.bit",
+     "mtime": 1759982900.0,
+     "size": 19400000,
+     "current": true
+    }
+   ],
+   "steps": {
+    "synth_design": 4913.2,
+    "opt_design": 505.4,
+    "place_design": 1829.6,
+    "phys_opt_design": 701.9,
+    "route_design": 3032.2,
+    "write_bitstream": 753.4
+   },
+   "phases": {},
+   "messages": {
+    "Synth 8-7080": {
+     "count": 1,
+     "severity": "warning",
+     "text": "Parallel synthesis criteria is not met"
+    },
+    "Synth 8-3332": {
+     "count": 412,
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic."
+    },
+    "Synth 8-6014": {
+     "count": 96,
+     "severity": "warning",
+     "text": "Unused sequential element ddc/fir_reg[3] was removed."
+    },
+    "Vivado 12-4739": {
+     "count": 3,
+     "severity": "warning",
+     "text": "set_false_path:No valid object(s) found for '-to [get_cells -hier adc_fifo_reg]'."
+    },
+    "DRC DPIP-1": {
+     "count": 24,
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register."
+    },
+    "DRC REQP-1858": {
+     "count": 6,
+     "severity": "warning",
+     "text": "RAMB36E2 has unfavorable timing with DOA_REG=0 and no output register."
+    }
+   },
+   "timing_clocks": {
+    "clk_pl": {
+     "wns": 0.214,
+     "whs": 0.011
+    },
+    "clk_adc": {
+     "wns": 0.564,
+     "whs": 0.011
+    },
+    "clk_dac": {
+     "wns": 0.824,
+     "whs": 0.031
+    }
+   },
+   "host": "buildsrv"
   }
  ],
  "firmwares": [
@@ -1283,6 +1456,11 @@
   {
    "id": "rd06",
    "name": "radar_dsp"
+  },
+  {
+   "id": "buildsrv~bs12",
+   "name": "beamformer",
+   "host": "buildsrv"
   }
  ]
 }

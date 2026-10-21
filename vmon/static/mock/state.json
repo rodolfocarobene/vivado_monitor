@@ -15500,5 +15500,76 @@
     "project": "/home/user/projects/radar_dsp/radar_dsp.xpr"
    }
   }
+ ],
+ "remotes": [
+  {
+   "name": "buildsrv",
+   "url": "http://127.0.0.1:9001",
+   "online": true,
+   "last_ok": 1759999998.0,
+   "error": null,
+   "version": 1,
+   "system": {
+    "cpu_pct": 63.0,
+    "cpu_count": 32,
+    "load1": 9.8,
+    "mem_used_mb": 88000.0,
+    "mem_total_mb": 128000.0,
+    "swap_used_mb": 0.0,
+    "swap_total_mb": 0.0
+   },
+   "firmwares": 2
+  }
+ ],
+ "mock_remote_clones": [
+  {
+   "from": "ad03",
+   "id": "buildsrv~bs11",
+   "name": "ddc_chain",
+   "path": "/srv/build/ddc_chain/ddc_chain.runs",
+   "pids": [
+    60234
+   ],
+   "launcher": null,
+   "events": [],
+   "info": {
+    "part": "xczu48dr-ffvg1517-2-e",
+    "board": null,
+    "top": "adc_capture",
+    "vivado_version": "2022.2",
+    "host": "rfsoc-build01",
+    "strategy_synth": "Vivado Synthesis Defaults",
+    "strategy_impl": "Vivado Implementation Defaults",
+    "directives": {},
+    "jobs": 4,
+    "project": "/srv/build/ddc_chain/ddc_chain.xpr"
+   },
+   "host": "buildsrv"
+  },
+  {
+   "from": "tp02",
+   "id": "buildsrv~bs12",
+   "name": "beamformer",
+   "path": "/srv/build/beamformer/beamformer.runs",
+   "events": [],
+   "info": {
+    "part": "xczu48dr-ffvg1517-2-e",
+    "board": "xilinx.com:zcu111:part0:1.4",
+    "top": "top",
+    "vivado_version": "2022.2",
+    "host": "rfsoc-build01",
+    "strategy_synth": "Vivado Synthesis Defaults",
+    "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+    "directives": {
+     "opt_design": "Explore",
+     "place_design": "ExtraTimingOpt",
+     "phys_opt_design": "AggressiveExplore",
+     "route_design": "Explore"
+    },
+    "jobs": 8,
+    "project": "/srv/build/beamformer/beamformer.xpr"
+   },
+   "host": "buildsrv"
+  }
  ]
 }

@@ -34,6 +34,7 @@ Other files:
 | `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
 | `[history]` | Build history: builds kept per firmware, messages kept per build, report kinds recorded, bitstream |
 | `[notify]`, `[notify.desktop]`, `[notify.ntfy]`, `[notify.slack]`, `[notify.matrix]`, `[notify.webhook]` | Notifications outside the browser (all off by default) |
+| `[remote]` | Other vmon instances to aggregate (hosts, poll interval, timeout) |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -240,3 +241,28 @@ vmon
 | `webhook` | `url`/`url_env` | `POST` JSON `{firmware, fw_id, kind, code, level, title, body, t, project}` (see `SPEC.md`) |
 
 Only events that happen while vmon runs are sent; builds already finished at startup are not. Logs and the API show only `scheme://host` of a URL, never its path, query or token. `POST /api/notify/test` (the "Send test" button) tests every enabled channel.
+
+## Remote vmon instances
+
+`[remote]` lists other vmons to show in this UI, usually the ones running on build servers, reached through an SSH tunnel. Nothing is contacted unless a host is listed (or `--remote` / `--ssh` is used).
+
+```toml
+[remote]
+hosts = [
+  {name = "buildsrv", url = "http://127.0.0.1:9001"},
+  {name = "lab2",     url = "http://127.0.0.1:9002"},
+]
+interval_s = 3      # seconds between polls of each remote's /api/state
+timeout_s = 5       # per request, polls and proxied requests alike
+```
+
+```sh
+ssh -N -L 9001:127.0.0.1:8765 user@server      # on your machine; vmon on the server stays on 127.0.0.1
+vmon                                           # or: vmon --remote buildsrv=http://127.0.0.1:9001
+```
+
+- `name`: `[A-Za-z0-9_-]{1,32}`, unique; it becomes the host badge and the prefix of firmware ids (`buildsrv~<id>`).
+- `url`: `http://` or `https://`, `host[:port]` only (no credentials, path or query). It is shown in the UI as `scheme://host:port`.
+- `--remote NAME=URL` adds to the list (a command-line entry replaces a config entry of the same name). `--ssh USER@HOST[:PORT]` picks a free local port, runs `ssh -N -o ExitOnForwardFailure=yes -L <port>:127.0.0.1:<PORT or 8765> USER@HOST` as a child process, registers it as a remote named after the host and ends it on exit; authentication is whatever your ssh does (keys or agent; a prompt appears in the terminal).
+- Redirects are refused and environment proxies (`http_proxy`) are ignored. The remote is always taken from this config, never from a request.
+- Notifications outside the browser are sent by each machine's own vmon; the browser notifications of this UI cover remote events too. `/api/msgrule`, `/api/notify`, `/api/watch` and `/api/browse` act on this machine only.

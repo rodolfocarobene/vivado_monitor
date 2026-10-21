@@ -133,6 +133,7 @@ class Firmware:
     info: dict | None = None
     attempt: dict | None = None
     clock_history: dict | None = None
+    host: str | None = None      # set only by the aggregating vmon, for firmwares of a remote
 
     def to_dict(self):
         return {
@@ -145,6 +146,6 @@ class Firmware:
             "vivado_version": self.vivado_version, "resources": self.resources,
             "utilization": self.utilization, "top_messages": self.top_messages,
             "events": self.events, "eta": self.eta, "info": self.info,
-            "attempt": self.attempt, "clock_history": self.clock_history,
+            "attempt": self.attempt, "clock_history": self.clock_history, "host": self.host,
             "flows": [f.to_dict() for f in self.flows],
         }

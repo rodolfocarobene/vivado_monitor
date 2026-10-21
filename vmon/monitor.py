@@ -9,6 +9,7 @@ from pathlib import Path
 
 from . import clocks as clocks_mod
 from . import history as history_mod
+from . import remote as remote_mod
 from .docs import DocLinks
 from .notify import Notifier
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
@@ -55,7 +56,7 @@ def resolve_path(text):
 
 
 class Monitor:
-    def __init__(self, config, interval=1.0, recent_file=RECENT_FILE, rules_file=None):
+    def __init__(self, config, interval=1.0, recent_file=RECENT_FILE, rules_file=None, remotes=()):
         self.cfg = config
         self.interval = interval
         self.recent_file = Path(recent_file)
@@ -71,6 +72,10 @@ class Monitor:
         self.docs = DocLinks(config.data)
         self.notifier = Notifier(config.data.get("notify"))
         self.sampler = Sampler()
+        hosts, remote_interval, remote_timeout = remote_mod.settings(config)
+        extra = dict(remotes)           # command-line remotes win over a config entry of the same name
+        self.remotes = remote_mod.Remotes([h for h in hosts if h[0] not in extra] + list(extra.items()),
+                                          remote_interval, remote_timeout, self._remote_changed)
         self._recorded = set()         # (fw_id, build) already stored as a baseline this session
         self._top_cache = {}
         self._seen = {}                # fw_id -> {"status", "nodes", "alerts"} from the previous tick
@@ -365,9 +370,18 @@ class Monitor:
             self.version += 1
             self.cond.notify_all()
 
+    def _remote_changed(self):
+        with self.cond:
+            self.version += 1
+            self.cond.notify_all()
+
     def state_json(self):
+        firmwares, remote = self._body, self.remotes.firmwares_json()
+        if remote:
+            firmwares = "[%s]" % ",".join(p for p in (firmwares[1:-1], remote) if p)
         return ('{"generated_at":%f,"version":1,"tick":%d,"system":%s,"settings":{"interval":%g},'
-                '"firmwares":%s}' % (time.time(), self._tick, self._sys_json, self.interval, self._body))
+                '"firmwares":%s,"remotes":%s}' % (time.time(), self._tick, self._sys_json, self.interval, firmwares,
+                                                  json.dumps(self.remotes.statuses(), separators=(",", ":"))))
 
     def wait_for_change(self, last_version, timeout):
         with self.cond:
@@ -383,6 +397,7 @@ class Monitor:
         self.tick()
         self._thread = threading.Thread(target=self._loop, name="vmon-monitor", daemon=True)
         self._thread.start()
+        self.remotes.start()
 
     def _loop(self):
         while True:
@@ -397,6 +412,7 @@ class Monitor:
 
     def stop(self):
         self._stop.set()
+        self.remotes.stop()
         self.notifier.stop()
         self._wake.set()
         with self.cond:

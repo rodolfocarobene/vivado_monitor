@@ -21,6 +21,7 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **Build history page**: every finished build with date, duration, outcome, final WNS/WHS, utilization, and links to its reports and `.bit` (only while the files still belong to that build). Click a build to open its project in the standard view (it is loaded again if its tab was closed).
 - **Compare two builds** of a firmware (pick two, or "vs previous"): timing and utilization deltas, step durations, new/removed/changed warnings.
 - **Export a build summary** as Markdown or a self-contained HTML page (timing, utilization, top warnings, attempts, reports), or copy it to the clipboard.
+- **Remote builds**: watch a build server through an SSH tunnel, or aggregate several machines in one UI; each remote firmware gets a host badge, and an unreachable host leaves its tabs visible but marked stale.
 - **Build info**: part, board, strategies, directives; links to AMD documentation.
 - **System CPU / RAM / swap** meters, sticky summary, folder explorer to add runs.
 - **Keyboard**: `1`-`9` firmware tabs, `f`/`m`/`t` views, `j`/`k` stages, `n` next alert, `c` collapse all, `h` build history, `?` help; arrow keys on the tab strip.
@@ -71,8 +72,21 @@ vmon --port 9000 --no-browser
 | `--interval` | 1.0 | Poll interval in seconds (also changeable in the UI) |
 | `--no-browser` | | Do not open the browser |
 | `--config FILE` | | Extra `flows.toml` merged over the defaults |
+| `--remote NAME=URL` | | Aggregate another vmon, e.g. `buildsrv=http://127.0.0.1:9001` (repeatable; also `[remote]` in `flows.toml`) |
+| `--ssh USER@HOST[:PORT]` | | Start `ssh -N -L` to the vmon on that host (default remote port 8765) and aggregate it; the tunnel ends with vmon |
 
 If a vmon is already running on the port, the new command hands it your paths and opens the browser on it instead of starting a second server.
+
+### Watching a build server
+
+Run a normal vmon on the server (it binds to `127.0.0.1` there), forward its port, and aggregate it locally:
+
+```sh
+ssh -N -L 9001:127.0.0.1:8765 user@server &          # or let vmon do it: vmon --ssh user@server
+vmon --remote buildsrv=http://127.0.0.1:9001
+```
+
+Remote firmwares appear as tabs with a host badge; the top bar shows one dot per remote (hover for the address and last update). Messages, logs, reports, timing paths, history, comparisons, summaries and downloads are fetched from the server on demand through your local vmon, which only ever talks to the hosts you configured. `Watch` and `Explore` still act on this machine. See [docs/configuration.md](docs/configuration.md#remote-vmon-instances).
 
 Demo without Vivado: serve `vmon/static/` with any static server and open `index.html?mock=1`, for example `python -m http.server 8798 --bind 127.0.0.1 --directory vmon/static`.
 
@@ -89,7 +103,7 @@ See [docs/configuration.md](docs/configuration.md), [docs/catalog.md](docs/catal
 
 ## Safety
 
-vmon is read-only on your build directories and never signals or kills processes. It binds to `127.0.0.1` by default. It writes only to `~/.cache/vmon/` and `~/.config/vmon/message_rules.json`.
+vmon is read-only on your build directories and never signals or kills processes. It binds to `127.0.0.1` by default. With remotes it makes HTTP requests to the configured URLs only (no redirects, no proxies). It writes only to `~/.cache/vmon/` and `~/.config/vmon/message_rules.json`.
 
 ## Development
 

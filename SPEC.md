@@ -516,6 +516,26 @@ GET /api/history/artifact?fw=&build=&path=  -> application/octet-stream, Content
   shows "Export summary" (Markdown of its latest recorded build) and "HTML" next to the view switch. Mock: static/mock/summary_<fw>_<build>.md|html.
 - UI: top-bar History button / `h` / `#page=history`; table of builds with firmware filter (default: current firmware).
 
+## Remote vmon instances
+
+Config `[remote]` / `--remote NAME=URL` / `--ssh USER@HOST[:PORT]` (docs/configuration.md); nothing is contacted by default.
+```
+State.remotes = [{"name": str,                  # [A-Za-z0-9_-]{1,32}
+                  "url": str,                   # scheme://host:port only
+                  "online": bool, "last_ok": epoch|null, "error": str|null,   # error never contains a URL
+                  "version": int|null,          # the remote's State.version
+                  "system": State.system|null,  # last known meters of the remote
+                  "firmwares": int}]            # [] when no remote is configured
+Firmware.host = str|null                        # null for local firmwares
+Firmware.id   = "<host>~<remote id>" for remote firmwares (local ids are unchanged and never contain "~")
+```
+`State.firmwares` is the local list followed by the remote ones. An offline remote keeps its last snapshot (the UI marks it stale).
+Every route with `fw=` accepts a namespaced id and is answered by that remote with the original id; unknown host 404, unreachable or
+redirecting remote 502 `{"error"}`. `/api/history`, `/api/history/build` and `/api/history/compare` answers carry the namespaced `fw_id`
+(history builds also `host`; firmware entries `host`). `GET /api/history` without `fw` merges in the builds of online remotes
+and adds `"unreachable": [name]`. `POST /api/watch`, `/api/browse`, `/api/msgrule`, `/api/notify`, `/api/settings` are local.
+UI: host badge on tabs and history rows, "on <host>" in the header, a dot per remote in the top bar; mock: `?mock=1` has a remote `buildsrv`, `&remote=off` shows it unreachable.
+
 ## Notifications outside the browser
 
 Config `[notify]` (see docs/configuration.md); all channels disabled by default. Only live events are sent (never those present at startup).

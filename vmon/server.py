@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import browse as browse_mod
 from . import history as history_mod
+from . import remote as remote_mod
 from . import summary as summary_mod
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -52,6 +53,8 @@ def make_server(monitor, host, port):
             url = urlparse(self.path)
             query = parse_qs(url.query)
             route = url.path
+            if route in remote_mod.PROXY_GET and remote_mod.split_id(query.get("fw", [""])[0])[0]:
+                return monitor.remotes.forward(self, route, query)
             if route == "/api/state":
                 return self._send(200, monitor.state_json())
             if route == "/api/events":
@@ -156,7 +159,10 @@ def make_server(monitor, host, port):
             url = urlparse(self.path)
             if url.path != "/api/firmware":
                 return self._error(404, "not found")
-            fw_id = parse_qs(url.query).get("fw", [""])[0]
+            query = parse_qs(url.query)
+            fw_id = query.get("fw", [""])[0]
+            if remote_mod.split_id(fw_id)[0]:
+                return monitor.remotes.forward(self, url.path, query, "DELETE")
             if monitor.forget(fw_id):
                 monitor.tick()
                 return self._json({"ok": True})
@@ -168,7 +174,9 @@ def make_server(monitor, host, port):
             if route == "/api/history":
                 if fw_id and not history_mod.ID_RE.match(fw_id):
                     return self._error(404, "unknown firmware")
-                return self._json(store.listing(fw_id or None, _int(query, "limit", store.cap)))
+                limit = _int(query, "limit", store.cap)
+                listing = store.listing(fw_id or None, limit)
+                return self._json(self._with_remotes(listing, limit) if not fw_id and monitor.remotes else listing)
             if route in ("/api/history/build", "/api/history/compare"):
                 if route == "/api/history/build":
                     record = store.build(fw_id, query.get("build", [""])[0])
@@ -198,6 +206,14 @@ def make_server(monitor, host, port):
                         self.wfile.write(chunk)
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     self.close_connection = True
+
+        @staticmethod
+        def _with_remotes(listing, limit):
+            """The global history also lists the builds of every reachable remote (ids namespaced)."""
+            builds, firmwares, down = monitor.remotes.history(max(1, min(limit, history_mod.BUILD_LIMIT_MAX)))
+            merged = sorted(listing["builds"] + builds, key=lambda b: b.get("started_at") or 0, reverse=True)
+            return {"builds": merged[:max(1, min(limit, history_mod.BUILD_LIMIT_MAX))],
+                    "firmwares": listing["firmwares"] + firmwares, "unreachable": down}
 
         def _summary(self, store, fw_id, query):
             fmt = query.get("format", ["md"])[0]
