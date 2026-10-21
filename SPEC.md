@@ -252,10 +252,15 @@ Alerts: timing_fail is level "error" ONLY when Timing.final and not met; otherwi
         stating it is an intermediate/estimated value (e.g. "WHS -0.135 ns (intermediate, route not finished — hold
         fixing usually comes later)"). Firmware.health must follow the same logic.
 Firmware.eta = {"expected_end": epoch|null, "remaining_s": float|null,
-                "method": "previous build"|"catalog weights"|null, "confidence": "low"|"medium"|"high"} | null
-     # previous build: per-step durations of the last completed build of the same firmware, stored in
-     #   ~/.cache/vmon/durations/<fw_id>.json when a build finishes (also recorded at startup for finished builds);
-     #   remaining = sum(durations of pending steps) + max(prev_dur(current) - elapsed(current), 10% of prev_dur).
+                "low_end": epoch|null, "high_end": epoch|null, "remaining_low_s": float|null, "remaining_high_s": float|null,
+                "method": "history"|"catalog weights"|null, "builds": int, "confidence": "low"|"medium"|"high"} | null
+     # history: durations of up to [eta] history_builds completed builds, stored in
+     #   ~/.cache/vmon/durations/<fw_id>.json as {"builds": [{"build","total_s","steps":{step:s},"phases":{step:{name:s}}}]}
+     #   (phase name = label without number; the old single-build file is read as one build);
+     #   remaining = sum(median of pending steps) + current step (medians of unfinished phases, running phase
+     #   max(median - elapsed, 10% of median); without phase history max(median - elapsed, 10% of median)).
+     #   Band = p10/p90 of the same sum computed per past build (min/max +-15% under 3 builds).
+     #   confidence: >=5 builds and all steps known high, >=2 medium, else low; an unseen step lowers it one level.
      # fallback: catalog weights scaled by elapsed / progress_estimate (confidence low).
 Firmware.info = {"part": str|null, "board": str|null, "top": str|null, "vivado_version": str|null,
                  "host": str|null, "strategy_synth": str|null, "strategy_impl": str|null,
@@ -274,9 +279,9 @@ Docs links (configurable URL templates in flows.toml [docs]):
   "any timing is final once that step is done". Stage text: "<Step> · estimate|intermediate|final|report|final report".
   Final violation message ends with "(final)"; non-final: "WHS -0.135 ns - intermediate value during Route Design, not final
   (hold fixing usually comes later in route)" ("estimated" instead of "intermediate" for place/phys_opt estimates).
-- ETA: only for running builds. Durations file = {"build","total_s","steps":{step_id: s}} of the last completed build (synth under
-  "synth_design"; stored beside recent.json in `durations/`). Confidence "medium" with a previous build ("low" if a pending step has no
-  recorded duration), "low" for catalog weights. Never computed for finished builds (eta null).
+- ETA: only for running builds; never computed for finished builds (eta null). Synth is stored under "synth_design"; the durations file
+  lives beside recent.json in `durations/` (format above, upgraded from the single-build format on the next write). Unknown running
+  step or no history: catalog weights (method "catalog weights", builds 0, confidence low, band +-30%).
 - Info: `jobs` from the impl Run `LaunchOptions` in the .xpr, else `set_param runs.launchOptions` in the run tcl (the launcher log is not
   used). `directives` come from `Command:` lines in the impl log (second phys_opt/power_opt command maps to the post-route/post-place step).
   Files parsed by mtime/size (log incrementally). Log-mode firmwares get only part/top/version/directives.

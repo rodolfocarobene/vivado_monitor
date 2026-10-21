@@ -30,6 +30,7 @@ Other files:
 | `[resume]`, `[resume.checkpoints]` | Recognising non-project sessions that resume a run from a checkpoint |
 | `[timing_paths]` | Worst paths kept per timing report (`max_paths`) and how many go in the state JSON (`summary_paths`) |
 | `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
+| `[eta]` | ETA: history size, band quantiles, small-sample margin, floor for a running step/phase, builds needed for high confidence |
 | `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
@@ -140,6 +141,19 @@ tolerance_s = 1
 [artifacts.files]
 '^{top}\.bit$' = "write_bitstream"
 '^{top}_routed\.dcp$' = "route_design"
+```
+
+## ETA
+
+```toml
+[eta]
+history_builds = 20           # completed builds kept per firmware
+low_quantile = 0.10           # band = these quantiles of the per-build remaining time
+high_quantile = 0.90
+quantile_min_builds = 3       # fewer builds: min/max widened by small_sample_margin
+small_sample_margin = 0.15
+current_floor = 0.10          # a running step/phase keeps at least this fraction of its median
+high_confidence_builds = 5    # with every remaining step known, gives "high" confidence
 ```
 
 ## Congestion

@@ -614,6 +614,7 @@ main { max-width: 1440px; }
 
 /* firmware header: start/ETA + info */
 .sub2 { font-size: var(--fs-caption); color: var(--muted); margin-top: 1px; max-width: 280px; }
+.sub2 .band { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sub2 .how { font-style: italic; opacity: .9; }
 .kv[hidden] { display: none; }
 .fwinfo { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid var(--border-soft); }
@@ -998,7 +999,7 @@ tr.pdrow td { background: var(--panel-2); padding: 0; }
 .now-run { display: grid; grid-template-columns: auto minmax(120px, 1fr) auto; align-items: start; gap: 8px 24px; margin-top: 10px; }
 .now-run .el { font-size: var(--fs-display); font-weight: 600; line-height: 1.15; }
 .now-run .eta { font-size: var(--fs-heading); font-weight: 600; line-height: 1.15; }
-.now-run .eta-wrap .sub2 { max-width: none; white-space: nowrap; }
+.now-run .eta-wrap .sub2 { max-width: 270px; white-space: normal; }
 .now-bar { display: flex; align-items: center; gap: 10px; margin-top: 30px; min-width: 0; } /* centred on the readout digits, below the labels */
 .now .cur[hidden] { display: none; }
 .now .cur[hidden] + .now-run { margin-top: 0; }
@@ -1100,7 +1101,7 @@ main.railed .fwinfo { padding-top: 8px; }
 .alerts.compact .alert { min-width: 0; }
 .now-run .el { white-space: nowrap; }
 .now-run .started-wrap[hidden] { display: none; }
-main.railed .now-run .eta-wrap .sub2 { white-space: normal; max-width: 190px; }
+main.railed .now-run .eta-wrap .sub2 { white-space: normal; max-width: 230px; }
 
 /* narrow: one tree. The selected stage's detail sits under its own card; its heading row would repeat the card. */
 .detail[hidden] { display: none; }
@@ -1111,3 +1112,4 @@ main.railed .now-run .eta-wrap .sub2 { white-space: normal; max-width: 190px; }
   .stg > .main > .detail .stagedetail > .main > .card { padding: 0 0 4px; }
   .stg > .main > .detail .stagedetail > .main > .card .desc { margin-top: 0; }
 }
+.etasub .band.nwb { display: block; white-space: nowrap; color: var(--text-2); } /* the range reads as its own line under the ETA */

@@ -179,7 +179,7 @@ function shiftTimes(o, d) {
   if (Array.isArray(o)) { o.forEach((x) => shiftTimes(x, d)); return o; }
   if (o && typeof o === 'object') {
     for (const k of Object.keys(o)) {
-      if (['started_at', 'ended_at', 'updated_at', 'generated_at', 't', 'mtime', 'expected_end'].includes(k) && typeof o[k] === 'number') o[k] += d;
+      if (['started_at', 'ended_at', 'updated_at', 'generated_at', 't', 'mtime', 'expected_end', 'low_end', 'high_end'].includes(k) && typeof o[k] === 'number') o[k] += d;
       else shiftTimes(o[k], d);
     }
   }
@@ -697,13 +697,18 @@ const TOP_ISSUES_SHOWN = 3;
 let issuesOpen = lsGet('vmon.issuesOpen') === '1';
 const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
 
-const ETA_METHOD = { 'previous build': 'based on previous build', 'catalog weights': 'rough estimate' };
 function etaParts(fw) {
   const e = fw.eta;
   if (fw.status !== 'running' || !e || e.expected_end == null) return null;
   const rem = e.expected_end - nowS();
-  const how = [ETA_METHOD[e.method] || e.method, e.confidence === 'low' ? 'low confidence' : ''].filter(Boolean).join(' · ');
-  return { clock: fmtClock(e.expected_end), end: e.expected_end, how, inTxt: rem > 30 ? `in ${fmtDur(rem)}` : 'any moment now' };
+  const hist = e.method === 'history';
+  const band = e.low_end != null && e.high_end != null ? `${fmtClock(e.low_end)}–${fmtClock(e.high_end)}` : '';
+  const src = hist ? `${e.builds} build${e.builds === 1 ? '' : 's'}` : e.method === 'catalog weights' ? 'rough estimate' : e.method || '';
+  const how = [src, e.confidence === 'low' ? 'low confidence' : ''].filter(Boolean).join(' · ');
+  const tip = (hist ? `Median of per-phase and per-step durations of ${e.builds} previous build${e.builds === 1 ? '' : 's'}; ` : 'No usable build history: catalog weights scaled by progress; ')
+    + (band ? (e.builds >= 3 ? 'the range is the 10th to 90th percentile of those builds' : 'the range is widened around the few builds seen') : '')
+    + `. Confidence: ${e.confidence || 'low'}.`;
+  return { clock: fmtClock(e.expected_end), end: e.expected_end, band, how, tip, inTxt: rem > 30 ? `in ${fmtDur(rem)}` : 'any moment now' };
 }
 const endedAt = (fw) => (fw.started_at && fw.elapsed_s != null ? fw.started_at + fw.elapsed_s : fw.updated_at);
 
@@ -753,8 +758,8 @@ function renderHeader(fw) {
   r.etaWrap.hidden = !(ep || (fin && endedAt(fw)));
   if (ep) {
     setText(r.etak, 'Expected end'); setText(r.eta, `~${ep.clock}`);
-    setHTML(r.etasub, `<span data-end="${ep.end}">${ep.inTxt}</span>${ep.how ? ` · <span class="how">${esc(ep.how)}</span>` : ''}`);
-    r.etaWrap.title = 'Estimated finish time' + (ep.how ? ` (${ep.how}${fw.eta.confidence ? `, ${fw.eta.confidence} confidence` : ''})` : '');
+    setHTML(r.etasub, `${ep.band ? `<span class="band nwb">${ep.band}</span>` : ''}<span class="nw"><span data-end="${ep.end}">${ep.inTxt}</span>${ep.how ? ` · <span class="how">${esc(ep.how)}</span>` : ''}</span>`);
+    r.etaWrap.title = `Estimated finish time. ${ep.tip}`;
   } else if (fin && endedAt(fw)) { setText(r.etak, 'Ended'); setText(r.eta, fmtClock(endedAt(fw))); setHTML(r.etasub, ''); r.etaWrap.title = ''; }
   const ih = infoHTML(fw);
   r.info.hidden = !ih; setHTML(r.infoGrid, ih);
@@ -1444,7 +1449,7 @@ function renderSummary(fw, flow) {
   const running = fw.status === 'running' && fw.started_at;
   const ep = etaParts(fw);
   const fin = ['done', 'failed', 'stopped'].includes(fw.status);
-  setHTML(sr.time, `<span class="num" ${running ? `data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</span>${ep ? `<span class="sm-eta" title="${esc(ep.how)}">ETA ~${ep.clock} <span data-end="${ep.end}">${ep.inTxt}</span></span>` : fin && endedAt(fw) ? `<span class="sm-eta">ended ${fmtClock(endedAt(fw))}</span>` : ''}`);
+  setHTML(sr.time, `<span class="num" ${running ? `data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</span>${ep ? `<span class="sm-eta" title="${esc(ep.tip)}">ETA ~${ep.clock}${ep.band ? ` (${ep.band})` : ''} <span data-end="${ep.end}">${ep.inTxt}</span></span>` : fin && endedAt(fw) ? `<span class="sm-eta">ended ${fmtClock(endedAt(fw))}</span>` : ''}`);
   setHTML(sr.counts, badgesHTML(fw.counts));
   const t = fw.timing; const tl = fwTimingLevel(fw);
   const tv = (k, l) => {

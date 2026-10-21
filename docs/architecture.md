@@ -93,7 +93,7 @@ Top-level model: `State` contains `Firmware` objects; each has `flows` of `Node`
 
 ## ETA
 
-For a running build, per-step durations of the last completed build of the same firmware (`~/.cache/vmon/durations/`) are summed for pending steps, plus the remainder of the current step. Without a previous build it falls back to catalog weights scaled by progress (low confidence).
+Each completed build is stored (last `[eta] history_builds`, default 20, per firmware) in `~/.cache/vmon/durations/<fw_id>.json` as `{"builds": [{"build", "total_s", "steps": {step: s}, "phases": {step: {phase name without number: s}}}]}`; the older single-build file is read as one build and upgraded on the next write. For a running build the remaining time is the sum of the median duration of each pending step plus the current step: the medians of its phases not yet finished (the running phase keeps `max(median - elapsed, current_floor * median)`), or the step median minus elapsed when no phase history exists. The same sum is computed per past build; its p10/p90 (min/max widened by `small_sample_margin` with fewer than 3 builds) give the band. Confidence: at least 5 builds with every remaining step known is high, at least 2 medium, else low; a step never seen in history lowers it one level. When the running step is unknown, or there is no history, it falls back to catalog weights scaled by progress (low confidence, wide band).
 
 ## Timing insights
 

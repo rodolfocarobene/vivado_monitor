@@ -462,6 +462,16 @@ utilization_pct = 90
 timing_error_steps = ["route_design", "post_route_phys_opt_design", "write_bitstream"]   # timing is final once one of these is done
 timing_final_steps = ["route_design", "post_route_phys_opt_design"]   # their timing_summary reports are final results
 
+# ---------------------------------------------------------------- ETA
+[eta]
+history_builds = 20          # completed builds kept per firmware
+low_quantile = 0.10          # band edges over the per-build remaining times
+high_quantile = 0.90
+quantile_min_builds = 3      # fewer builds: band is min/max widened by small_sample_margin
+small_sample_margin = 0.15
+current_floor = 0.10         # a running step/phase keeps at least this fraction of its typical duration
+high_confidence_builds = 5   # builds needed (with every step known) for "high" confidence
+
 # ---------------------------------------------------------------- timing paths (timing_summary reports)
 [timing_paths]
 max_paths = 200       # worst paths kept per report (half setup, half hold); the report is streamed, never loaded whole

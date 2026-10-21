@@ -2803,8 +2803,13 @@
    "eta": {
     "expected_end": 1760004800.0,
     "remaining_s": 4800,
-    "method": "previous build",
-    "confidence": "medium"
+    "low_end": 1760004000.0,
+    "high_end": 1760006100.0,
+    "remaining_low_s": 4000,
+    "remaining_high_s": 6100,
+    "method": "history",
+    "builds": 6,
+    "confidence": "high"
    },
    "info": {
     "part": "xczu48dr-ffvg1517-2-e",
