@@ -1639,9 +1639,9 @@ document.addEventListener('click', async (ev) => {
   } else if (act === 'hbit') {
     if (t.getAttribute('aria-disabled') === 'true') ev.preventDefault();
     else if (MOCK) { ev.preventDefault(); toast('Mock mode: download disabled'); }
-  } else if (act === 'hrow') {
-    if (ev.target.closest('a, button')) return;
-    if (state.firmwares.some((f) => f.id === t.dataset.fw)) { hist.on = false; selected = t.dataset.fw; lsSet('vmon.tab', selected); render(); }
+  } else if (act === 'hrow' || act === 'hopen') {
+    if (act === 'hrow' && ev.target.closest('a, button')) return;
+    openFromHistory(t.dataset.fw, t.dataset.project, t.dataset.name);
   } else if (act === 'toggle' && nodeEl) {
     const k = keyOf(nodeEl._fw, nodeEl._node);
     const au = autoOf(nodeEl._fw); const sl = ui.sel.get(nodeEl._fw.id);
@@ -2044,20 +2044,40 @@ async function exploreWatch() {
   const t = exploreTarget(); if (!t) return;
   closeExplore();
   if (MOCK) { toast(`Mock mode: would watch ${t.path}`); return; }
+  await watchAndOpen(t.path);
+}
+
+const normPath = (x) => String(x || '').replace(/\/+$/, '');
+const fwForPath = (path) => {
+  const base = normPath(path).replace(/\.(xpr|log)$/, '');
+  return state.firmwares.find((f) => normPath(f.path) === normPath(path) || normPath(f.path).startsWith(base) || normPath(path).startsWith(normPath(f.path)));
+};
+function openFirmware(id) { hist.on = false; selected = id; lsSet('vmon.tab', selected); render(); window.scrollTo({ top: 0 }); }
+// Watch a path (POST /api/watch), wait for its firmware to show up in the state, then switch to its tab.
+async function watchAndOpen(path) {
   const before = new Set(state.firmwares.map((f) => f.id));
   try {
-    const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: t.path }) });
+    const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
     if (!r.ok) throw new Error((await r.text()) || r.status);
-  } catch (e) { toast('Watch failed: ' + e.message); return; }
-  toast('Watching ' + t.path);
-  const norm = (x) => String(x || '').replace(/\/+$/, '');
-  const base = norm(t.path).replace(/\.(xpr|log)$/, '');
+  } catch (e) { toast('Could not open: ' + e.message); return false; }
+  toast('Opening ' + path);
   for (let i = 0; i < 14; i++) {
     await poll();
-    const hit = state.firmwares.find((f) => !before.has(f.id)) || state.firmwares.find((f) => norm(f.path) === norm(t.path) || norm(f.path).startsWith(base) || norm(t.path).startsWith(norm(f.path)));
-    if (hit) { hist.on = false; selected = hit.id; lsSet('vmon.tab', selected); render(); return; }
+    const hit = state.firmwares.find((f) => !before.has(f.id)) || fwForPath(path);
+    if (hit) { openFirmware(hit.id); return true; }
     await new Promise((res) => setTimeout(res, 700));
   }
+  toast('The project did not load: ' + path);
+  return false;
+}
+// A history row opens its project in the standard view: its tab if loaded, else the project is watched again.
+// The view always shows the project's current (latest) build, since the run directory is reused by every build.
+async function openFromHistory(fwId, project, name) {
+  const loaded = state.firmwares.find((f) => f.id === fwId) || (project && fwForPath(project));
+  if (loaded) { openFirmware(loaded.id); return; }
+  if (!project) { toast(`No project path recorded for ${name}`); return; }
+  if (MOCK) { toast(`Mock mode: would open ${project}`); return; }
+  await watchAndOpen(project);
 }
 
 function renderExplore() {
@@ -2712,9 +2732,11 @@ function hxRow(b, loaded) {
   const res = HX_RESULT[b.result] || HX_RESULT.done;
   const why = b.failure && b.failure.reason ? `${b.failure.step ? `${b.failure.step}: ` : ''}${b.failure.reason}` : '';
   const where = [b.part, b.strategy_impl].filter(Boolean).join(' · ');
-  return `<tr class="${loaded ? 'go' : ''}" data-act="hrow" data-fw="${esc(b.fw_id)}"${loaded ? ' title="Open this firmware"' : ''}>
+  const tip = `Open ${b.firmware} in the standard view${loaded ? '' : ' (loads the project again)'}; it shows the project's latest build`;
+  const ds = `data-fw="${esc(b.fw_id)}" data-project="${esc(b.project || '')}" data-name="${esc(b.firmware)}"`;
+  return `<tr class="go" data-act="hrow" ${ds} title="${esc(tip)}">
     <td class="when" data-label="Date">${fmtWhen(b.started_at)}</td>
-    <td class="fw" data-label="Firmware"><span class="fwn">${esc(b.firmware)}</span>${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
+    <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
     <td class="dur" data-label="Duration">${fmtDur(b.duration_s)}</td>
     <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
     <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>

@@ -18,7 +18,7 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **Message triage**: severity, rules, keywords, rarity and "new since last build" scoring; pin or mute any message id.
 - **ETA with a confidence band**: per-step and per-phase durations learned from the last 20 builds of the same firmware (medians, p10-p90 range); steps never seen are sized from the catalog.
 - **Congestion summary** for place and route: placer and router congestion levels per direction, final max congestion, router overlaps per iteration; a chip and an alert from level 5.
-- **Build history page**: every finished build with date, duration, outcome, final WNS/WHS, utilization, and links to its reports and `.bit` (only while the files still belong to that build).
+- **Build history page**: every finished build with date, duration, outcome, final WNS/WHS, utilization, and links to its reports and `.bit` (only while the files still belong to that build). Click a build to open its project in the standard view (it is loaded again if its tab was closed).
 - **Build info**: part, board, strategies, directives; links to AMD documentation.
 - **System CPU / RAM / swap** meters, sticky summary, folder explorer to add runs.
 - **Keyboard**: `1`-`9` firmware tabs, `f`/`m`/`t` views, `j`/`k` stages, `n` next alert, `c` collapse all, `h` build history, `?` help; arrow keys on the tab strip.
