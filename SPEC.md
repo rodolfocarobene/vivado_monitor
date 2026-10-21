@@ -467,16 +467,39 @@ HistoryRecord = {
   "utilization": {"LUT"|"FF"|"BRAM"|"URAM"|"DSP"|"IO": {"used","available","pct"}} | null,
   "part", "board", "vivado_version", "strategy_synth", "strategy_impl": str|null,
   "counts": [errors, critical warnings, warnings, info],
+  "steps": {step_id: seconds},      # finished steps of the last flow (eta.step_durations); {} if none
+  "phases": {step_id: {phase name without number: seconds}},          # eta.phase_durations
+  "messages": {msg_id: {"count": int, "severity": "warning"|"critical"|"error", "text": str<=160}} | null,
+                                    # first-instance text, worst/most frequent first, capped by [history] max_messages;
+                                    # null when the log was not readable
+  "timing_clocks": {clock: {"wns", "whs"}} | null,                    # final per-clock values (clocks.final_stage)
   "artifacts": [{"kind": str ("timing_summary"|"utilization"|"drc"|...|"bitstream"), "label": str, "step": str|null,
                  "path": str, "mtime": float, "size": int}] }
 GET /api/history?fw=<id>&limit=N  -> {"builds": [HistoryRecord + artifacts[].current: bool, newest first],
                                       "firmwares": [{"id","name"}]}     # no fw: every firmware with history
+                                      # the list omits messages, phases, timing_clocks (heavy)
+GET /api/history/build?fw=&build=           -> the full HistoryRecord (404 unknown fw/build)
+GET /api/history/compare?fw=&a=&b=          -> Compare (404 unknown fw/build, 400 a == b); a = base/older, b = newer
 GET /api/history/report?fw=&build=&path=    -> text/plain
 GET /api/history/artifact?fw=&build=&path=  -> application/octet-stream, Content-Disposition: attachment
 ```
+- Compare = {"fw_id", "firmware", "a": H, "b": H,                   # H = {build, started_at, ended_at, duration_s, result, part,
+                                                                   #      strategy_impl, vivado_version, counts}
+    "duration": P,                                                 # P = {"a", "b", "delta"}; delta null when a side is null
+    "timing": {"final": {"a": bool, "b": bool}, "metrics": {"wns"|"tns"|"whs"|"ths": P},
+               "clocks": [{"name", "wns": P, "whs": P}] | null},   # clocks only when both builds stored them, worst b first
+    "utilization": {"LUT"|...: {"pct": P, "used": P, "available": int|null}},
+    "steps": [{"step", "a", "b", "delta"}],                        # union: a's order, then steps only in b; a missing side = null
+    "messages": {"totals": {"error"|"critical"|"warning"|"info": P},          # from `counts`
+                 "available": {"a": bool, "b": bool},              # false: that record has no message detail (lists are empty)
+                 "new"|"removed"|"changed": [{"id", "severity", "text", "a", "b", "delta"}],   # max 200 each
+                 "counts": {"new", "removed", "changed"}}}         # full list sizes
 - `current` = the file's mtime and size still equal the recorded ones (Vivado overwrites reports on every run).
 - Report/artifact routes: 404 when the firmware, build or path is not recorded (including any path not in that build's
   artifacts, e.g. traversal attempts), 410 when the file changed or vanished since the build. Read-only.
 - Recording: when a build is done/failed/stopped, plus backfill of finished builds at startup. A record is replaced only
   when its result changed. The bitstream is `<runs>/<impl run>/<top>.bit` and only counts if written after the build start.
+- Compare UI: a checkbox per row (max 2, one firmware) and "Compare" in the header, or "vs previous" on a row; the view
+  has a Back link, `#page=history&hcmp=<buildA>,<buildB>` opens it directly (older first). Deltas: green improved, amber
+  worse, red only for a newer build whose final timing fails.
 - UI: top-bar History button / `h` / `#page=history`; table of builds with firmware filter (default: current firmware).

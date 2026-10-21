@@ -61,7 +61,8 @@ def make_server(monitor, host, port):
                     return self._json(browse_mod.browse(query.get("path", [""])[0], str(Path.home()), live, recent))
                 except browse_mod.BrowseError as exc:
                     return self._error(exc.status, str(exc))
-            if route in ("/api/history", "/api/history/report", "/api/history/artifact"):
+            if route in ("/api/history", "/api/history/report", "/api/history/artifact",
+                         "/api/history/build", "/api/history/compare"):
                 return self._history(route, query)
             if route in ("/api/messages", "/api/log", "/api/report", "/api/triage", "/api/paths"):
                 source = self._source(query)
@@ -161,6 +162,12 @@ def make_server(monitor, host, port):
                 if fw_id and not history_mod.ID_RE.match(fw_id):
                     return self._error(404, "unknown firmware")
                 return self._json(store.listing(fw_id or None, _int(query, "limit", store.cap)))
+            if route in ("/api/history/build", "/api/history/compare"):
+                if route == "/api/history/build":
+                    record = store.build(fw_id, query.get("build", [""])[0])
+                    return self._json(record) if record else self._error(404, "no such build in the history")
+                result, err = store.compare(fw_id, query.get("a", [""])[0], query.get("b", [""])[0])
+                return self._error(*err) if err else self._json(result)
             art, err = store.artifact(fw_id, query.get("build", [""])[0], query.get("path", [""])[0])
             if err:
                 return self._error(*err)

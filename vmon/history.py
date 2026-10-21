@@ -8,12 +8,19 @@ import os
 import re
 from pathlib import Path
 
-DEFAULTS = {"max_builds": 100, "bitstream": True,
+from .eta import phase_durations, step_durations
+
+DEFAULTS = {"max_builds": 100, "bitstream": True, "max_messages": 500,
             "kinds": ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]}
 FINISHED = ("done", "failed", "stopped")
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 UTIL_ROWS = ("LUT", "FF", "BRAM", "URAM", "DSP", "IO")
 BUILD_LIMIT_MAX = 1000
+HEAVY = ("messages", "phases", "timing_clocks")     # kept out of the list payload; GET /api/history/build has them
+MESSAGE_SEVERITIES = ("error", "critical", "warning")          # worst first; info is never recorded
+SEVERITY_RANK = {s: len(MESSAGE_SEVERITIES) - i for i, s in enumerate(MESSAGE_SEVERITIES)}
+TEXT_MAX = 160
+COMPARE_LIST_MAX = 200
 
 
 def settings(cfg):
@@ -82,7 +89,16 @@ def artifacts_of(fw, hcfg):
     return out
 
 
-def build_record(fw, build, hcfg):
+def messages_of(groups, cap):
+    """{msg_id: {count, severity, text}} of warnings and worse, worst and most frequent first, at most `cap` ids."""
+    kept = [g for g in groups or () if g["severity"] in SEVERITY_RANK]
+    kept.sort(key=lambda g: (-SEVERITY_RANK[g["severity"]], -g["count"], g["id"]))
+    return {g["id"]: {"count": g["count"], "severity": g["severity"], "text": (g.get("text") or "")[:TEXT_MAX]}
+            for g in kept[:max(0, int(cap))]}
+
+
+def build_record(fw, build, hcfg, groups=None, clocks=None):
+    """`groups` = raw message groups of the whole firmware, `clocks` = final per-clock timing (clocks.per_clock)."""
     timing = fw.timing
     info = fw.info or {}
     util = {r["name"]: {"used": r["used"], "available": r["available"], "pct": r["pct"]}
@@ -97,6 +113,9 @@ def build_record(fw, build, hcfg):
         "part": info.get("part"), "board": info.get("board"), "vivado_version": fw.vivado_version or info.get("vivado_version"),
         "strategy_synth": info.get("strategy_synth"), "strategy_impl": info.get("strategy_impl"),
         "counts": [c[3], c[2], c[1], c[0]],            # E, CW, W, I
+        "steps": step_durations(fw), "phases": phase_durations(fw),
+        "messages": messages_of(groups, hcfg["max_messages"]) if groups is not None else None,
+        "timing_clocks": {n: {"wns": v["wns"], "whs": v["whs"]} for n, v in clocks.items()} if clocks else None,
         "artifacts": artifacts_of(fw, hcfg),
     }
 
@@ -166,8 +185,25 @@ class HistoryStore:
         builds.sort(key=lambda b: b.get("started_at") or 0, reverse=True)
         out = []
         for b in builds[:max(1, min(limit, BUILD_LIMIT_MAX))]:
-            out.append({**b, "artifacts": [{**a, "current": is_current(a)} for a in b.get("artifacts", ())]})
+            light = {k: v for k, v in b.items() if k not in HEAVY}
+            out.append({**light, "artifacts": [{**a, "current": is_current(a)} for a in b.get("artifacts", ())]})
         return {"builds": out, "firmwares": self.firmwares()}
+
+    def build(self, fw_id, build):
+        """The full record of one build (artifacts get `current`), or None."""
+        record = next((b for b in self.load(fw_id) if b["build"] == build), None)
+        if record is None:
+            return None
+        return {**record, "artifacts": [{**a, "current": is_current(a)} for a in record.get("artifacts", ())]}
+
+    def compare(self, fw_id, a, b):
+        """(diff, None) of two builds of one firmware, else (None, (status, why))."""
+        if a == b:
+            return None, (400, "pick two different builds")
+        old, new = self.build(fw_id, a), self.build(fw_id, b)
+        if old is None or new is None:
+            return None, (404, "no such build in the history")
+        return compare_records(old, new), None
 
     def artifact(self, fw_id, build, path):
         """(artifact, None) when `path` is a recorded artifact of that build and still current, else (None, (status, why))."""
@@ -180,3 +216,72 @@ class HistoryStore:
         if not is_current(art):
             return None, (410, "replaced by a later build (the file changed since this build finished)")
         return art, None
+
+
+def _pair(a, b, digits=3):
+    delta = round(b - a, digits) if isinstance(a, (int, float)) and isinstance(b, (int, float)) else None
+    return {"a": a, "b": b, "delta": delta}
+
+
+def _header(r):
+    keys = ("build", "started_at", "ended_at", "duration_s", "result", "part", "strategy_impl", "vivado_version", "counts")
+    return {k: r.get(k) for k in keys}
+
+
+def _timing_diff(a, b):
+    ta, tb = a.get("timing") or {}, b.get("timing") or {}
+    metrics = {k: _pair(ta.get(k), tb.get(k)) for k in ("wns", "tns", "whs", "ths")}
+    ca, cb = a.get("timing_clocks"), b.get("timing_clocks")
+    clocks = None
+    if ca and cb:
+        clocks = [{"name": n, **{k: _pair((ca.get(n) or {}).get(k), (cb.get(n) or {}).get(k)) for k in ("wns", "whs")}}
+                  for n in {**ca, **cb}]
+        clocks.sort(key=lambda c: (c["wns"]["b"] is None, c["wns"]["b"] if c["wns"]["b"] is not None else 0, c["name"]))
+    return {"final": {"a": bool(ta.get("final")), "b": bool(tb.get("final"))}, "metrics": metrics, "clocks": clocks}
+
+
+def _util_diff(a, b):
+    ua, ub = a.get("utilization") or {}, b.get("utilization") or {}
+    return {k: {"pct": _pair((ua.get(k) or {}).get("pct"), (ub.get(k) or {}).get("pct"), 1),
+                "used": _pair((ua.get(k) or {}).get("used"), (ub.get(k) or {}).get("used"), 0),
+                "available": (ub.get(k) or ua.get(k) or {}).get("available")}
+            for k in UTIL_ROWS if k in ua or k in ub}
+
+
+def _steps_diff(a, b):
+    sa, sb = a.get("steps") or {}, b.get("steps") or {}
+    return [{"step": s, **_pair(sa.get(s), sb.get(s), 1)} for s in [*sa, *(s for s in sb if s not in sa)]]
+
+
+def _messages_diff(a, b):
+    ma, mb = a.get("messages"), b.get("messages")
+    ca, cb = a.get("counts") or [None] * 4, b.get("counts") or [None] * 4
+    totals = {sev: _pair(ca[i], cb[i], 0) for i, sev in enumerate(("error", "critical", "warning", "info"))}
+    out = {"totals": totals, "available": {"a": ma is not None, "b": mb is not None},
+           "new": [], "removed": [], "changed": [], "counts": {"new": 0, "removed": 0, "changed": 0}}
+    if ma is None or mb is None:
+        return out
+
+    def entry(i, ra, rb):
+        src = rb or ra
+        return {"id": i, "severity": src["severity"], "text": src.get("text") or "", **_pair(
+            ra["count"] if ra else None, rb["count"] if rb else None, 0)}
+    rows = {"new": [entry(i, None, r) for i, r in mb.items() if i not in ma],
+            "removed": [entry(i, r, None) for i, r in ma.items() if i not in mb],
+            "changed": [entry(i, ma[i], r) for i, r in mb.items() if i in ma and ma[i]["count"] != r["count"]]}
+    for kind, items in rows.items():
+        if kind == "changed":
+            items.sort(key=lambda e: (-abs(e["delta"]), e["id"]))
+        else:
+            items.sort(key=lambda e: (-SEVERITY_RANK.get(e["severity"], 0), -(e["b"] if kind == "new" else e["a"]), e["id"]))
+        out["counts"][kind] = len(items)
+        out[kind] = items[:COMPARE_LIST_MAX]
+    return out
+
+
+def compare_records(a, b):
+    """Structured diff of two records of one firmware; `a` is the base (older), `b` the newer build."""
+    return {"fw_id": b.get("fw_id"), "firmware": b.get("firmware"), "a": _header(a), "b": _header(b),
+            "duration": _pair(a.get("duration_s"), b.get("duration_s"), 1),
+            "timing": _timing_diff(a, b), "utilization": _util_diff(a, b), "steps": _steps_diff(a, b),
+            "messages": _messages_diff(a, b)}

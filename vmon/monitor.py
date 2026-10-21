@@ -295,7 +295,10 @@ class Monitor:
         if self._history_seen.get(key) == sig:
             return
         self._history_seen[key] = sig
-        self.history.record(history_mod.build_record(fw, key[1], self.history_cfg))
+        source = self.sources.get(fw_id)
+        groups = source.raw_groups(None, None) if source else None
+        final = clocks_mod.final_stage(fw, clocks_mod.stages_of(fw, self.cfg), self.cfg)
+        self.history.record(history_mod.build_record(fw, key[1], self.history_cfg, groups, final and final["per_clock"]))
 
     def _record_clocks(self, fw_id, fw):
         """Final per-clock timing of a finished build (also catches up on builds not stored yet)."""

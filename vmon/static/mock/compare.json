@@ -1,0 +1,2763 @@
+{
+ "tp02|1759064000|1759388000": {
+  "fw_id": "tp02",
+  "firmware": "top",
+  "a": {
+   "build": "1759064000",
+   "started_at": 1759064000.0,
+   "ended_at": 1759074200.0,
+   "duration_s": 10200,
+   "result": "done",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Default",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    5,
+    180,
+    3011
+   ]
+  },
+  "b": {
+   "build": "1759388000",
+   "started_at": 1759388000.0,
+   "ended_at": 1759390400.0,
+   "duration_s": 2400,
+   "result": "stopped",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    2,
+    88,
+    1204
+   ]
+  },
+  "duration": {
+   "a": 10200,
+   "b": 2400,
+   "delta": -7800
+  },
+  "timing": {
+   "final": {
+    "a": false,
+    "b": false
+   },
+   "metrics": {
+    "wns": {
+     "a": null,
+     "b": null,
+     "delta": null
+    },
+    "tns": {
+     "a": null,
+     "b": null,
+     "delta": null
+    },
+    "whs": {
+     "a": null,
+     "b": null,
+     "delta": null
+    },
+    "ths": {
+     "a": null,
+     "b": null,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": null,
+     "b": 34.1,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 78566,
+     "delta": null
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": null,
+     "b": 21.8,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 100454,
+     "delta": null
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": null,
+     "b": 41.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 443,
+     "delta": null
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 0,
+     "delta": null
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": null,
+     "b": 57.9,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 2473,
+     "delta": null
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": null,
+     "b": 31.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 108,
+     "delta": null
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 4412.5,
+    "b": 1120.0,
+    "delta": -3292.5
+   },
+   {
+    "step": "opt_design",
+    "a": 453.9,
+    "b": 115.2,
+    "delta": -338.7
+   },
+   {
+    "step": "place_design",
+    "a": 1643.1,
+    "b": 417.1,
+    "delta": -1226.0
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 630.4,
+    "b": null,
+    "delta": null
+   },
+   {
+    "step": "route_design",
+    "a": 2723.2,
+    "b": null,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 5,
+     "b": 2,
+     "delta": -3
+    },
+    "warning": {
+     "a": 180,
+     "b": 88,
+     "delta": -92
+    },
+    "info": {
+     "a": 3011,
+     "b": 1204,
+     "delta": -1807
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [],
+   "removed": [
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": 22,
+     "b": null,
+     "delta": null
+    }
+   ],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 380,
+     "b": 120,
+     "delta": -260
+    },
+    {
+     "id": "Synth 8-6014",
+     "severity": "warning",
+     "text": "Unused sequential element ddc/fir_reg[3] was removed.",
+     "a": 90,
+     "b": 40,
+     "delta": -50
+    }
+   ],
+   "counts": {
+    "new": 0,
+    "removed": 1,
+    "changed": 2
+   }
+  }
+ },
+ "tp02|1759064000|1759640000": {
+  "fw_id": "tp02",
+  "firmware": "top",
+  "a": {
+   "build": "1759064000",
+   "started_at": 1759064000.0,
+   "ended_at": 1759074200.0,
+   "duration_s": 10200,
+   "result": "done",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Default",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    5,
+    180,
+    3011
+   ]
+  },
+  "b": {
+   "build": "1759640000",
+   "started_at": 1759640000.0,
+   "ended_at": 1759650800.0,
+   "duration_s": 10800,
+   "result": "met",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    6,
+    209,
+    3398
+   ]
+  },
+  "duration": {
+   "a": 10200,
+   "b": 10800,
+   "delta": 600
+  },
+  "timing": {
+   "final": {
+    "a": false,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": null,
+     "b": 0.142,
+     "delta": null
+    },
+    "tns": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "whs": {
+     "a": null,
+     "b": 0.009,
+     "delta": null
+    },
+    "ths": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": null,
+     "b": 34.6,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 79718,
+     "delta": null
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": null,
+     "b": 22.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 101376,
+     "delta": null
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": null,
+     "b": 41.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 443,
+     "delta": null
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 0,
+     "delta": null
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": null,
+     "b": 58.2,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 2486,
+     "delta": null
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": null,
+     "b": 31.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 108,
+     "delta": null
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 4412.5,
+    "b": 4536.0,
+    "delta": 123.5
+   },
+   {
+    "step": "opt_design",
+    "a": 453.9,
+    "b": 466.6,
+    "delta": 12.7
+   },
+   {
+    "step": "place_design",
+    "a": 1643.1,
+    "b": 1689.1,
+    "delta": 46.0
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 630.4,
+    "b": 648.0,
+    "delta": 17.6
+   },
+   {
+    "step": "route_design",
+    "a": 2723.2,
+    "b": 2799.4,
+    "delta": 76.2
+   },
+   {
+    "step": "write_bitstream",
+    "a": null,
+    "b": 695.5,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 5,
+     "b": 6,
+     "delta": 1
+    },
+    "warning": {
+     "a": 180,
+     "b": 209,
+     "delta": 29
+    },
+    "info": {
+     "a": 3011,
+     "b": 3398,
+     "delta": 387
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "Timing 38-316",
+     "severity": "critical",
+     "text": "Clock period '4.000' specified during out-of-context synthesis of instance 'ps' does not match the actual clock period.",
+     "a": null,
+     "b": 1,
+     "delta": null
+    },
+    {
+     "id": "Vivado 12-4739",
+     "severity": "warning",
+     "text": "set_false_path:No valid object(s) found for '-to [get_cells -hier adc_fifo_reg]'.",
+     "a": null,
+     "b": 3,
+     "delta": null
+    },
+    {
+     "id": "Route 35-328",
+     "severity": "warning",
+     "text": "Router estimated timing not met; the design may need more physical optimisation.",
+     "a": null,
+     "b": 2,
+     "delta": null
+    }
+   ],
+   "removed": [],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 380,
+     "b": 398,
+     "delta": 18
+    },
+    {
+     "id": "Synth 8-6014",
+     "severity": "warning",
+     "text": "Unused sequential element ddc/fir_reg[3] was removed.",
+     "a": 90,
+     "b": 96,
+     "delta": 6
+    },
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": 22,
+     "b": 24,
+     "delta": 2
+    }
+   ],
+   "counts": {
+    "new": 3,
+    "removed": 0,
+    "changed": 3
+   }
+  }
+ },
+ "tp02|1759064000|1759982000": {
+  "fw_id": "tp02",
+  "firmware": "top",
+  "a": {
+   "build": "1759064000",
+   "started_at": 1759064000.0,
+   "ended_at": 1759074200.0,
+   "duration_s": 10200,
+   "result": "done",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Default",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    5,
+    180,
+    3011
+   ]
+  },
+  "b": {
+   "build": "1759982000",
+   "started_at": 1759982000.0,
+   "ended_at": 1759994060.0,
+   "duration_s": 12060,
+   "result": "met",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    6,
+    212,
+    3410
+   ]
+  },
+  "duration": {
+   "a": 10200,
+   "b": 12060,
+   "delta": 1860
+  },
+  "timing": {
+   "final": {
+    "a": false,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": null,
+     "b": 0.214,
+     "delta": null
+    },
+    "tns": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "whs": {
+     "a": null,
+     "b": 0.011,
+     "delta": null
+    },
+    "ths": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": null,
+     "b": 34.8,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 80179,
+     "delta": null
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": null,
+     "b": 22.1,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 101837,
+     "delta": null
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": null,
+     "b": 41.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 443,
+     "delta": null
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 0,
+     "delta": null
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": null,
+     "b": 58.2,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 2486,
+     "delta": null
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": null,
+     "b": 31.0,
+     "delta": null
+    },
+    "used": {
+     "a": null,
+     "b": 108,
+     "delta": null
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 4412.5,
+    "b": 4913.2,
+    "delta": 500.7
+   },
+   {
+    "step": "opt_design",
+    "a": 453.9,
+    "b": 505.4,
+    "delta": 51.5
+   },
+   {
+    "step": "place_design",
+    "a": 1643.1,
+    "b": 1829.6,
+    "delta": 186.5
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 630.4,
+    "b": 701.9,
+    "delta": 71.5
+   },
+   {
+    "step": "route_design",
+    "a": 2723.2,
+    "b": 3032.2,
+    "delta": 309.0
+   },
+   {
+    "step": "write_bitstream",
+    "a": null,
+    "b": 753.4,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 5,
+     "b": 6,
+     "delta": 1
+    },
+    "warning": {
+     "a": 180,
+     "b": 212,
+     "delta": 32
+    },
+    "info": {
+     "a": 3011,
+     "b": 3410,
+     "delta": 399
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "DRC REQP-1858",
+     "severity": "warning",
+     "text": "RAMB36E2 has unfavorable timing with DOA_REG=0 and no output register.",
+     "a": null,
+     "b": 6,
+     "delta": null
+    },
+    {
+     "id": "Vivado 12-4739",
+     "severity": "warning",
+     "text": "set_false_path:No valid object(s) found for '-to [get_cells -hier adc_fifo_reg]'.",
+     "a": null,
+     "b": 3,
+     "delta": null
+    }
+   ],
+   "removed": [],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 380,
+     "b": 412,
+     "delta": 32
+    },
+    {
+     "id": "Synth 8-6014",
+     "severity": "warning",
+     "text": "Unused sequential element ddc/fir_reg[3] was removed.",
+     "a": 90,
+     "b": 96,
+     "delta": 6
+    },
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": 22,
+     "b": 24,
+     "delta": 2
+    }
+   ],
+   "counts": {
+    "new": 2,
+    "removed": 0,
+    "changed": 3
+   }
+  }
+ },
+ "tp02|1759388000|1759640000": {
+  "fw_id": "tp02",
+  "firmware": "top",
+  "a": {
+   "build": "1759388000",
+   "started_at": 1759388000.0,
+   "ended_at": 1759390400.0,
+   "duration_s": 2400,
+   "result": "stopped",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    2,
+    88,
+    1204
+   ]
+  },
+  "b": {
+   "build": "1759640000",
+   "started_at": 1759640000.0,
+   "ended_at": 1759650800.0,
+   "duration_s": 10800,
+   "result": "met",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    6,
+    209,
+    3398
+   ]
+  },
+  "duration": {
+   "a": 2400,
+   "b": 10800,
+   "delta": 8400
+  },
+  "timing": {
+   "final": {
+    "a": false,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": null,
+     "b": 0.142,
+     "delta": null
+    },
+    "tns": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "whs": {
+     "a": null,
+     "b": 0.009,
+     "delta": null
+    },
+    "ths": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 34.1,
+     "b": 34.6,
+     "delta": 0.5
+    },
+    "used": {
+     "a": 78566,
+     "b": 79718,
+     "delta": 1152
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 21.8,
+     "b": 22.0,
+     "delta": 0.2
+    },
+    "used": {
+     "a": 100454,
+     "b": 101376,
+     "delta": 922
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 41.0,
+     "b": 41.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 443,
+     "b": 443,
+     "delta": 0
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 57.9,
+     "b": 58.2,
+     "delta": 0.3
+    },
+    "used": {
+     "a": 2473,
+     "b": 2486,
+     "delta": 13
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 31.0,
+     "b": 31.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 108,
+     "b": 108,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 1120.0,
+    "b": 4536.0,
+    "delta": 3416.0
+   },
+   {
+    "step": "opt_design",
+    "a": 115.2,
+    "b": 466.6,
+    "delta": 351.4
+   },
+   {
+    "step": "place_design",
+    "a": 417.1,
+    "b": 1689.1,
+    "delta": 1272.0
+   },
+   {
+    "step": "phys_opt_design",
+    "a": null,
+    "b": 648.0,
+    "delta": null
+   },
+   {
+    "step": "route_design",
+    "a": null,
+    "b": 2799.4,
+    "delta": null
+   },
+   {
+    "step": "write_bitstream",
+    "a": null,
+    "b": 695.5,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 2,
+     "b": 6,
+     "delta": 4
+    },
+    "warning": {
+     "a": 88,
+     "b": 209,
+     "delta": 121
+    },
+    "info": {
+     "a": 1204,
+     "b": 3398,
+     "delta": 2194
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "Timing 38-316",
+     "severity": "critical",
+     "text": "Clock period '4.000' specified during out-of-context synthesis of instance 'ps' does not match the actual clock period.",
+     "a": null,
+     "b": 1,
+     "delta": null
+    },
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": null,
+     "b": 24,
+     "delta": null
+    },
+    {
+     "id": "Vivado 12-4739",
+     "severity": "warning",
+     "text": "set_false_path:No valid object(s) found for '-to [get_cells -hier adc_fifo_reg]'.",
+     "a": null,
+     "b": 3,
+     "delta": null
+    },
+    {
+     "id": "Route 35-328",
+     "severity": "warning",
+     "text": "Router estimated timing not met; the design may need more physical optimisation.",
+     "a": null,
+     "b": 2,
+     "delta": null
+    }
+   ],
+   "removed": [],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 120,
+     "b": 398,
+     "delta": 278
+    },
+    {
+     "id": "Synth 8-6014",
+     "severity": "warning",
+     "text": "Unused sequential element ddc/fir_reg[3] was removed.",
+     "a": 40,
+     "b": 96,
+     "delta": 56
+    }
+   ],
+   "counts": {
+    "new": 4,
+    "removed": 0,
+    "changed": 2
+   }
+  }
+ },
+ "tp02|1759388000|1759982000": {
+  "fw_id": "tp02",
+  "firmware": "top",
+  "a": {
+   "build": "1759388000",
+   "started_at": 1759388000.0,
+   "ended_at": 1759390400.0,
+   "duration_s": 2400,
+   "result": "stopped",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    2,
+    88,
+    1204
+   ]
+  },
+  "b": {
+   "build": "1759982000",
+   "started_at": 1759982000.0,
+   "ended_at": 1759994060.0,
+   "duration_s": 12060,
+   "result": "met",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    6,
+    212,
+    3410
+   ]
+  },
+  "duration": {
+   "a": 2400,
+   "b": 12060,
+   "delta": 9660
+  },
+  "timing": {
+   "final": {
+    "a": false,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": null,
+     "b": 0.214,
+     "delta": null
+    },
+    "tns": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    },
+    "whs": {
+     "a": null,
+     "b": 0.011,
+     "delta": null
+    },
+    "ths": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 34.1,
+     "b": 34.8,
+     "delta": 0.7
+    },
+    "used": {
+     "a": 78566,
+     "b": 80179,
+     "delta": 1613
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 21.8,
+     "b": 22.1,
+     "delta": 0.3
+    },
+    "used": {
+     "a": 100454,
+     "b": 101837,
+     "delta": 1383
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 41.0,
+     "b": 41.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 443,
+     "b": 443,
+     "delta": 0
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 57.9,
+     "b": 58.2,
+     "delta": 0.3
+    },
+    "used": {
+     "a": 2473,
+     "b": 2486,
+     "delta": 13
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 31.0,
+     "b": 31.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 108,
+     "b": 108,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 1120.0,
+    "b": 4913.2,
+    "delta": 3793.2
+   },
+   {
+    "step": "opt_design",
+    "a": 115.2,
+    "b": 505.4,
+    "delta": 390.2
+   },
+   {
+    "step": "place_design",
+    "a": 417.1,
+    "b": 1829.6,
+    "delta": 1412.5
+   },
+   {
+    "step": "phys_opt_design",
+    "a": null,
+    "b": 701.9,
+    "delta": null
+   },
+   {
+    "step": "route_design",
+    "a": null,
+    "b": 3032.2,
+    "delta": null
+   },
+   {
+    "step": "write_bitstream",
+    "a": null,
+    "b": 753.4,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 2,
+     "b": 6,
+     "delta": 4
+    },
+    "warning": {
+     "a": 88,
+     "b": 212,
+     "delta": 124
+    },
+    "info": {
+     "a": 1204,
+     "b": 3410,
+     "delta": 2206
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": null,
+     "b": 24,
+     "delta": null
+    },
+    {
+     "id": "DRC REQP-1858",
+     "severity": "warning",
+     "text": "RAMB36E2 has unfavorable timing with DOA_REG=0 and no output register.",
+     "a": null,
+     "b": 6,
+     "delta": null
+    },
+    {
+     "id": "Vivado 12-4739",
+     "severity": "warning",
+     "text": "set_false_path:No valid object(s) found for '-to [get_cells -hier adc_fifo_reg]'.",
+     "a": null,
+     "b": 3,
+     "delta": null
+    }
+   ],
+   "removed": [],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 120,
+     "b": 412,
+     "delta": 292
+    },
+    {
+     "id": "Synth 8-6014",
+     "severity": "warning",
+     "text": "Unused sequential element ddc/fir_reg[3] was removed.",
+     "a": 40,
+     "b": 96,
+     "delta": 56
+    }
+   ],
+   "counts": {
+    "new": 3,
+    "removed": 0,
+    "changed": 2
+   }
+  }
+ },
+ "tp02|1759640000|1759982000": {
+  "fw_id": "tp02",
+  "firmware": "top",
+  "a": {
+   "build": "1759640000",
+   "started_at": 1759640000.0,
+   "ended_at": 1759650800.0,
+   "duration_s": 10800,
+   "result": "met",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    6,
+    209,
+    3398
+   ]
+  },
+  "b": {
+   "build": "1759982000",
+   "started_at": 1759982000.0,
+   "ended_at": 1759994060.0,
+   "duration_s": 12060,
+   "result": "met",
+   "part": "xczu48dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    6,
+    212,
+    3410
+   ]
+  },
+  "duration": {
+   "a": 10800,
+   "b": 12060,
+   "delta": 1260
+  },
+  "timing": {
+   "final": {
+    "a": true,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": 0.142,
+     "b": 0.214,
+     "delta": 0.072
+    },
+    "tns": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "whs": {
+     "a": 0.009,
+     "b": 0.011,
+     "delta": 0.002
+    },
+    "ths": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    }
+   },
+   "clocks": [
+    {
+     "name": "clk_pl",
+     "wns": {
+      "a": 0.142,
+      "b": 0.214,
+      "delta": 0.072
+     },
+     "whs": {
+      "a": 0.009,
+      "b": 0.011,
+      "delta": 0.002
+     }
+    },
+    {
+     "name": "clk_adc",
+     "wns": {
+      "a": 0.492,
+      "b": 0.564,
+      "delta": 0.072
+     },
+     "whs": {
+      "a": 0.009,
+      "b": 0.011,
+      "delta": 0.002
+     }
+    },
+    {
+     "name": "clk_dac",
+     "wns": {
+      "a": 0.752,
+      "b": 0.824,
+      "delta": 0.072
+     },
+     "whs": {
+      "a": 0.029,
+      "b": 0.031,
+      "delta": 0.002
+     }
+    }
+   ]
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 34.6,
+     "b": 34.8,
+     "delta": 0.2
+    },
+    "used": {
+     "a": 79718,
+     "b": 80179,
+     "delta": 461
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 22.0,
+     "b": 22.1,
+     "delta": 0.1
+    },
+    "used": {
+     "a": 101376,
+     "b": 101837,
+     "delta": 461
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 41.0,
+     "b": 41.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 443,
+     "b": 443,
+     "delta": 0
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 58.2,
+     "b": 58.2,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 2486,
+     "b": 2486,
+     "delta": 0
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 31.0,
+     "b": 31.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 108,
+     "b": 108,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 4536.0,
+    "b": 4913.2,
+    "delta": 377.2
+   },
+   {
+    "step": "opt_design",
+    "a": 466.6,
+    "b": 505.4,
+    "delta": 38.8
+   },
+   {
+    "step": "place_design",
+    "a": 1689.1,
+    "b": 1829.6,
+    "delta": 140.5
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 648.0,
+    "b": 701.9,
+    "delta": 53.9
+   },
+   {
+    "step": "route_design",
+    "a": 2799.4,
+    "b": 3032.2,
+    "delta": 232.8
+   },
+   {
+    "step": "write_bitstream",
+    "a": 695.5,
+    "b": 753.4,
+    "delta": 57.9
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 6,
+     "b": 6,
+     "delta": 0
+    },
+    "warning": {
+     "a": 209,
+     "b": 212,
+     "delta": 3
+    },
+    "info": {
+     "a": 3398,
+     "b": 3410,
+     "delta": 12
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "DRC REQP-1858",
+     "severity": "warning",
+     "text": "RAMB36E2 has unfavorable timing with DOA_REG=0 and no output register.",
+     "a": null,
+     "b": 6,
+     "delta": null
+    }
+   ],
+   "removed": [
+    {
+     "id": "Timing 38-316",
+     "severity": "critical",
+     "text": "Clock period '4.000' specified during out-of-context synthesis of instance 'ps' does not match the actual clock period.",
+     "a": 1,
+     "b": null,
+     "delta": null
+    },
+    {
+     "id": "Route 35-328",
+     "severity": "warning",
+     "text": "Router estimated timing not met; the design may need more physical optimisation.",
+     "a": 2,
+     "b": null,
+     "delta": null
+    }
+   ],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 398,
+     "b": 412,
+     "delta": 14
+    }
+   ],
+   "counts": {
+    "new": 1,
+    "removed": 2,
+    "changed": 1
+   }
+  }
+ },
+ "lk01|1759280000|1759820000": {
+  "fw_id": "lk01",
+  "firmware": "lockin",
+  "a": {
+   "build": "1759280000",
+   "started_at": 1759280000.0,
+   "ended_at": 1759287620.0,
+   "duration_s": 7620,
+   "result": "met",
+   "part": "xczu28dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_NetDelay_high",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    10,
+    322,
+    5002
+   ]
+  },
+  "b": {
+   "build": "1759820000",
+   "started_at": 1759820000.0,
+   "ended_at": 1759826000.0,
+   "duration_s": 6000,
+   "result": "failed",
+   "part": "xczu28dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_NetDelay_high",
+   "vivado_version": "2024.2",
+   "counts": [
+    1,
+    9,
+    301,
+    4020
+   ]
+  },
+  "duration": {
+   "a": 7620,
+   "b": 6000,
+   "delta": -1620
+  },
+  "timing": {
+   "final": {
+    "a": true,
+    "b": false
+   },
+   "metrics": {
+    "wns": {
+     "a": 0.031,
+     "b": null,
+     "delta": null
+    },
+    "tns": {
+     "a": 0.0,
+     "b": null,
+     "delta": null
+    },
+    "whs": {
+     "a": 0.017,
+     "b": null,
+     "delta": null
+    },
+    "ths": {
+     "a": 0.0,
+     "b": null,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 17.2,
+     "b": 17.5,
+     "delta": 0.3
+    },
+    "used": {
+     "a": 39629,
+     "b": 40320,
+     "delta": 691
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 11.8,
+     "b": 11.9,
+     "delta": 0.1
+    },
+    "used": {
+     "a": 54374,
+     "b": 54835,
+     "delta": 461
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 45.0,
+     "b": 46.0,
+     "delta": 1.0
+    },
+    "used": {
+     "a": 486,
+     "b": 497,
+     "delta": 11
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 85.4,
+     "b": 86.9,
+     "delta": 1.5
+    },
+    "used": {
+     "a": 3648,
+     "b": 3712,
+     "delta": 64
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 93.0,
+     "b": 93.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 323,
+     "b": 323,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 3040.4,
+    "b": 2800.0,
+    "delta": -240.4
+   },
+   {
+    "step": "opt_design",
+    "a": 312.7,
+    "b": 288.0,
+    "delta": -24.7
+   },
+   {
+    "step": "place_design",
+    "a": 1132.2,
+    "b": null,
+    "delta": null
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 434.3,
+    "b": null,
+    "delta": null
+   },
+   {
+    "step": "route_design",
+    "a": 1876.3,
+    "b": null,
+    "delta": null
+   },
+   {
+    "step": "write_bitstream",
+    "a": 466.2,
+    "b": null,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 1,
+     "delta": 1
+    },
+    "critical": {
+     "a": 10,
+     "b": 9,
+     "delta": -1
+    },
+    "warning": {
+     "a": 322,
+     "b": 301,
+     "delta": -21
+    },
+    "info": {
+     "a": 5002,
+     "b": 4020,
+     "delta": -982
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "Common 17-69",
+     "severity": "error",
+     "text": "Command failed: Run 'impl_1' failed.",
+     "a": null,
+     "b": 1,
+     "delta": null
+    },
+    {
+     "id": "Synth 8-327",
+     "severity": "error",
+     "text": "inferring latch for variable 'q_reg'",
+     "a": null,
+     "b": 1,
+     "delta": null
+    }
+   ],
+   "removed": [
+    {
+     "id": "Place 30-568",
+     "severity": "critical",
+     "text": "A LUT 'x/lut' is driving clock pin of 3 registers.",
+     "a": 1,
+     "b": null,
+     "delta": null
+    },
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": 11,
+     "b": null,
+     "delta": null
+    }
+   ],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 522,
+     "b": 505,
+     "delta": -17
+    }
+   ],
+   "counts": {
+    "new": 2,
+    "removed": 2,
+    "changed": 1
+   }
+  }
+ },
+ "lk01|1759280000|1759928000": {
+  "fw_id": "lk01",
+  "firmware": "lockin",
+  "a": {
+   "build": "1759280000",
+   "started_at": 1759280000.0,
+   "ended_at": 1759287620.0,
+   "duration_s": 7620,
+   "result": "met",
+   "part": "xczu28dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_NetDelay_high",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    10,
+    322,
+    5002
+   ]
+  },
+  "b": {
+   "build": "1759928000",
+   "started_at": 1759928000.0,
+   "ended_at": 1759935800.0,
+   "duration_s": 7800,
+   "result": "timing_not_met",
+   "part": "xczu28dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_NetDelay_high",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    11,
+    340,
+    5120
+   ]
+  },
+  "duration": {
+   "a": 7620,
+   "b": 7800,
+   "delta": 180
+  },
+  "timing": {
+   "final": {
+    "a": true,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": 0.031,
+     "b": -0.387,
+     "delta": -0.418
+    },
+    "tns": {
+     "a": 0.0,
+     "b": -212.4,
+     "delta": -212.4
+    },
+    "whs": {
+     "a": 0.017,
+     "b": 0.021,
+     "delta": 0.004
+    },
+    "ths": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    }
+   },
+   "clocks": [
+    {
+     "name": "clk_pl",
+     "wns": {
+      "a": 0.031,
+      "b": -0.387,
+      "delta": -0.418
+     },
+     "whs": {
+      "a": 0.017,
+      "b": 0.021,
+      "delta": 0.004
+     }
+    },
+    {
+     "name": "clk_adc",
+     "wns": {
+      "a": 0.381,
+      "b": -0.037,
+      "delta": -0.418
+     },
+     "whs": {
+      "a": 0.017,
+      "b": 0.021,
+      "delta": 0.004
+     }
+    },
+    {
+     "name": "clk_dac",
+     "wns": {
+      "a": 0.641,
+      "b": 0.223,
+      "delta": -0.418
+     },
+     "whs": {
+      "a": 0.037,
+      "b": 0.041,
+      "delta": 0.004
+     }
+    }
+   ]
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 17.2,
+     "b": 17.9,
+     "delta": 0.7
+    },
+    "used": {
+     "a": 39629,
+     "b": 41242,
+     "delta": 1613
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 11.8,
+     "b": 12.1,
+     "delta": 0.3
+    },
+    "used": {
+     "a": 54374,
+     "b": 55757,
+     "delta": 1383
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 45.0,
+     "b": 46.0,
+     "delta": 1.0
+    },
+    "used": {
+     "a": 486,
+     "b": 497,
+     "delta": 11
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 85.4,
+     "b": 87.4,
+     "delta": 2.0
+    },
+    "used": {
+     "a": 3648,
+     "b": 3734,
+     "delta": 86
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 93.0,
+     "b": 93.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 323,
+     "b": 323,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 3040.4,
+    "b": 3439.8,
+    "delta": 399.4
+   },
+   {
+    "step": "opt_design",
+    "a": 312.7,
+    "b": 353.8,
+    "delta": 41.1
+   },
+   {
+    "step": "place_design",
+    "a": 1132.2,
+    "b": 1280.9,
+    "delta": 148.7
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 434.3,
+    "b": 491.4,
+    "delta": 57.1
+   },
+   {
+    "step": "route_design",
+    "a": 1876.3,
+    "b": 2122.8,
+    "delta": 246.5
+   },
+   {
+    "step": "write_bitstream",
+    "a": 466.2,
+    "b": 527.4,
+    "delta": 61.2
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 10,
+     "b": 11,
+     "delta": 1
+    },
+    "warning": {
+     "a": 322,
+     "b": 340,
+     "delta": 18
+    },
+    "info": {
+     "a": 5002,
+     "b": 5120,
+     "delta": 118
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "Constraints 18-4434",
+     "severity": "critical",
+     "text": "Global Clock Buffer is missing on a clock net driving the IO.",
+     "a": null,
+     "b": 1,
+     "delta": null
+    },
+    {
+     "id": "Route 35-328",
+     "severity": "warning",
+     "text": "Router estimated timing not met; the design may need more physical optimisation.",
+     "a": null,
+     "b": 5,
+     "delta": null
+    }
+   ],
+   "removed": [],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 522,
+     "b": 540,
+     "delta": 18
+    },
+    {
+     "id": "Place 30-568",
+     "severity": "critical",
+     "text": "A LUT 'x/lut' is driving clock pin of 3 registers.",
+     "a": 1,
+     "b": 2,
+     "delta": 1
+    }
+   ],
+   "counts": {
+    "new": 2,
+    "removed": 0,
+    "changed": 2
+   }
+  }
+ },
+ "lk01|1759820000|1759928000": {
+  "fw_id": "lk01",
+  "firmware": "lockin",
+  "a": {
+   "build": "1759820000",
+   "started_at": 1759820000.0,
+   "ended_at": 1759826000.0,
+   "duration_s": 6000,
+   "result": "failed",
+   "part": "xczu28dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_NetDelay_high",
+   "vivado_version": "2024.2",
+   "counts": [
+    1,
+    9,
+    301,
+    4020
+   ]
+  },
+  "b": {
+   "build": "1759928000",
+   "started_at": 1759928000.0,
+   "ended_at": 1759935800.0,
+   "duration_s": 7800,
+   "result": "timing_not_met",
+   "part": "xczu28dr-ffvg1517-2-e",
+   "strategy_impl": "Performance_NetDelay_high",
+   "vivado_version": "2024.2",
+   "counts": [
+    0,
+    11,
+    340,
+    5120
+   ]
+  },
+  "duration": {
+   "a": 6000,
+   "b": 7800,
+   "delta": 1800
+  },
+  "timing": {
+   "final": {
+    "a": false,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": null,
+     "b": -0.387,
+     "delta": null
+    },
+    "tns": {
+     "a": null,
+     "b": -212.4,
+     "delta": null
+    },
+    "whs": {
+     "a": null,
+     "b": 0.021,
+     "delta": null
+    },
+    "ths": {
+     "a": null,
+     "b": 0.0,
+     "delta": null
+    }
+   },
+   "clocks": null
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 17.5,
+     "b": 17.9,
+     "delta": 0.4
+    },
+    "used": {
+     "a": 40320,
+     "b": 41242,
+     "delta": 922
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 11.9,
+     "b": 12.1,
+     "delta": 0.2
+    },
+    "used": {
+     "a": 54835,
+     "b": 55757,
+     "delta": 922
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 46.0,
+     "b": 46.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 497,
+     "b": 497,
+     "delta": 0
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 86.9,
+     "b": 87.4,
+     "delta": 0.5
+    },
+    "used": {
+     "a": 3712,
+     "b": 3734,
+     "delta": 22
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 93.0,
+     "b": 93.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 323,
+     "b": 323,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 2800.0,
+    "b": 3439.8,
+    "delta": 639.8
+   },
+   {
+    "step": "opt_design",
+    "a": 288.0,
+    "b": 353.8,
+    "delta": 65.8
+   },
+   {
+    "step": "place_design",
+    "a": null,
+    "b": 1280.9,
+    "delta": null
+   },
+   {
+    "step": "phys_opt_design",
+    "a": null,
+    "b": 491.4,
+    "delta": null
+   },
+   {
+    "step": "route_design",
+    "a": null,
+    "b": 2122.8,
+    "delta": null
+   },
+   {
+    "step": "write_bitstream",
+    "a": null,
+    "b": 527.4,
+    "delta": null
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 1,
+     "b": 0,
+     "delta": -1
+    },
+    "critical": {
+     "a": 9,
+     "b": 11,
+     "delta": 2
+    },
+    "warning": {
+     "a": 301,
+     "b": 340,
+     "delta": 39
+    },
+    "info": {
+     "a": 4020,
+     "b": 5120,
+     "delta": 1100
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [
+    {
+     "id": "Place 30-568",
+     "severity": "critical",
+     "text": "A LUT 'x/lut' is driving clock pin of 3 registers.",
+     "a": null,
+     "b": 2,
+     "delta": null
+    },
+    {
+     "id": "Constraints 18-4434",
+     "severity": "critical",
+     "text": "Global Clock Buffer is missing on a clock net driving the IO.",
+     "a": null,
+     "b": 1,
+     "delta": null
+    },
+    {
+     "id": "DRC DPIP-1",
+     "severity": "warning",
+     "text": "Input pipelining: DSP48E2 uses the A input without a pipeline register.",
+     "a": null,
+     "b": 11,
+     "delta": null
+    },
+    {
+     "id": "Route 35-328",
+     "severity": "warning",
+     "text": "Router estimated timing not met; the design may need more physical optimisation.",
+     "a": null,
+     "b": 5,
+     "delta": null
+    }
+   ],
+   "removed": [
+    {
+     "id": "Common 17-69",
+     "severity": "error",
+     "text": "Command failed: Run 'impl_1' failed.",
+     "a": 1,
+     "b": null,
+     "delta": null
+    },
+    {
+     "id": "Synth 8-327",
+     "severity": "error",
+     "text": "inferring latch for variable 'q_reg'",
+     "a": 1,
+     "b": null,
+     "delta": null
+    }
+   ],
+   "changed": [
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 505,
+     "b": 540,
+     "delta": 35
+    }
+   ],
+   "counts": {
+    "new": 4,
+    "removed": 2,
+    "changed": 1
+   }
+  }
+ },
+ "rd06|1759730000|1759906400": {
+  "fw_id": "rd06",
+  "firmware": "radar_dsp",
+  "a": {
+   "build": "1759730000",
+   "started_at": 1759730000.0,
+   "ended_at": 1759747400.0,
+   "duration_s": 17400,
+   "result": "timing_not_met",
+   "part": "xcvu9p-flgb2104-2-i",
+   "strategy_impl": "Performance_ExtraTimingOpt",
+   "vivado_version": "2023.2",
+   "counts": [
+    0,
+    5,
+    98,
+    2701
+   ]
+  },
+  "b": {
+   "build": "1759906400",
+   "started_at": 1759906400.0,
+   "ended_at": 1759924700.0,
+   "duration_s": 18300,
+   "result": "met",
+   "part": "xcvu9p-flgb2104-2-i",
+   "strategy_impl": "Performance_ExtraTimingOpt",
+   "vivado_version": "2023.2",
+   "counts": [
+    0,
+    4,
+    95,
+    2680
+   ]
+  },
+  "duration": {
+   "a": 17400,
+   "b": 18300,
+   "delta": 900
+  },
+  "timing": {
+   "final": {
+    "a": true,
+    "b": true
+   },
+   "metrics": {
+    "wns": {
+     "a": -1.108,
+     "b": 0.062,
+     "delta": 1.17
+    },
+    "tns": {
+     "a": -1840.2,
+     "b": 0.0,
+     "delta": 1840.2
+    },
+    "whs": {
+     "a": -0.092,
+     "b": 0.034,
+     "delta": 0.126
+    },
+    "ths": {
+     "a": -14.3,
+     "b": 0.0,
+     "delta": 14.3
+    }
+   },
+   "clocks": [
+    {
+     "name": "clk_pl",
+     "wns": {
+      "a": -1.108,
+      "b": 0.062,
+      "delta": 1.17
+     },
+     "whs": {
+      "a": -0.092,
+      "b": 0.034,
+      "delta": 0.126
+     }
+    },
+    {
+     "name": "clk_adc",
+     "wns": {
+      "a": -0.758,
+      "b": 0.412,
+      "delta": 1.17
+     },
+     "whs": {
+      "a": -0.092,
+      "b": 0.034,
+      "delta": 0.126
+     }
+    },
+    {
+     "name": "clk_dac",
+     "wns": {
+      "a": -0.498,
+      "b": 0.672,
+      "delta": 1.17
+     },
+     "whs": {
+      "a": -0.072,
+      "b": 0.054,
+      "delta": 0.126
+     }
+    }
+   ]
+  },
+  "utilization": {
+   "LUT": {
+    "pct": {
+     "a": 63.9,
+     "b": 64.2,
+     "delta": 0.3
+    },
+    "used": {
+     "a": 147226,
+     "b": 147917,
+     "delta": 691
+    },
+    "available": 230400
+   },
+   "FF": {
+    "pct": {
+     "a": 48.5,
+     "b": 48.7,
+     "delta": 0.2
+    },
+    "used": {
+     "a": 223488,
+     "b": 224410,
+     "delta": 922
+    },
+    "available": 460800
+   },
+   "BRAM": {
+    "pct": {
+     "a": 72.5,
+     "b": 72.5,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 783,
+     "b": 783,
+     "delta": 0
+    },
+    "available": 1080
+   },
+   "URAM": {
+    "pct": {
+     "a": 0.0,
+     "b": 0.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "available": 80
+   },
+   "DSP": {
+    "pct": {
+     "a": 81.3,
+     "b": 81.3,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 3473,
+     "b": 3473,
+     "delta": 0
+    },
+    "available": 4272
+   },
+   "IO": {
+    "pct": {
+     "a": 22.0,
+     "b": 22.0,
+     "delta": 0.0
+    },
+    "used": {
+     "a": 76,
+     "b": 76,
+     "delta": 0
+    },
+    "available": 347
+   }
+  },
+  "steps": [
+   {
+    "step": "synth_design",
+    "a": 7600.3,
+    "b": 7686.0,
+    "delta": 85.7
+   },
+   {
+    "step": "opt_design",
+    "a": 781.7,
+    "b": 790.6,
+    "delta": 8.9
+   },
+   {
+    "step": "place_design",
+    "a": 2830.2,
+    "b": 2862.1,
+    "delta": 31.9
+   },
+   {
+    "step": "phys_opt_design",
+    "a": 1085.8,
+    "b": 1098.0,
+    "delta": 12.2
+   },
+   {
+    "step": "route_design",
+    "a": 4690.5,
+    "b": 4743.4,
+    "delta": 52.9
+   },
+   {
+    "step": "write_bitstream",
+    "a": 1165.4,
+    "b": 1178.5,
+    "delta": 13.1
+   }
+  ],
+  "messages": {
+   "totals": {
+    "error": {
+     "a": 0,
+     "b": 0,
+     "delta": 0
+    },
+    "critical": {
+     "a": 5,
+     "b": 4,
+     "delta": -1
+    },
+    "warning": {
+     "a": 98,
+     "b": 95,
+     "delta": -3
+    },
+    "info": {
+     "a": 2701,
+     "b": 2680,
+     "delta": -21
+    }
+   },
+   "available": {
+    "a": true,
+    "b": true
+   },
+   "new": [],
+   "removed": [
+    {
+     "id": "Place 30-568",
+     "severity": "critical",
+     "text": "A LUT 'x/lut' is driving clock pin of 3 registers.",
+     "a": 2,
+     "b": null,
+     "delta": null
+    }
+   ],
+   "changed": [
+    {
+     "id": "Route 35-328",
+     "severity": "warning",
+     "text": "Router estimated timing not met; the design may need more physical optimisation.",
+     "a": 7,
+     "b": 1,
+     "delta": -6
+    },
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "text": "Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.",
+     "a": 205,
+     "b": 210,
+     "delta": 5
+    }
+   ],
+   "counts": {
+    "new": 0,
+    "removed": 1,
+    "changed": 2
+   }
+  }
+ }
+}
