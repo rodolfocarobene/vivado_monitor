@@ -93,6 +93,8 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 | `GET /api/browse?path=` | Read-only directory listing for the explorer (skips `/proc`, `/sys`, `/dev`). |
 | `POST /api/watch` `{"path": ...}` | Add a `.runs` dir, `.xpr` or log to watch. |
 | `POST /api/msgrule` `{"id": ..., "priority": ...}` | Set or clear a message priority override. |
+| `GET /api/msgrules/export?by=` | Your message rules as a `vmon-message-rules` v1 file (attachment `vmon_message_rules_<YYYY-MM-DD>.json`); `exported_by` is empty unless `by` is given. |
+| `POST /api/msgrules/import` `{"mode": "merge"\|"replace", "dry_run": true, "keep_mine": false, "data": <file>}` | Preview (default) or apply a rules file; returns `{added, changed, removed, unchanged, kept_mine, invalid, applied}`. 400 bad file or options, 413 over 2 MB, 422 when applying a file with invalid entries (nothing is imported). Format in [`SPEC.md`](../SPEC.md). |
 | `POST /api/settings` `{"interval": 0.5..60}` | Change the poll interval. |
 | `DELETE /api/firmware?fw=` | Forget a finished firmware (nothing is deleted on disk). |
 
@@ -108,7 +110,7 @@ On each build server a normal vmon runs (bound to `127.0.0.1`); its port is forw
 - **Merge**: `state.firmwares` is the local list (ids unchanged, `host: null`) followed by each remote's firmwares with `id = "<host>~<remote id>"` and `host = "<host>"`; `state.remotes` holds the statuses. Events and alerts travel inside the firmware objects, so browser notifications cover remote builds. A firmware that already has a `host` (a remote that itself aggregates) is skipped, so chains and loops cannot form. `system` stays local; a remote's last meters are in its status.
 - **Proxy**: for `/api/messages`, `/api/triage`, `/api/log`, `/api/report`, `/api/paths` and every `/api/history/*` route, and `DELETE /api/firmware`, a `fw` of the form `<host>~<id>` is sent to that remote with the original id and all other parameters untouched (the remote validates paths and builds). The status, `Content-Type`, `Content-Length` and `Content-Disposition` are relayed and the body is streamed in 64 KiB chunks, so artifact downloads work. History answers that carry firmware ids (`/api/history`, `/build`, `/compare`) are rewritten to the namespaced id and builds get a `host` field. An unreachable or timed-out remote gives `502 {"error": "remote <host> unreachable: <reason>"}`, a redirect from a remote gives 502, an unknown host prefix gives 404 without any network access.
 - **Global history**: `GET /api/history` without `fw` also lists the builds and firmwares of every online remote (ids namespaced, newest first, same `limit`); `unreachable` lists the remotes that were skipped.
-- **Local only**: `POST /api/watch`, `GET /api/browse`, `/api/msgrule`, `/api/notify` and `/api/settings` act on the machine the UI is served from.
+- **Local only**: `POST /api/watch`, `GET /api/browse`, `/api/msgrule`, `/api/msgrules/*`, `/api/notify` and `/api/settings` act on the machine the UI is served from.
 - **UI**: remote tabs carry the host badge and the header says "on <host>". When a remote is offline its firmwares stay, marked stale ("<host> unreachable · last update HH:MM", hollow ochre dot, frozen clocks), never red. The top bar shows one dot per remote (only when remotes are configured).
 
 ## Message triage

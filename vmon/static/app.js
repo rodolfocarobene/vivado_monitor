@@ -130,6 +130,7 @@ let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
 let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
+let hashRulesDemo = false; // #rulesdemo=1 (mock): open the import preview with a canned file (screenshots)
 let hashPclk = false; // #pclk=1: also open the "Clock & required" table of those rows
 let hashPth = []; // #pth=0,3: pre-expand those worst-path rows (screenshots/debug)
 
@@ -144,7 +145,7 @@ function parseHash() {
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
-  hashPclk = p.get('pclk') === '1';
+  hashPclk = p.get('pclk') === '1'; hashRulesDemo = p.get('rulesdemo') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
   if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
@@ -669,7 +670,8 @@ function buildView() {
   setAttr(rail, 'aria-label', 'Stages');
   const split = h('div', 'split', '<section class="detail"></section>');
   const mv = h('section', 'msgview', `
-    <div class="mv-bar"><div class="mv-chips"></div><input class="mv-q" type="search" placeholder="Search id or text…" spellcheck="false" autocomplete="off"></div>
+    <div class="mv-bar"><div class="mv-chips"></div><input class="mv-q" type="search" placeholder="Search id or text…" spellcheck="false" autocomplete="off">
+      <span class="mv-rules"><button class="mv-btn" data-act="mv-export" title="Download your ★ and mute rules as a file to share">Export rules</button><button class="mv-btn" data-act="mv-import" title="Load a rules file from a teammate or another machine, with a preview first">Import rules…</button><input class="mv-file" type="file" accept=".json,application/json" hidden aria-label="Message rules file"></span></div>
     <div class="mv-hint" hidden></div>
     <div class="mv-list"></div>`);
   mv.hidden = true;
@@ -1450,6 +1452,7 @@ function renderMsgView(fw) {
     if (row) { setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 2200); }
     m.focus = null;
   }
+  if (hashRulesDemo && MOCK && data) { hashRulesDemo = false; rulesDemo(fw); }
 }
 
 /* ------------------------------------------------------------------ sticky summary bar */
@@ -1831,10 +1834,170 @@ function mvAction(act, t) {
     renderMsgView(fw);
   } else if (act === 'mv-line') { const g = grp(); if (g) loadExcerpt(fw, g, +t.dataset.line); }
   else if (act === 'mv-step') gotoNode(fw, t.dataset.node);
+  else if (act === 'mv-export') exportRules(fw);
+  else if (act === 'mv-import') { if (fw.host) toast(`Message rules are per machine: import them on ${fw.host}`); else $('.mv-file', mainEl).click(); }
   else if (act === 'mv-rule') {
     apiMsgRule(fw, id, t.dataset.pri || null).then(() => { m.rev++; if (MOCK) { fw.top_messages = mockTop(fw); render(); } else ensureTriage(fw); })
       .catch((e) => toast('Could not save rule: ' + e.message));
   }
+}
+
+/* ---- message rules: export, and import with a preview (merge / replace) */
+const RULE_PRIORITIES = ['critical', 'high', 'medium', 'low', 'mute'];
+const MAX_RULES_FILE = 2e6;
+const rd = { fw: null, data: null, mode: 'merge', keep: false, sum: null, err: null, busy: false, seq: 0, ret: null, el: null };
+const priLabel = (p) => (p === 'high' ? '★ high' : p);
+
+const mockRulesCurrent = (fw) => Object.fromEntries(Object.entries(mock.rules).filter(([k, v]) => v && k.startsWith(`${fw.id}|`)).map(([k, v]) => [k.slice(fw.id.length + 1), v]));
+function mockRulesImport(fw, data, mode, keep, dry) {
+  const legacy = data && typeof data === 'object' && !Array.isArray(data) && !('format' in data);
+  if (!legacy && !(data && data.format === 'vmon-message-rules' && data.version === 1 && data.rules && typeof data.rules === 'object')) throw new Error('not a vmon message rules file (format vmon-message-rules, version 1)');
+  const rules = {}, invalid = [];
+  for (const [id, spec] of Object.entries(legacy ? data : data.rules)) {
+    const pri = legacy && typeof spec === 'string' ? spec : spec && spec.priority;
+    if (!id.trim() || id.length > 200) invalid.push({ id, error: 'bad id' });
+    else if (!RULE_PRIORITIES.includes(pri)) invalid.push({ id, error: `priority must be one of ${RULE_PRIORITIES.join(', ')}` });
+    else rules[id] = pri;
+  }
+  const cur = mockRulesCurrent(fw);
+  const s = { mode, dry_run: dry, applied: false, added: [], changed: [], removed: [], unchanged: 0, kept_mine: 0, invalid };
+  for (const [id, pri] of Object.entries(rules).sort()) {
+    if (!(id in cur)) s.added.push({ id, priority: pri });
+    else if (cur[id] === pri) s.unchanged++;
+    else if (keep && mode === 'merge') s.kept_mine++;
+    else s.changed.push({ id, from: cur[id], to: pri });
+  }
+  if (mode === 'replace') s.removed = Object.entries(cur).filter(([id]) => !(id in rules)).map(([id, priority]) => ({ id, priority })).sort((a, b) => a.id.localeCompare(b.id));
+  if (!dry && !invalid.length) {
+    s.applied = true;
+    for (const x of s.added) mock.rules[`${fw.id}|${x.id}`] = x.priority;
+    for (const x of s.changed) mock.rules[`${fw.id}|${x.id}`] = x.to;
+    for (const x of s.removed) delete mock.rules[`${fw.id}|${x.id}`];
+  }
+  return s;
+}
+async function apiRulesImport(fw, data, mode, keep, dry) {
+  if (MOCK) return mockRulesImport(fw, data, mode, keep, dry);
+  const r = await fetch('/api/msgrules/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, dry_run: dry, keep_mine: keep, data }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.status);
+  return j;
+}
+
+async function exportRules(fw) {
+  if (fw.host) { toast(`Message rules are per machine: export them on ${fw.host}`); return; }
+  try {
+    if (MOCK) {
+      const rules = Object.fromEntries(Object.entries(mockRulesCurrent(fw)).map(([k, v]) => [k, { priority: v }]));
+      const doc = { format: 'vmon-message-rules', version: 1, exported_at: Math.round(nowS()), exported_by: '', rules };
+      saveBlob(new Blob([JSON.stringify(doc, null, 1)], { type: 'application/json' }), `vmon_message_rules_${new Date().toISOString().slice(0, 10)}.json`);
+      toast('Mock mode: saved the mock rules file');
+      return;
+    }
+    const r = await fetch('/api/msgrules/export', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'vmon_message_rules.json';
+    saveBlob(await r.blob(), name);
+    toast(`Saved ${name}`);
+  } catch (e) { toast(`Could not export the rules: ${e.message}`); }
+}
+
+function rdList(title, items, line) {
+  if (!items.length) return '';
+  const shown = items.slice(0, 200).map((x) => `<li>${line(x)}</li>`).join('');
+  return `<section class="rd-sec"><h3>${title} <b>${items.length}</b></h3><ul class="rd-list">${shown}${items.length > 200 ? `<li class="rd-more">and ${items.length - 200} more</li>` : ''}</ul></section>`;
+}
+function rulesDialogHTML() {
+  const s = rd.sum, replace = rd.mode === 'replace';
+  const pri = (p) => `<span class="rd-pri ${p === 'mute' ? 'mute' : p === 'high' ? 'star' : ''}">${esc(priLabel(p))}</span>`;
+  let body;
+  if (rd.err) body = `<div class="rd-err" role="alert">${esc(rd.err)}</div>`;
+  else if (!s) body = '<div class="none">Checking the file…</div>';
+  else {
+    const change = s.added.length + s.changed.length + s.removed.length;
+    body = `<p class="rd-sum" aria-live="polite">${s.added.length} added · ${s.changed.length} changed${replace ? ` · ${s.removed.length} removed` : ''} · ${s.unchanged} unchanged${s.kept_mine ? ` · ${s.kept_mine} kept as yours` : ''}${s.invalid.length ? ` · <span class="bad">${s.invalid.length} invalid</span>` : ''}</p>`
+      + (replace ? `<p class="rd-warn">Replace discards your current rules that are not in this file${s.removed.length ? ` (${s.removed.length} below)` : ''}. Export first if you want a backup.</p>` : '')
+      + (s.invalid.length ? '<p class="rd-warn">The file has invalid entries. Fix them (or ask the sender) before importing; nothing is applied until it is clean.</p>' : '')
+      + rdList('Invalid', s.invalid, (x) => `<span class="mono">${esc(x.id || '(empty id)')}</span> <span class="rd-why">${esc(x.error)}</span>`)
+      + rdList('Added', s.added, (x) => `<span class="mono">${esc(x.id)}</span> ${pri(x.priority)}`)
+      + rdList('Changed', s.changed, (x) => `<span class="mono">${esc(x.id)}</span> ${pri(x.from)} <span aria-label="to">→</span> ${pri(x.to)}`)
+      + rdList('Removed', s.removed, (x) => `<span class="mono">${esc(x.id)}</span> ${pri(x.priority)}`)
+      + (change || s.invalid.length ? '' : '<div class="none">Nothing to change: this file matches your rules.</div>');
+  }
+  const can = rd.sum && !rd.err && !rd.sum.invalid.length && (rd.sum.added.length + rd.sum.changed.length + rd.sum.removed.length) > 0 && !rd.busy;
+  return `<div class="mbox rbox" role="dialog" aria-modal="true" aria-labelledby="rd-title">
+    <div class="mhead"><b id="rd-title">Import message rules</b><button class="icon-btn" data-rd="cancel" aria-label="Close">✕</button></div>
+    <div class="rd-opts"><label><input type="radio" name="rd-mode" value="merge" ${replace ? '' : 'checked'}> Merge <small>keep your other rules; the file wins on conflicts</small></label>
+      <label class="${replace ? 'sel-replace' : ''}"><input type="radio" name="rd-mode" value="replace" ${replace ? 'checked' : ''}> Replace <small>discard your current rules, use only this file</small></label>
+      <label class="rd-keep"><input type="checkbox" data-rd="keep" ${rd.keep ? 'checked' : ''} ${replace ? 'disabled' : ''}> Keep my priority when both define a message</label></div>
+    <div class="rd-body">${body}</div>
+    <div class="rd-foot"><button class="mv-btn" data-rd="cancel">Cancel</button><button class="mv-btn primary${replace ? ' danger' : ''}" data-rd="apply" ${can ? '' : 'disabled'}>${rd.busy ? 'Applying…' : replace ? 'Replace my rules' : 'Apply'}</button></div></div>`;
+}
+function renderRules() {
+  const el = rd.el; if (!el) return;
+  const key = document.activeElement && el.contains(document.activeElement) ? document.activeElement.dataset.rd || document.activeElement.value : null;
+  el.innerHTML = rulesDialogHTML();
+  if (key) { const t = [...el.querySelectorAll('[data-rd],[name="rd-mode"]')].find((x) => (x.dataset.rd || x.value) === key && !x.disabled); if (t) t.focus(); }
+}
+async function previewRules() {
+  const seq = ++rd.seq; rd.sum = null; rd.err = null; renderRules();
+  try {
+    const s = await apiRulesImport(rd.fw, rd.data, rd.mode, rd.keep, true);
+    if (seq === rd.seq) { rd.sum = s; renderRules(); }
+  } catch (e) { if (seq === rd.seq) { rd.err = e.message; renderRules(); } }
+}
+function openRules(fw, data) {
+  if (!rd.el) {
+    const el = rd.el = h('div', 'modal'); el.id = 'rules-dialog'; document.body.appendChild(el);
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-rd]'); if (e.target === el || (b && b.dataset.rd === 'cancel')) closeRules(); else if (b && b.dataset.rd === 'apply') applyRules(); });
+    el.addEventListener('change', (e) => {
+      if (e.target.name === 'rd-mode') { rd.mode = e.target.value; previewRules(); }
+      else if (e.target.dataset.rd === 'keep') { rd.keep = e.target.checked; previewRules(); }
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const f = [...el.querySelectorAll('button:not([disabled]),input:not([disabled])')];
+      if (!f.length) return;
+      const i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    });
+  }
+  Object.assign(rd, { fw, data, mode: 'merge', keep: false, busy: false, ret: document.activeElement });
+  rd.el.hidden = false;
+  previewRules();
+  $('[data-rd="cancel"]', rd.el).focus();
+}
+function closeRules() {
+  if (!rd.el || rd.el.hidden) return false;
+  rd.el.hidden = true; rd.seq++;
+  if (rd.ret && rd.ret.isConnected) rd.ret.focus();
+  return true;
+}
+async function applyRules() {
+  if (rd.busy || !rd.sum) return;
+  const { fw, mode } = rd;
+  rd.busy = true; renderRules();
+  try {
+    const s = await apiRulesImport(fw, rd.data, mode, rd.keep, false);
+    closeRules();
+    toast(`Rules imported: ${s.added.length} added, ${s.changed.length} changed${mode === 'replace' ? `, ${s.removed.length} removed` : ''}`);
+    for (const m of ui.mv.values()) m.rev++;
+    if (MOCK) { for (const f of state.firmwares) f.top_messages = mockTop(f); render(); } else ensureTriage(fw);
+  } catch (e) { rd.busy = false; renderRules(); toast(`Import failed: ${e.message}`); }
+}
+document.addEventListener('change', async (ev) => {
+  if (!ev.target.classList.contains('mv-file')) return;
+  const file = ev.target.files[0]; ev.target.value = '';
+  const fw = curFw(); if (!file || !fw) return;
+  if (file.size > MAX_RULES_FILE) { toast('That file is too large to be a rules file (over 2 MB)'); return; }
+  try { openRules(fw, JSON.parse(await file.text())); } catch { toast('That file is not valid JSON'); }
+});
+function rulesDemo(fw) {       // mock + #rulesdemo=1: current rules and a canned file that shows every kind of line
+  const ids = mockTriage(fw, { sev: SEV_ALL }).groups.map((g) => g.id);
+  [[0, 'high'], [1, 'mute'], [2, 'high'], [3, 'mute']].forEach(([i, p]) => { if (ids[i]) mock.rules[`${fw.id}|${ids[i]}`] = p; });
+  const rules = { [ids[0]]: { priority: 'high' }, [ids[1]]: { priority: 'high', note: 'now matters' }, [ids[2]]: { priority: 'mute' },
+    [ids[4] || 'Synth 8-6014']: { priority: 'mute' }, [ids[5] || 'Place 30-574']: { priority: 'high' }, 'Bad 1-1': { priority: 'pin' } };
+  openRules(fw, { format: 'vmon-message-rules', version: 1, exported_at: 1760000000, exported_by: '', rules });
 }
 
 for (const [type, on] of [['mouseover', true], ['mouseout', false], ['focusin', true], ['focusout', false]]) document.addEventListener(type, (ev) => pathHover(ev, on));
@@ -1882,7 +2045,7 @@ document.addEventListener('keydown', (ev) => {
     ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
     return;
   }
-  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) { if (hist.cmp) { hist.cmp = null; renderHistory(); } else setHistory(false); } return; }
+  if (ev.key === 'Escape') { if (closeRules() || closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) { if (hist.cmp) { hist.cmp = null; renderHistory(); } else setHistory(false); } return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
   const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
@@ -2944,14 +3107,17 @@ async function summaryText(fw, build) {
   if (!r.ok) throw new Error('no recorded build to summarise');
   return r.text();
 }
+function saveBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 async function exportMarkdown(fw, build) {
   try {
     const r = await fetch(MOCK ? mockSummaryUrl(fw, build, 'md') : summaryUrl(fw, build, 'md', true), { cache: 'no-store' });
     if (!r.ok) throw new Error('no recorded build to summarise yet');
     const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || `${fw}_${build}_summary.md`;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    saveBlob(await r.blob(), name);
     toast(`Saved ${name}`);
   } catch (e) { toast(`Could not export the summary: ${e.message}`); }
 }

@@ -226,7 +226,25 @@ GET  /api/messages?fw=&node=&id=<msg id>&limit=   (new optional `id` filter; nod
 GET  /api/log?fw=&log=<path>&around=<line>&context=30   (log excerpt around a line; path must be a known log)
 POST /api/msgrule {"id": "Synth 8-327", "priority": "high"|"mute"|null(=remove)}
 POST /api/settings {"interval": 0.5..60}
+GET  /api/msgrules/export[?by=<free text>]   -> the rules file below, Content-Disposition attachment "vmon_message_rules_<YYYY-MM-DD>.json"
+POST /api/msgrules/import {"mode": "merge"|"replace", "dry_run": true (default)|false, "keep_mine": false, "data": <file>}
+     -> {"mode","dry_run","applied": bool, "added": [{id, priority}], "changed": [{id, from, to}],
+         "removed": [{id, priority}] (replace only), "unchanged": n, "kept_mine": n, "invalid": [{id, error}]}
 ```
+Rules file (message rule sharing), also what `GET /api/msgrules/export` returns:
+```
+{"format": "vmon-message-rules", "version": 1, "exported_at": <epoch>, "exported_by": "" (free text, never filled in automatically),
+ "rules": {"<msg id>": {"priority": "critical"|"high"|"medium"|"low"|"mute", "note": optional str <= 200}}}
+```
+- The reader also accepts the raw `message_rules.json` shape `{"<id>": "<priority>"}` (no `format` key), so a teammate can send that file as is.
+- Strict: unknown `format` or a `version` other than 1, a non-object `rules`, more than 5000 rules, or a body over 2 MB (413) is a
+  400 with a message. Per-entry problems (id empty or over 200 characters, priority not in the set above, note not a string or over
+  200 characters) are listed in `invalid`; a dry run returns them with 200, applying a file with any invalid entry is a 422 and
+  imports nothing. Notes are validated but not stored (vmon keeps one priority per id).
+- Merge: imported rules win on conflicts; `keep_mine` keeps your priority for ids you already have (counted in `kept_mine`);
+  ids not in the file are untouched. Replace: your rules become exactly the file (`removed` lists what is dropped).
+  Applying writes `message_rules.json` atomically (temp file + rename) and rescores immediately. Local only, like `/api/msgrule`.
+- No shared read-only team file: a team shares a rules file (git, chat) and each member imports it (merge, optionally `keep_mine`).
 
 ### v2 implementation notes (deviations / detail)
 - `[messages.keywords]` is an array of tables: `[[messages.keywords]]` (TOML cannot mix table and array under one name).
@@ -533,7 +551,7 @@ Firmware.id   = "<host>~<remote id>" for remote firmwares (local ids are unchang
 Every route with `fw=` accepts a namespaced id and is answered by that remote with the original id; unknown host 404, unreachable or
 redirecting remote 502 `{"error"}`. `/api/history`, `/api/history/build` and `/api/history/compare` answers carry the namespaced `fw_id`
 (history builds also `host`; firmware entries `host`). `GET /api/history` without `fw` merges in the builds of online remotes
-and adds `"unreachable": [name]`. `POST /api/watch`, `/api/browse`, `/api/msgrule`, `/api/notify`, `/api/settings` are local.
+and adds `"unreachable": [name]`. `POST /api/watch`, `/api/browse`, `/api/msgrule`, `/api/msgrules/*`, `/api/notify`, `/api/settings` are local.
 UI: host badge on tabs and history rows, "on <host>" in the header, a dot per remote in the top bar; mock: `?mock=1` has a remote `buildsrv`, `&remote=off` shows it unreachable.
 
 ## Notifications outside the browser

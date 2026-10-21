@@ -86,6 +86,10 @@ reason = "CDC"
 
 Because lists replace, copy the whole `[[messages.rules]]` list into your override file if you add rules there. The scoring weights live in `[messages.scoring]`. Individual messages can also be starred or muted in the UI; those overrides go to `~/.config/vmon/message_rules.json`, e.g. `{"Synth 8-327": "high", "Synth 8-7080": "mute"}`.
 
+### Sharing message rules
+
+In the Messages view, **Export rules** downloads your ★/mute rules as a `vmon-message-rules` file (no host or user name is added; `exported_by` stays empty) and **Import rules…** previews a file before touching anything: what is added, changed (old to new priority) and, in replace mode, removed. *Merge* keeps your other rules and lets the file win on conflicts (tick *keep my priority* to reverse that); *replace* discards your current rules. A raw `message_rules.json` from a teammate is accepted as is. Invalid entries are listed and block the import. To share rules in a team, keep one exported file in git or a shared folder and have everyone import it (merge); there is no live shared file. Rules are per machine: with remote firmwares, import on the machine that builds.
+
 ## Recommended actions
 
 `[[hints]]` entries are rules that turn the model into advice ("Suggested actions" in the recap card, and in the detail of the stage a hint is anchored to). They are data: add or change them without touching Python. A hint fires when all conditions of `when` hold; the UI shows the hint's static `text` (why it matters) and an `evidence` line vmon computes (for example `WHS -0.034 ns after Route Design (final)`).
@@ -325,4 +329,4 @@ vmon                                           # or: vmon --remote buildsrv=http
 - `url`: `http://` or `https://`, `host[:port]` only (no credentials, path or query). It is shown in the UI as `scheme://host:port`.
 - `--remote NAME=URL` adds to the list (a command-line entry replaces a config entry of the same name). `--ssh USER@HOST[:PORT]` picks a free local port, runs `ssh -N -o ExitOnForwardFailure=yes -L <port>:127.0.0.1:<PORT or 8765> USER@HOST` as a child process, registers it as a remote named after the host and ends it on exit; authentication is whatever your ssh does (keys or agent; a prompt appears in the terminal).
 - Redirects are refused and environment proxies (`http_proxy`) are ignored. The remote is always taken from this config, never from a request.
-- Notifications outside the browser are sent by each machine's own vmon; the browser notifications of this UI cover remote events too. `/api/msgrule`, `/api/notify`, `/api/watch` and `/api/browse` act on this machine only.
+- Notifications outside the browser are sent by each machine's own vmon; the browser notifications of this UI cover remote events too. `/api/msgrule`, `/api/msgrules/*`, `/api/notify`, `/api/watch` and `/api/browse` act on this machine only.

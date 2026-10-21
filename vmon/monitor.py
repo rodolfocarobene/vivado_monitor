@@ -11,6 +11,7 @@ from . import clocks as clocks_mod
 from . import hints as hints_mod
 from . import history as history_mod
 from . import remote as remote_mod
+from . import rules_io
 from .docs import DocLinks
 from .notify import Notifier
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
@@ -19,7 +20,7 @@ from .discovery import Discovery
 from .project import LogSource, ProjectSource
 from .reports import ReportCache
 from .sysstats import Sampler
-from .triage import BaselineStore, TriageConfig, UserRules, score_groups
+from .triage import PRIORITIES, BaselineStore, TriageConfig, UserRules, score_groups
 
 RECENT_FILE = Path.home() / ".cache" / "vmon" / "recent.json"
 RECENT_MAX = 20
@@ -375,6 +376,18 @@ class Monitor:
         with self.lock:
             self._top_cache.clear()
         self.tick()
+
+    def import_msgrules(self, data, mode, keep_mine=False, dry_run=True):
+        """-> (summary, applied). Nothing is applied when the file has invalid entries."""
+        rules, invalid = rules_io.parse_file(data, PRIORITIES)      # RulesFileError / ValueError on a bad file
+        apply = not dry_run and not invalid
+        summary = self.user_rules.import_rules(rules, mode, keep_mine, not apply)
+        summary.update(mode=mode, dry_run=dry_run, applied=apply, invalid=invalid)
+        if apply:
+            with self.lock:
+                self._top_cache.clear()
+            self.tick()
+        return summary
 
     # ------------------------------------------------------------------ settings
     def set_interval(self, value):
