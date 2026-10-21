@@ -17,6 +17,7 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **Alerts** with browser notifications, and an in-app event log. Optional server-side notifications (`notify-send`, ntfy, Slack, Matrix, JSON webhook) for crashes and timing failures, with no browser open; off by default, set up in `[notify]` (see [docs/configuration.md](docs/configuration.md)).
 - **Suggested actions**: rule-based hints from `[[hints]]` in `flows.toml` (hold violated after route, route- or logic-dominated setup paths, high fanout, congestion, router stalled, out of memory, lost license, latches, ...), each with the evidence that fired it and commands you can copy; add your own or disable built-ins in your config (see [docs/configuration.md](docs/configuration.md#recommended-actions)).
 - **Message triage**: severity, rules, keywords, rarity and "new since last build" scoring; pin or mute any message id.
+- **Share message rules**: export your ★/mute rules to a file and import a teammate's (or your other machine's) with a preview of what changes first (merge or replace).
 - **ETA with a confidence band**: per-step and per-phase durations learned from the last 20 builds of the same firmware (medians, p10-p90 range); steps never seen are sized from the catalog.
 - **Congestion summary** for place and route: placer and router congestion levels per direction, final max congestion, router overlaps per iteration; a chip and an alert from level 5.
 - **Build history page**: every finished build with date, duration, outcome, final WNS/WHS, utilization, and links to its reports and `.bit` (only while the files still belong to that build). Click a build to open its project in the standard view (it is loaded again if its tab was closed).
@@ -37,6 +38,8 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 | ![Build history](docs/img/history.png) | ![Congestion](docs/img/congestion.png) |
 
 ![Compare two builds](docs/img/compare.png)
+
+![Suggested actions](docs/img/hints.png)
 
 ## Requirements
 
