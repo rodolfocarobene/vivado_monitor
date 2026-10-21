@@ -557,3 +557,23 @@ Generic webhook body (`POST`, `application/json`):
  "body": "<step>: <message>", "t": epoch, "project": "<runs dir>"}
 ```
 `kind` is `test` for the test button and `summary` for the "N more events" rate-limit message.
+
+## Recommended actions (hints)
+```
+Firmware.hints = [Hint]            # [] when nothing applies; warnings first, then flows.toml order
+Hint = {"id", "title", "severity": "info"|"warning", "text",    # text = why this matters (static)
+        "evidence": "WHS -0.034 ns after Route Design (final)",  # what fired it (computed from the model)
+        "actions": [{"text", "command"?, "doc_url"?}], "node_id": step node id | null}
+```
+- Declared as `[[hints]]` in flows.toml (`id`, `title`, `severity`, `text`, `actions`, optional `step`, `when`); `when` is a
+  table of conditions combined with AND, plus an optional `any` list of condition tables (OR). Conditions: `alert_codes`,
+  `message_ids` (glob), `message_re`, `min_severity` (modifier for the two message conditions), `failure_re`, `status`,
+  `timing = {final, stage, wns_lt, tns_lt, whs_lt, ths_lt}`, `worst_path = {type, top, route_pct_ge, logic_pct_ge,
+  levels_ge, fanout_ge}`, `congestion_level_ge`, `convergence_trend`, `util_pct_ge = {any|<resource>: pct}`, `step_done`.
+  Unknown condition keys make config loading fail with the hint id.
+- `node_id` is the step node named by `step` (null when absent in this flow); the UI shows a hint in that stage's detail.
+  Hints without `step` only appear in the recap card.
+- Evaluated every tick over the model by `vmon/hints.py`; `worst_path` reads the compact paths of the report that `timing`
+  picked (else the latest, final first), `message_*` the aggregated warning+ groups of the firmware (cached per message
+  generation). Carried (stale) timing values and non-final timing with `final = true` never fire. A user hint with the same
+  id as a built-in replaces it; `[hints_config] disabled = [ids]` switches built-ins off.

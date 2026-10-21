@@ -658,10 +658,11 @@ function buildView() {
         <span class="fw-exp" hidden><button type="button" class="hx-chip" data-act="hexp" data-format="md" title="Download a Markdown summary of this build">Export summary</button><a class="hx-chip" data-act="hexp" data-format="html" target="_blank" rel="noopener" title="Open a printable HTML summary of this build in a new tab">HTML</a></span>
       </div>
       <div class="topissues" hidden></div>
+      <div class="hintbar" hidden></div>
     </div>
     <div class="cards"><div class="timing-card"></div><div class="util-card"></div></div>
     <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
-  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), host: $('.fw-host', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
+  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), host: $('.fw-host', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), hints: $('.hintbar', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
   const banner = h('div', 'banner');
   // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
   const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="segwrap"></div><div class="stagelist"></div>`);
@@ -712,6 +713,27 @@ function topIssuesHTML(fw) {
 const TOP_ISSUES_SHOWN = 3;
 let issuesOpen = lsGet('vmon.issuesOpen') === '1';
 const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
+
+// Suggested actions: rule-based hints (flows.toml [[hints]]). Amber for warnings, accent for info; never red.
+let hintsOpen = lsGet('vmon.hintsOpen') === '1';
+const HINT_WORD = { warning: 'CHECK', info: 'TIP' };
+function hintHTML(h, withGoto) {
+  const acts = (h.actions || []).map((a) => `<li class="hact"><span class="hat">${esc(a.text)}</span>${a.doc_url ? docBtn(a.doc_url, `${h.title} documentation`) : ''}${a.command ? `<div class="hcmd"><code class="mono">${esc(a.command)}</code>${copyBtn(a.command, 'command')}</div>` : ''}</li>`).join('');
+  const go = withGoto && h.node_id ? `<button class="linkbtn hgo" data-act="goto" data-node="${esc(h.node_id)}">show stage →</button>` : '';
+  return `<div class="hint" data-sev="${esc(h.severity)}"><div class="hint-h"><span class="hpill">${HINT_WORD[h.severity] || 'TIP'}</span><b class="hint-t">${esc(h.title)}</b>${go}</div>${h.evidence ? `<div class="hint-ev mono">${esc(h.evidence)}</div>` : ''}<div class="hint-x">${esc(h.text)}</div>${acts ? `<ul class="hacts">${acts}</ul>` : ''}</div>`;
+}
+function hintsBarHTML(fw) {
+  const hs = fw.hints || [];
+  if (!hs.length) return '';
+  const first = hs[0];
+  const sum = hintsOpen ? '' : `<span class="ti-sum hsum" data-sev="${esc(first.severity)}" title="${esc(first.title)}">${esc(first.title)}</span>`;
+  const head = `<div class="ti-h"><button class="infotoggle" data-act="hints-toggle" aria-expanded="${hintsOpen}">Suggested actions<span class="hcount mono">${hs.length}</span>${CHEV}</button>${sum}</div>`;
+  return hintsOpen ? `${head}<div class="hintlist">${hs.map((h) => hintHTML(h, true)).join('')}</div>` : head;
+}
+function stageHintsHTML(fw, n) {
+  const hs = (fw.hints || []).filter((h) => h.node_id === n.id);
+  return hs.length ? `<div class="hintlist"><div class="hint-cap">Suggested actions</div>${hs.map((h) => hintHTML(h, false)).join('')}</div>` : '';
+}
 
 function etaParts(fw) {
   const e = fw.eta;
@@ -793,6 +815,8 @@ function renderHeader(fw) {
   setHTML(r.uc, utilCardHTML(fw));
   const ti = topIssuesHTML(fw);
   r.top.hidden = !ti; setHTML(r.top, ti);
+  const hb = hintsBarHTML(fw);
+  r.hints.hidden = !hb; setHTML(r.hints, hb);
   r.exp.hidden = !['done', 'failed', 'stopped'].includes(fw.status) || fw.started_at == null;
   if (!r.exp.hidden) for (const c of r.exp.children) { const build = String(Math.floor(fw.started_at)); c.dataset.fw = fw.id; c.dataset.build = build; if (c.tagName === 'A') c.href = summaryUrl(fw.id, build, 'html', false); }
   const view = curView(fw);
@@ -921,8 +945,9 @@ function createDetail() {
   const fb = h('div', 'dfail');
   const at = h('div', 'dattempts');
   const al = h('div', 'dalerts');
-  for (const x of [fb, at, al]) $('.main', el).insertBefore(x, $('.body', el));
-  el._r.alerts = al; el._r.dfail = fb; el._r.dattempts = at;
+  const hn = h('div', 'dhints');
+  for (const x of [fb, at, hn, al]) $('.main', el).insertBefore(x, $('.body', el));
+  el._r.alerts = al; el._r.dfail = fb; el._r.dattempts = at; el._r.dhints = hn;
   return el;
 }
 
@@ -944,6 +969,8 @@ function renderDetail(el, n, fw) {
   if (el._r.dfail._h !== fbox) { setHTML(el._r.dfail, fbox); scrollExcerpts(el._r.dfail); }
   const atl = attemptsHTML(n, fw);
   if (el._r.dattempts._h !== atl) { setHTML(el._r.dattempts, atl); scrollExcerpts(el._r.dattempts); }
+  const hh = stageHintsHTML(fw, n);
+  if (el._r.dhints._h !== hh) setHTML(el._r.dhints, hh);
   setHTML(el._r.alerts, ''); // the firmware banner above already lists these; the stage card keeps its alert icon
 }
 
@@ -1597,6 +1624,7 @@ function revealFinder(act, t, nodeEl) {
   if (['toggle', 'dtab', 'rchip', 'rsel', 'att-toggle', 'fail-log'].includes(act) && nodeEl) return () => ({ ctrl: nodeCard(nodeEl) || nodeEl, region: nodeEl });
   if (act === 'info-toggle') return () => { const r = $('.fwinfo', mainEl); return r && { ctrl: r, region: r }; };
   if (act === 'issues-toggle') return () => { const r = $('.topissues', mainEl); return r && { ctrl: r, region: r }; };
+  if (act === 'hints-toggle') return () => { const r = $('.hintbar', mainEl); return r && { ctrl: r, region: r }; };
   const q = (sel) => mainEl.querySelector(sel);
   if (act === 'mv-row') return () => { const c = q(`[data-act="mv-row"][data-id="${css(d.id)}"]`); return c && { ctrl: c, region: c.closest('.mrow') || c }; };
   if (act === 'grp') return () => { const c = q(`[data-act="grp"][data-gid="${css(d.gid)}"]`); return c && { ctrl: c, region: c.parentElement }; };
@@ -1755,6 +1783,8 @@ document.addEventListener('click', async (ev) => {
     render();
   } else if (act === 'issues-toggle') {
     issuesOpen = !issuesOpen; lsSet('vmon.issuesOpen', issuesOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
+  } else if (act === 'hints-toggle') {
+    hintsOpen = !hintsOpen; lsSet('vmon.hintsOpen', hintsOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'info-toggle') {
     infoOpen = !infoOpen; lsSet('vmon.infoOpen', infoOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'sumstage') {

@@ -120,6 +120,31 @@
      }
     }
    },
+   "hints": [
+    {
+     "id": "congestion_high",
+     "title": "Routing congestion may hurt timing",
+     "severity": "warning",
+     "text": "Vivado reports congestion at level 5 or higher, which can make routing slow and timing hard to close.",
+     "evidence": "congestion level 5 during placement (north global) in Place Design",
+     "actions": [
+      {
+       "text": "Place with a directive that spreads logic",
+       "command": "place_design -directive AltSpreadLogic_high",
+       "doc_url": "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/place_design"
+      },
+      {
+       "text": "Find the congested areas and the modules in them",
+       "command": "report_design_analysis -congestion",
+       "doc_url": "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/report_design_analysis"
+      },
+      {
+       "text": "Reduce local utilization or wide-bus logic in those areas"
+      }
+     ],
+     "node_id": "impl_1/place_design"
+    }
+   ],
    "flows": [
     {
      "id": "impl_1",
@@ -10575,6 +10600,31 @@
     "stage": "Route - estimate",
     "carried": {}
    },
+   "hints": [
+    {
+     "id": "oom_jobs",
+     "title": "Run ran out of memory",
+     "severity": "warning",
+     "text": "The run crashed with an out-of-memory error or was killed with signal 9 (often the Linux OOM killer).",
+     "evidence": "Route Design failed: Out of memory",
+     "actions": [
+      {
+       "text": "Run fewer jobs in parallel",
+       "command": "launch_runs impl_1 -jobs 2",
+       "doc_url": "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/launch_runs"
+      },
+      {
+       "text": "Lower the thread count of each Vivado session",
+       "command": "set_param general.maxThreads 4",
+       "doc_url": "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/set_param"
+      },
+      {
+       "text": "Free RAM or add swap before relaunching, and check that no other Vivado session is running"
+      }
+     ],
+     "node_id": null
+    }
+   ],
    "flows": [
     {
      "id": "impl_1",
@@ -12657,7 +12707,9 @@
       "levels": 7,
       "logic_pct": 47.761,
       "route_pct": 52.239,
-      "skew": -0.037
+      "skew": -0.037,
+      "max_fanout": 420,
+      "fanout_net": "d_1_i/dsp_ctrl/enable_reg_n_0"
      },
      {
       "id": 1,
@@ -12801,6 +12853,46 @@
      }
     ]
    },
+   "hints": [
+    {
+     "id": "hold_after_route",
+     "title": "Fix hold violations after route",
+     "severity": "warning",
+     "text": "Final hold slack is negative. The router normally fixes hold, so remaining violations usually come from large clock skew or an unconstrained or mis-constrained clock crossing.",
+     "evidence": "WHS -0.034 ns after Route Design (final)",
+     "actions": [
+      {
+       "text": "Run a post-route physical optimization that targets hold",
+       "command": "phys_opt_design -directive ExploreWithHoldFix",
+       "doc_url": "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/phys_opt_design"
+      },
+      {
+       "text": "Check clock skew and the clock-crossing (CDC) constraints on the failing paths",
+       "command": "report_clock_interaction -delay_type min_max"
+      }
+     ],
+     "node_id": "impl_1/route_design"
+    },
+    {
+     "id": "high_fanout_worst_path",
+     "title": "High-fanout net on a failing path",
+     "severity": "warning",
+     "text": "A net with a very large fanout sits on one of the worst setup paths. Replicating its driver shortens the loads each copy has to reach.",
+     "evidence": "net d_1_i/dsp_ctrl/enable_reg_n_0 has fanout 420 on a worst setup path (slack -0.187 ns) (Route Design timing report)",
+     "actions": [
+      {
+       "text": "Replicate the driver of that net after placement",
+       "command": "phys_opt_design -force_replication_on_nets [get_nets <net>]",
+       "doc_url": "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/phys_opt_design"
+      },
+      {
+       "text": "Or limit the fanout in the RTL or constraints",
+       "command": "set_property MAX_FANOUT 50 [get_nets <net>]"
+      }
+     ],
+     "node_id": "impl_1/route_design"
+    }
+   ],
    "flows": [
     {
      "id": "impl_1",

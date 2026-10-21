@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from . import clocks as clocks_mod
+from . import hints as hints_mod
 from . import history as history_mod
 from . import remote as remote_mod
 from .docs import DocLinks
@@ -78,6 +79,7 @@ class Monitor:
                                           remote_interval, remote_timeout, self._remote_changed)
         self._recorded = set()         # (fw_id, build) already stored as a baseline this session
         self._top_cache = {}
+        self._hint_groups = {}         # fw_id -> (message generation, aggregated groups)
         self._seen = {}                # fw_id -> {"status", "nodes", "alerts"} from the previous tick
         self._events = {}              # fw_id -> [event]
         self._system = {}
@@ -130,6 +132,7 @@ class Monitor:
             self.sources.pop(fw_id)
             self.firmwares.pop(fw_id, None)
             self.watched.pop(fw_id, None)
+            self._hint_groups.pop(fw_id, None)
             self.ignored.add(fw_id)
             self._save_recent()
             return True
@@ -197,6 +200,7 @@ class Monitor:
                 fw.eta = estimate(fw, self.durations.load(fw_id) if fw.status == "running" else None, now, self.eta_cfg)
                 fw.events = list(self._events.get(fw_id, ()))
                 fw.top_messages = self._top_messages(fw_id, fw)
+                fw.hints = self._hints(fw_id, fw)
             ordered = sorted(self.firmwares.values(), key=lambda f: (
                 STATUS_RANK.get(f.status, 9), -(f.updated_at or 0)))
             body = json.dumps([f.to_dict() for f in ordered], separators=(",", ":"))
@@ -352,6 +356,19 @@ class Monitor:
             g.pop("muted", None)
         self._top_cache[fw_id] = (key, top)
         return top
+
+    def _hints(self, fw_id, fw):
+        """Recommended actions. The model walk is cheap, so it runs every tick; the message groups come from the
+        source's own per-generation aggregate and the worst paths from the compact paths already parsed per report."""
+        if not self.cfg.hints:
+            return []
+        source = self.sources.get(fw_id)
+        gen = source.msg_generation() if source else None
+        hit = self._hint_groups.get(fw_id)
+        if hit is None or hit[0] != gen:
+            groups = (source.raw_groups(None, list(TRIAGE_SEVERITIES)) if source else None) or []
+            hit = self._hint_groups[fw_id] = (gen, groups)
+        return hints_mod.evaluate(self.cfg.hints, fw, self.cfg, hit[1])
 
     def set_msgrule(self, msg_id, priority):
         self.user_rules.set(msg_id, priority)      # ValueError on bad input
