@@ -89,6 +89,22 @@ def artifacts_of(fw, hcfg):
     return out
 
 
+def attempts_of(fw):
+    """One row per attempt number when the last flow ran more than once (resume/restart), else None."""
+    by_n = {}
+    for node in _walk(fw.flows[-1].stages if fw.flows else ()):
+        for att in node.attempts:
+            row = by_n.setdefault(att["n"], {"n": att["n"], "mode": att.get("mode"), "statuses": set(), "detail": None})
+            row["statuses"].add(att.get("status"))
+            if att.get("status") == "failed" and row["detail"] is None:
+                row["detail"] = "%s: %s" % (node.label, att.get("summary") or "failed")
+    if len(by_n) < 2:
+        return None
+    rank = ("failed", "stopped", "running")
+    return [{"n": r["n"], "mode": r["mode"], "result": next((s for s in rank if s in r["statuses"]), "done"),
+             "detail": r["detail"]} for _, r in sorted(by_n.items())]
+
+
 def messages_of(groups, cap):
     """{msg_id: {count, severity, text}} of warnings and worse, worst and most frequent first, at most `cap` ids."""
     kept = [g for g in groups or () if g["severity"] in SEVERITY_RANK]
@@ -112,6 +128,7 @@ def build_record(fw, build, hcfg, groups=None, clocks=None):
         "utilization": util or None,
         "part": info.get("part"), "board": info.get("board"), "vivado_version": fw.vivado_version or info.get("vivado_version"),
         "strategy_synth": info.get("strategy_synth"), "strategy_impl": info.get("strategy_impl"),
+        "host": info.get("host"), "directives": info.get("directives") or None, "attempts": attempts_of(fw),
         "counts": [c[3], c[2], c[1], c[0]],            # E, CW, W, I
         "steps": step_durations(fw), "phases": phase_durations(fw),
         "messages": messages_of(groups, hcfg["max_messages"]) if groups is not None else None,

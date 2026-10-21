@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>lockin build summary</title><style>
+:root{--bg:#fff;--text:#18212f;--muted:#647186;--border:#d8dfea;--soft:#f6f8fb;--accent:#2d6cdf;--ok:#00783d;--err:#c5233f;--crit:#af4900;--warn:#8c6000;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+main{max-width:920px;margin:0 auto;padding:32px 24px 48px}
+h1{font-size:24px;margin:0 0 6px;letter-spacing:-.2px}
+h2{font-size:15px;margin:28px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border);break-after:avoid}
+.lede{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);margin:0}
+.badge{font-weight:700;padding:1px 10px;border-radius:99px;border:1px solid currentColor}
+.ok{color:var(--ok)}.err{color:var(--err)}.crit{color:var(--crit)}.warn{color:var(--warn)}.muted{color:var(--muted)}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 18px;margin:0}
+dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:var(--soft)}
+th,td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+tr{break-inside:avoid}
+.r{text-align:right;font-variant-numeric:tabular-nums}
+code{font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.note{color:var(--muted);font-style:italic;margin:6px 0 0}
+footer{margin-top:36px;padding-top:10px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+@media(max-width:600px){main{padding:20px 16px}}
+@media print{main{max-width:none;padding:0}h2{margin-top:20px}a{color:inherit}}
+</style></head><body><main>
+<h1>lockin build summary</h1>
+<p class="lede"><span>2025-10-07 08:53+02:00</span><span>Duration 1h 40m</span><span class="badge err">Failed: Route Design: Vivado crashed (SIGSEGV) during Global Iteration 2</span></p>
+<h2>Build info</h2>
+<dl><dt>Project</dt><dd><code>/home/user/projects/firmware/lockin/lockin.runs</code></dd><dt>Part</dt><dd><code>xczu28dr-ffvg1517-2-e</code></dd><dt>Vivado</dt><dd>2024.2</dd><dt>Synthesis strategy</dt><dd>Vivado Synthesis Defaults</dd><dt>Implementation strategy</dt><dd>Performance_NetDelay_high</dd></dl>
+<h2>Utilization</h2>
+<table><thead><tr><th>Resource</th><th class="r">Used</th><th class="r">Available</th><th class="r">Used %</th></tr></thead><tbody><tr><td>LUT</td><td class="r">40,320</td><td class="r">230,400</td><td class="r">17.5%</td></tr><tr><td>FF</td><td class="r">54,835</td><td class="r">460,800</td><td class="r">11.9%</td></tr><tr><td>BRAM</td><td class="r">497</td><td class="r">1,080</td><td class="r">46.0%</td></tr><tr><td>URAM</td><td class="r">0</td><td class="r">80</td><td class="r">0.0%</td></tr><tr><td>DSP</td><td class="r">3,712</td><td class="r">4,272</td><td class="r">86.9%</td></tr><tr><td>IO</td><td class="r">323</td><td class="r">347</td><td class="r">93.0%</td></tr></tbody></table>
+<h2>Step durations</h2>
+<table><thead><tr><th>Step</th><th class="r">Duration</th><th class="r">Share of build</th></tr></thead><tbody><tr><td><code>synth_design</code></td><td class="r">46m 40s</td><td class="r">46.7%</td></tr><tr><td><code>opt_design</code></td><td class="r">4m 48s</td><td class="r">4.8%</td></tr></tbody></table>
+<h2>Messages</h2>
+<table><thead><tr><th class="r">Errors</th><th class="r">Critical warnings</th><th class="r">Warnings</th><th class="r">Info</th></tr></thead><tbody><tr><td class="r">1</td><td class="r">9</td><td class="r">301</td><td class="r">4,020</td></tr></tbody></table>
+<table><thead><tr><th>Id</th><th>Severity</th><th class="r">Count</th><th>Text</th></tr></thead><tbody><tr><td><code>Common 17-69</code></td><td>Error</td><td class="r">1</td><td>Command failed: Run &#x27;impl_1&#x27; failed.</td></tr><tr><td><code>Synth 8-327</code></td><td>Error</td><td class="r">1</td><td>inferring latch for variable &#x27;q_reg&#x27;</td></tr><tr><td><code>Synth 8-3332</code></td><td>Warning</td><td class="r">505</td><td>Sequential element (dsp_acc_reg[17]) is unused and will be removed from module axis_cic.</td></tr><tr><td><code>Synth 8-7080</code></td><td>Warning</td><td class="r">1</td><td>Parallel synthesis criteria is not met</td></tr></tbody></table>
+<h2>Attempts</h2>
+<table><thead><tr><th>#</th><th>Mode</th><th>Result</th><th>Detail</th></tr></thead><tbody><tr><td>1</td><td>Project run</td><td>Failed</td><td>Route Design: failed in Phase 4.1 Global Iteration 2: Vivado crashed (SIGSEGV)</td></tr><tr><td>2</td><td>Resume from checkpoint</td><td>Failed</td><td>Route Design: failed: Vivado crashed (SIGSEGV) during Global Iteration 2</td></tr></tbody></table>
+<h2>Reports and bitstream</h2>
+<table><thead><tr><th>Item</th><th>Step</th><th>Path</th><th>Note</th></tr></thead><tbody><tr><td>Utilization</td><td>route_design</td><td><code>/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_utilization_routed.rpt</code></td><td></td></tr></tbody></table>
+<footer>Generated by vmon 0.1.0 on 2025-10-09</footer>
+</main></body></html>

@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import browse as browse_mod
 from . import history as history_mod
+from . import summary as summary_mod
 
 STATIC_DIR = Path(__file__).parent / "static"
 HEARTBEAT_S = 15
@@ -23,12 +24,14 @@ def make_server(monitor, host, port):
             pass
 
         # ---- helpers
-        def _send(self, status, body, ctype="application/json"):
+        def _send(self, status, body, ctype="application/json", headers=None):
             data = body.encode() if isinstance(body, str) else body
             self.send_response(status)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
+            for name, value in (headers or {}).items():
+                self.send_header(name, value)
             self.end_headers()
             self.wfile.write(data)
 
@@ -62,7 +65,7 @@ def make_server(monitor, host, port):
                 except browse_mod.BrowseError as exc:
                     return self._error(exc.status, str(exc))
             if route in ("/api/history", "/api/history/report", "/api/history/artifact",
-                         "/api/history/build", "/api/history/compare"):
+                         "/api/history/build", "/api/history/compare", "/api/history/summary"):
                 return self._history(route, query)
             if route in ("/api/messages", "/api/log", "/api/report", "/api/triage", "/api/paths"):
                 source = self._source(query)
@@ -168,6 +171,8 @@ def make_server(monitor, host, port):
                     return self._json(record) if record else self._error(404, "no such build in the history")
                 result, err = store.compare(fw_id, query.get("a", [""])[0], query.get("b", [""])[0])
                 return self._error(*err) if err else self._json(result)
+            if route == "/api/history/summary":
+                return self._summary(store, fw_id, query)
             art, err = store.artifact(fw_id, query.get("build", [""])[0], query.get("path", [""])[0])
             if err:
                 return self._error(*err)
@@ -189,6 +194,19 @@ def make_server(monitor, host, port):
                         self.wfile.write(chunk)
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     self.close_connection = True
+
+        def _summary(self, store, fw_id, query):
+            fmt = query.get("format", ["md"])[0]
+            if fmt not in summary_mod.RENDERERS:
+                return self._error(400, "format must be md or html")
+            record = store.build(fw_id, query.get("build", [""])[0])
+            if record is None:
+                return self._error(404, "no such build in the history")
+            render, ctype = summary_mod.RENDERERS[fmt]
+            extra = {}
+            if query.get("download", [""])[0] in ("1", "true", "yes"):
+                extra["Content-Disposition"] = 'attachment; filename="%s"' % summary_mod.filename(record, fmt)
+            self._send(200, render(record), ctype, extra)
 
         def _report(self, source, path):
             real = os.path.realpath(path)

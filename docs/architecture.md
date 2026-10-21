@@ -17,6 +17,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `expected.py` | Merges catalog placeholders (upcoming steps/phases, predicted numbers, weights) into the seen nodes. |
 | `timing_paths.py`, `path_table.py`, `clocks.py`, `convergence.py`, `congestion.py` | Worst-path parser for timing reports (streamed), per-clock history across stages and builds, router overlap trend, congestion level summary. |
 | `reports.py` | Parses utilization, timing summary, DRC/methodology, power, route status and other reports. |
+| `summary.py` | Renders a recorded build to Markdown or a self-contained HTML page. |
 | `history.py` | Build history store and records (`~/.cache/vmon/history/`), artifact validation for the history API. |
 | `alerts.py`, `triage.py`, `eta.py`, `info.py`, `docs.py` | Alerts, message scoring and baselines, ETA, build info, documentation links. |
 | `sysstats.py`, `browse.py` | System CPU/RAM/swap from `/proc`; read-only directory listing for the folder explorer. |
@@ -83,6 +84,7 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 | `GET /api/history?fw=&limit=` | Finished builds, newest first: `{"builds": [record], "firmwares": [{id, name}]}`. Without `fw`, all firmwares in the history dir (also ones not currently loaded). Each artifact carries `current`. |
 | `GET /api/history/build?fw=&build=` | The full record of one build (the list omits `messages`, `phases`, `timing_clocks`); 404 for an unknown firmware or build. |
 | `GET /api/history/compare?fw=&a=&b=` | Diff of two builds of one firmware (`a` base/older, `b` newer): timing, utilization, step durations, messages. 404 for an unknown firmware or build, 400 when `a` equals `b`. |
+| `GET /api/history/summary?fw=&build=&format=md\|html&download=1` | Printable summary of one recorded build: `text/markdown` (default) or `text/html`; `download=1` adds `Content-Disposition: attachment; filename="<firmware>_<YYYY-MM-DD_HHMM>_summary.<ext>"`. 404 for an unknown firmware or build, 400 for another format. |
 | `GET /api/history/report?fw=&build=&path=` | Text of a recorded report. `path` must be an artifact of that build and still current (same mtime and size); else 404 (not listed) or 410 (replaced by a later build). |
 | `GET /api/history/artifact?fw=&build=&path=` | Streams a recorded artifact (the bitstream) as `application/octet-stream` with `Content-Disposition: attachment`; same validation as the report route. |
 | `GET /api/browse?path=` | Read-only directory listing for the explorer (skips `/proc`, `/sys`, `/dev`). |
@@ -117,3 +119,7 @@ Result: `met` / `timing_not_met` (final timing only), `failed`, `stopped`, or `d
 ### Comparing builds
 
 A record also stores `steps` and `phases` (the durations `eta.py` keeps, same normalisation), `messages` (`{id: {count, severity, text}}` for warnings and worse, worst first, at most `[history] max_messages`, text cut at 160 characters) and `timing_clocks` (final WNS/WHS per clock). The list route strips the heavy fields; `/api/history/build` returns them. Records written before this release lack the fields and still load: their sides of a comparison are `null` and `messages.available` says the message detail is missing. `/api/history/compare` is computed on read by `history.compare_records` (new = in `b` only, removed = in `a` only, changed = count differs, top 200 per list by severity/count or `|delta|`; severity totals come from the recorded `counts`, so they stay exact when the id list was capped). The History page picks `a` and `b` by start time.
+
+### Build summary export
+
+`summary.py` turns a full history record (the same one `/api/history/build` returns) into neutral blocks, then draws them as GitHub Markdown or as one HTML file with inline CSS only (light, print-friendly, no external assets). Sections without data are left out, so records written by older versions still export. Order: title with date, duration and outcome, build info, timing (plus the 10 worst clocks), utilization, step durations, messages (every error and critical warning, then warnings by count, 15 rows at least), attempts, reports and bitstream (marked "replaced by a later build" when no longer current). Records also store `host`, `directives` and `attempts` (one row per attempt number when a resume or restart happened, from `Node.attempts`).

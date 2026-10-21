@@ -1294,3 +1294,14 @@ table.cmp-t { width: 100%; border-collapse: collapse; font-size: var(--fs-small)
   .cmp-msgs .mtx { grid-column: 1 / -1; grid-row: 2; white-space: normal; }
 }
 .cmp-msgs li > :first-child { justify-self: start; } /* one badge column, so ids and texts line up whatever the severity */
+
+/* build summary export: a quiet second line under a history row's reports, and a small pair next to the view switch */
+.hx-exp { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; }
+.hx-exp .dim { font-size: var(--fs-caption); margin-right: 2px; }
+.hx-exp .hx-chip svg { flex: none; }
+.fw-exp { display: inline-flex; gap: 4px; align-items: center; }
+.fw-exp[hidden] { display: none; }
+.fw-exp .hx-chip { cursor: pointer; }
+button.hx-chip { cursor: pointer; font-family: inherit; }
+.fw-meta .fw-exp { margin-left: auto; align-self: flex-end; display: inline-flex; gap: 6px; } /* finished builds only: sits where the live CPU/RAM readout was */
+.fw-exp[hidden] { display: none; }

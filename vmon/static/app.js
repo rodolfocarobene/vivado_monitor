@@ -629,7 +629,8 @@ function buildView() {
   head = h('section', 'fw-head', `
     <div class="fwl">
       <div class="fw-title"><h1></h1><span class="pill"></span>
-        <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div></div>
+        <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div>
+</div>
       <div class="fw-path mono"></div>
       <div class="fw-attempt" hidden></div>
       <div class="now">
@@ -643,12 +644,13 @@ function buildView() {
       <div class="fw-meta">
         <div class="kv counts-wrap"><div class="k">Messages</div><div class="cnt"></div></div>
         <div class="kv res-wrap"><div class="k">Vivado</div><div class="v sm num res"></div></div>
+        <span class="fw-exp" hidden><button type="button" class="hx-chip" data-act="hexp" data-format="md" title="Download a Markdown summary of this build">Export summary</button><a class="hx-chip" data-act="hexp" data-format="html" target="_blank" rel="noopener" title="Open a printable HTML summary of this build in a new tab">HTML</a></span>
       </div>
       <div class="topissues" hidden></div>
     </div>
     <div class="cards"><div class="timing-card"></div><div class="util-card"></div></div>
     <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
-  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head) };
+  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
   const banner = h('div', 'banner');
   // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
   const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="segwrap"></div><div class="stagelist"></div>`);
@@ -777,6 +779,8 @@ function renderHeader(fw) {
   setHTML(r.uc, utilCardHTML(fw));
   const ti = topIssuesHTML(fw);
   r.top.hidden = !ti; setHTML(r.top, ti);
+  r.exp.hidden = !['done', 'failed', 'stopped'].includes(fw.status) || fw.started_at == null;
+  if (!r.exp.hidden) for (const c of r.exp.children) { const build = String(Math.floor(fw.started_at)); c.dataset.fw = fw.id; c.dataset.build = build; if (c.tagName === 'A') c.href = summaryUrl(fw.id, build, 'html', false); }
   const view = curView(fw);
   for (const b of r.seg.children) { b.classList.toggle('on', b.dataset.view === view); setAttr(b, 'aria-pressed', String(b.dataset.view === view)); if (b.dataset.view === 'timing') b.hidden = !hasTimingView(fw) && view !== 'timing'; }
 }
@@ -1651,6 +1655,12 @@ document.addEventListener('click', async (ev) => {
     hist.cmpTab = t.dataset.tab; renderHistory();
   } else if (act === 'hrep') {
     openHistoryReport(t);
+  } else if (act === 'hexp') {
+    if (t.dataset.format === 'md') { ev.preventDefault(); exportMarkdown(t.dataset.fw, t.dataset.build); }
+    else if (MOCK) { ev.preventDefault(); window.open(mockSummaryUrl(t.dataset.fw, t.dataset.build, 'html'), '_blank', 'noopener'); }
+  } else if (act === 'hexp-copy') {
+    try { await navigator.clipboard.writeText(await summaryText(t.dataset.fw, t.dataset.build)); toast('Markdown summary copied'); }
+    catch (e) { toast(`Could not copy the summary: ${e.message}`); }
   } else if (act === 'hbit') {
     if (t.getAttribute('aria-disabled') === 'true') ev.preventDefault();
     else if (MOCK) { ev.preventDefault(); toast('Mock mode: download disabled'); }
@@ -2807,6 +2817,37 @@ function hxLinks(b) {
   } else bitHTML = '<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="No bitstream was recorded for this build">.bit</span>';
   return `<div class="links">${reports || '<span class="dim">no reports</span>'}<span class="hx-bit"><span class="hx-sep"></span>${bitHTML}</span></div>`;
 }
+// Summary export: MD downloads, HTML opens printable in a tab, the clipboard button copies the Markdown.
+const summaryUrl = (fw, build, fmt, dl) => `/api/history/summary?fw=${q(fw)}&build=${q(build)}&format=${fmt}${dl ? '&download=1' : ''}`;
+function hxExport(b) {
+  const ds = `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"`;
+  return `<div class="hx-exp" role="group" aria-label="Export build summary"><span class="dim">Summary</span>
+    <a class="hx-chip" data-act="hexp" data-format="md" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'md', true))}" download title="Download the Markdown summary of this build">MD</a>
+    <a class="hx-chip" data-act="hexp" data-format="html" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'html', false))}" target="_blank" rel="noopener" title="Open the printable HTML summary in a new tab">HTML</a>
+    <button type="button" class="hx-chip" data-act="hexp-copy" ${ds} title="Copy the Markdown summary" aria-label="Copy the Markdown summary">${HX_ICON}Copy</button></div>`;
+}
+const MOCK_SUMMARY_FALLBACK = 'tp02_1759982000';
+function mockSummaryUrl(fw, build, fmt) {
+  const x = new XMLHttpRequest(), key = `${fw}_${build}`;
+  x.open('GET', `mock/summary_${key}.${fmt}`, false); x.send();
+  return `mock/summary_${x.status === 200 ? key : MOCK_SUMMARY_FALLBACK}.${fmt}`;
+}
+async function summaryText(fw, build) {
+  const r = await fetch(MOCK ? mockSummaryUrl(fw, build, 'md') : summaryUrl(fw, build, 'md', false), { cache: 'no-store' });
+  if (!r.ok) throw new Error('no recorded build to summarise');
+  return r.text();
+}
+async function exportMarkdown(fw, build) {
+  try {
+    const r = await fetch(MOCK ? mockSummaryUrl(fw, build, 'md') : summaryUrl(fw, build, 'md', true), { cache: 'no-store' });
+    if (!r.ok) throw new Error('no recorded build to summarise yet');
+    const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || `${fw}_${build}_summary.md`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`Saved ${name}`);
+  } catch (e) { toast(`Could not export the summary: ${e.message}`); }
+}
 function hxRow(b, loaded, hasPrev) {
   const res = HX_RESULT[b.result] || HX_RESULT.done;
   const why = b.failure && b.failure.reason ? `${b.failure.step ? `${b.failure.step}: ` : ''}${b.failure.reason}` : '';
@@ -2824,7 +2865,7 @@ function hxRow(b, loaded, hasPrev) {
     <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
     <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
     <td class="ut" data-label="Utilization">${hxUtil(b)}</td>
-    <td class="links-c" data-label="Reports">${hxLinks(b)}</td></tr>`;
+    <td class="links-c" data-label="Reports">${hxLinks(b)}${hxExport(b)}</td></tr>`;
 }
 
 function renderHistory() {
