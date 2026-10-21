@@ -1,0 +1,885 @@
+{
+ "generated_at": 1760000000.0,
+ "builds": [
+  {
+   "build": "1759982000",
+   "fw_id": "tp02",
+   "firmware": "top",
+   "project": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs",
+   "started_at": 1759982000.0,
+   "ended_at": 1759994060.0,
+   "duration_s": 12060,
+   "result": "met",
+   "failure": null,
+   "timing": {
+    "wns": 0.214,
+    "tns": 0.0,
+    "whs": 0.011,
+    "ths": 0.0,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 80179,
+     "available": 230400,
+     "pct": 34.8
+    },
+    "FF": {
+     "used": 101837,
+     "available": 460800,
+     "pct": 22.1
+    },
+    "BRAM": {
+     "used": 443,
+     "available": 1080,
+     "pct": 41.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 2486,
+     "available": 4272,
+     "pct": 58.2
+    },
+    "IO": {
+     "used": 108,
+     "available": 347,
+     "pct": 31.0
+    }
+   },
+   "part": "xczu48dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "counts": [
+    0,
+    6,
+    212,
+    3410
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_timing_summary_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 180000,
+     "current": true
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_utilization_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_drc_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_power_routed.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "route_status",
+     "label": "Route status",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_route_status.rpt",
+     "mtime": 1759982600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper.bit",
+     "mtime": 1759982900.0,
+     "size": 19400000,
+     "current": true
+    }
+   ]
+  },
+  {
+   "build": "1759928000",
+   "fw_id": "lk01",
+   "firmware": "lockin",
+   "project": "/home/user/projects/firmware/lockin/lockin.runs",
+   "started_at": 1759928000.0,
+   "ended_at": 1759935800.0,
+   "duration_s": 7800,
+   "result": "timing_not_met",
+   "failure": null,
+   "timing": {
+    "wns": -0.387,
+    "tns": -212.4,
+    "whs": 0.021,
+    "ths": 0.0,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 41242,
+     "available": 230400,
+     "pct": 17.9
+    },
+    "FF": {
+     "used": 55757,
+     "available": 460800,
+     "pct": 12.1
+    },
+    "BRAM": {
+     "used": 497,
+     "available": 1080,
+     "pct": 46.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 3734,
+     "available": 4272,
+     "pct": 87.4
+    },
+    "IO": {
+     "used": 323,
+     "available": 347,
+     "pct": 93.0
+    }
+   },
+   "part": "xczu28dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_NetDelay_high",
+   "counts": [
+    0,
+    11,
+    340,
+    5120
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_timing_summary_routed.rpt",
+     "mtime": 1759928600.0,
+     "size": 180000,
+     "current": true
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_utilization_routed.rpt",
+     "mtime": 1759928600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_drc_routed.rpt",
+     "mtime": 1759928600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "methodology",
+     "label": "Methodology",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_methodology_drc_routed.rpt",
+     "mtime": 1759928600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_power_routed.rpt",
+     "mtime": 1759928600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "route_status",
+     "label": "Route status",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_route_status.rpt",
+     "mtime": 1759928600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin.bit",
+     "mtime": 1759928900.0,
+     "size": 19400000,
+     "current": false
+    }
+   ]
+  },
+  {
+   "build": "1759906400",
+   "fw_id": "rd06",
+   "firmware": "radar_dsp",
+   "project": "/home/user/projects/radar_dsp/radar_dsp.runs",
+   "started_at": 1759906400.0,
+   "ended_at": 1759924700.0,
+   "duration_s": 18300,
+   "result": "met",
+   "failure": null,
+   "timing": {
+    "wns": 0.062,
+    "tns": 0.0,
+    "whs": 0.034,
+    "ths": 0.0,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 147917,
+     "available": 230400,
+     "pct": 64.2
+    },
+    "FF": {
+     "used": 224410,
+     "available": 460800,
+     "pct": 48.7
+    },
+    "BRAM": {
+     "used": 783,
+     "available": 1080,
+     "pct": 72.5
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 3473,
+     "available": 4272,
+     "pct": 81.3
+    },
+    "IO": {
+     "used": 76,
+     "available": 347,
+     "pct": 22.0
+    }
+   },
+   "part": "xcvu9p-flgb2104-2-i",
+   "board": null,
+   "vivado_version": "2023.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_ExtraTimingOpt",
+   "counts": [
+    0,
+    4,
+    95,
+    2680
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_timing_summary_routed.rpt",
+     "mtime": 1759907000.0,
+     "size": 180000,
+     "current": true
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_utilization_routed.rpt",
+     "mtime": 1759907000.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_drc_routed.rpt",
+     "mtime": 1759907000.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_power_routed.rpt",
+     "mtime": 1759907000.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "route_status",
+     "label": "Route status",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_route_status.rpt",
+     "mtime": 1759907000.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp.bit",
+     "mtime": 1759907300.0,
+     "size": 71000000,
+     "current": true
+    }
+   ]
+  },
+  {
+   "build": "1759820000",
+   "fw_id": "lk01",
+   "firmware": "lockin",
+   "project": "/home/user/projects/firmware/lockin/lockin.runs",
+   "started_at": 1759820000.0,
+   "ended_at": 1759826000.0,
+   "duration_s": 6000,
+   "result": "failed",
+   "failure": {
+    "step": "Route Design",
+    "reason": "Vivado crashed (SIGSEGV) during Global Iteration 2"
+   },
+   "timing": null,
+   "utilization": {
+    "LUT": {
+     "used": 40320,
+     "available": 230400,
+     "pct": 17.5
+    },
+    "FF": {
+     "used": 54835,
+     "available": 460800,
+     "pct": 11.9
+    },
+    "BRAM": {
+     "used": 497,
+     "available": 1080,
+     "pct": 46.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 3712,
+     "available": 4272,
+     "pct": 86.9
+    },
+    "IO": {
+     "used": 323,
+     "available": 347,
+     "pct": 93.0
+    }
+   },
+   "part": "xczu28dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_NetDelay_high",
+   "counts": [
+    1,
+    9,
+    301,
+    4020
+   ],
+   "artifacts": [
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_utilization_routed.rpt",
+     "mtime": 1759820600.0,
+     "size": 24000,
+     "current": false
+    }
+   ]
+  },
+  {
+   "build": "1759730000",
+   "fw_id": "rd06",
+   "firmware": "radar_dsp",
+   "project": "/home/user/projects/radar_dsp/radar_dsp.runs",
+   "started_at": 1759730000.0,
+   "ended_at": 1759747400.0,
+   "duration_s": 17400,
+   "result": "timing_not_met",
+   "failure": null,
+   "timing": {
+    "wns": -1.108,
+    "tns": -1840.2,
+    "whs": -0.092,
+    "ths": -14.3,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 147226,
+     "available": 230400,
+     "pct": 63.9
+    },
+    "FF": {
+     "used": 223488,
+     "available": 460800,
+     "pct": 48.5
+    },
+    "BRAM": {
+     "used": 783,
+     "available": 1080,
+     "pct": 72.5
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 3473,
+     "available": 4272,
+     "pct": 81.3
+    },
+    "IO": {
+     "used": 76,
+     "available": 347,
+     "pct": 22.0
+    }
+   },
+   "part": "xcvu9p-flgb2104-2-i",
+   "board": null,
+   "vivado_version": "2023.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_ExtraTimingOpt",
+   "counts": [
+    0,
+    5,
+    98,
+    2701
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_timing_summary_routed.rpt",
+     "mtime": 1759730600.0,
+     "size": 180000,
+     "current": false
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_utilization_routed.rpt",
+     "mtime": 1759730600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp_power_routed.rpt",
+     "mtime": 1759730600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/home/user/projects/radar_dsp/radar_dsp.runs/impl_1/radar_dsp.bit",
+     "mtime": 1759730900.0,
+     "size": 71000000,
+     "current": true
+    }
+   ]
+  },
+  {
+   "build": "1759640000",
+   "fw_id": "tp02",
+   "firmware": "top",
+   "project": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs",
+   "started_at": 1759640000.0,
+   "ended_at": 1759650800.0,
+   "duration_s": 10800,
+   "result": "met",
+   "failure": null,
+   "timing": {
+    "wns": 0.142,
+    "tns": 0.0,
+    "whs": 0.009,
+    "ths": 0.0,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 79718,
+     "available": 230400,
+     "pct": 34.6
+    },
+    "FF": {
+     "used": 101376,
+     "available": 460800,
+     "pct": 22.0
+    },
+    "BRAM": {
+     "used": 443,
+     "available": 1080,
+     "pct": 41.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 2486,
+     "available": 4272,
+     "pct": 58.2
+    },
+    "IO": {
+     "used": 108,
+     "available": 347,
+     "pct": 31.0
+    }
+   },
+   "part": "xczu48dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "counts": [
+    0,
+    6,
+    209,
+    3398
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_timing_summary_routed.rpt",
+     "mtime": 1759640600.0,
+     "size": 180000,
+     "current": false
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_utilization_routed.rpt",
+     "mtime": 1759640600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_drc_routed.rpt",
+     "mtime": 1759640600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_power_routed.rpt",
+     "mtime": 1759640600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "route_status",
+     "label": "Route status",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_route_status.rpt",
+     "mtime": 1759640600.0,
+     "size": 24000,
+     "current": true
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper.bit",
+     "mtime": 1759640900.0,
+     "size": 19400000,
+     "current": false
+    }
+   ]
+  },
+  {
+   "build": "1759388000",
+   "fw_id": "tp02",
+   "firmware": "top",
+   "project": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs",
+   "started_at": 1759388000.0,
+   "ended_at": 1759390400.0,
+   "duration_s": 2400,
+   "result": "stopped",
+   "failure": {
+    "step": null,
+    "reason": "Vivado process gone"
+   },
+   "timing": null,
+   "utilization": {
+    "LUT": {
+     "used": 78566,
+     "available": 230400,
+     "pct": 34.1
+    },
+    "FF": {
+     "used": 100454,
+     "available": 460800,
+     "pct": 21.8
+    },
+    "BRAM": {
+     "used": 443,
+     "available": 1080,
+     "pct": 41.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 2473,
+     "available": 4272,
+     "pct": 57.9
+    },
+    "IO": {
+     "used": 108,
+     "available": 347,
+     "pct": 31.0
+    }
+   },
+   "part": "xczu48dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+   "counts": [
+    0,
+    2,
+    88,
+    1204
+   ],
+   "artifacts": [
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_utilization_routed.rpt",
+     "mtime": 1759388600.0,
+     "size": 24000,
+     "current": false
+    }
+   ]
+  },
+  {
+   "build": "1759280000",
+   "fw_id": "lk01",
+   "firmware": "lockin",
+   "project": "/home/user/projects/firmware/lockin/lockin.runs",
+   "started_at": 1759280000.0,
+   "ended_at": 1759287620.0,
+   "duration_s": 7620,
+   "result": "met",
+   "failure": null,
+   "timing": {
+    "wns": 0.031,
+    "tns": 0.0,
+    "whs": 0.017,
+    "ths": 0.0,
+    "final": true
+   },
+   "utilization": {
+    "LUT": {
+     "used": 39629,
+     "available": 230400,
+     "pct": 17.2
+    },
+    "FF": {
+     "used": 54374,
+     "available": 460800,
+     "pct": 11.8
+    },
+    "BRAM": {
+     "used": 486,
+     "available": 1080,
+     "pct": 45.0
+    },
+    "URAM": {
+     "used": 0,
+     "available": 80,
+     "pct": 0.0
+    },
+    "DSP": {
+     "used": 3648,
+     "available": 4272,
+     "pct": 85.4
+    },
+    "IO": {
+     "used": 323,
+     "available": 347,
+     "pct": 93.0
+    }
+   },
+   "part": "xczu28dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Performance_NetDelay_high",
+   "counts": [
+    0,
+    10,
+    322,
+    5002
+   ],
+   "artifacts": [
+    {
+     "kind": "timing_summary",
+     "label": "Timing summary",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_timing_summary_routed.rpt",
+     "mtime": 1759280600.0,
+     "size": 180000,
+     "current": false
+    },
+    {
+     "kind": "utilization",
+     "label": "Utilization",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_utilization_routed.rpt",
+     "mtime": 1759280600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_drc_routed.rpt",
+     "mtime": 1759280600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "power",
+     "label": "Power",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_power_routed.rpt",
+     "mtime": 1759280600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "route_status",
+     "label": "Route status",
+     "step": "route_design",
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin_route_status.rpt",
+     "mtime": 1759280600.0,
+     "size": 24000,
+     "current": false
+    },
+    {
+     "kind": "bitstream",
+     "label": "Bitstream",
+     "step": null,
+     "path": "/home/user/projects/firmware/lockin/lockin.runs/impl_1/lockin.bit",
+     "mtime": 1759280900.0,
+     "size": 19400000,
+     "current": false
+    }
+   ]
+  },
+  {
+   "build": "1759064000",
+   "fw_id": "tp02",
+   "firmware": "top",
+   "project": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs",
+   "started_at": 1759064000.0,
+   "ended_at": 1759074200.0,
+   "duration_s": 10200,
+   "result": "done",
+   "failure": null,
+   "timing": null,
+   "utilization": null,
+   "part": "xczu48dr-ffvg1517-2-e",
+   "board": null,
+   "vivado_version": "2024.2",
+   "strategy_synth": "Vivado Synthesis Defaults",
+   "strategy_impl": "Default",
+   "counts": [
+    0,
+    5,
+    180,
+    3011
+   ],
+   "artifacts": [
+    {
+     "kind": "drc",
+     "label": "DRC",
+     "step": "route_design",
+     "path": "/home/user/projects/qick_firmwares/4x2_tprocv2r26/top/top.runs/impl_1/d_1_wrapper_drc_routed.rpt",
+     "mtime": 1759064600.0,
+     "size": 24000,
+     "current": false
+    }
+   ]
+  }
+ ],
+ "firmwares": [
+  {
+   "id": "lk01",
+   "name": "lockin"
+  },
+  {
+   "id": "tp02",
+   "name": "top"
+  },
+  {
+   "id": "rd06",
+   "name": "radar_dsp"
+  }
+ ]
+}

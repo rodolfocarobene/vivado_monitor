@@ -16,15 +16,21 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **Router convergence chart** (overlaps and slack per iteration, live) and an alert when the router stalls or diverges.
 - **Alerts** with browser notifications, and an in-app event log.
 - **Message triage**: severity, rules, keywords, rarity and "new since last build" scoring; pin or mute any message id.
-- **ETA** from the previous build of the same firmware.
+- **ETA with a confidence band**: per-step and per-phase durations learned from the last 20 builds of the same firmware (medians, p10-p90 range); steps never seen are sized from the catalog.
+- **Congestion summary** for place and route: placer and router congestion levels per direction, final max congestion, router overlaps per iteration; a chip and an alert from level 5.
+- **Build history page**: every finished build with date, duration, outcome, final WNS/WHS, utilization, and links to its reports and `.bit` (only while the files still belong to that build). Click a build to open its project in the standard view (it is loaded again if its tab was closed).
 - **Build info**: part, board, strategies, directives; links to AMD documentation.
 - **System CPU / RAM / swap** meters, sticky summary, folder explorer to add runs.
-- **Keyboard**: `1`-`9` firmware tabs, `f`/`m`/`t` views, `j`/`k` stages, `n` next alert, `c` collapse all, `?` help; arrow keys on the tab strip.
+- **Keyboard**: `1`-`9` firmware tabs, `f`/`m`/`t` views, `j`/`k` stages, `n` next alert, `c` collapse all, `h` build history, `?` help; arrow keys on the tab strip.
 - No AI: pure log parsing. Read-only. Python standard library only.
 
 | Messages triage | Light theme, finished build | Narrow window |
 |---|---|---|
 | ![Messages](docs/img/messages.png) | ![Light theme](docs/img/light-theme.png) | <img src="docs/img/narrow.png" alt="Narrow window: stages as one tree" width="240"> |
+
+| Build history | Congestion (route) |
+|---|---|
+| ![Build history](docs/img/history.png) | ![Congestion](docs/img/congestion.png) |
 
 ## Requirements
 

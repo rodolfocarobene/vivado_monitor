@@ -252,10 +252,15 @@ Alerts: timing_fail is level "error" ONLY when Timing.final and not met; otherwi
         stating it is an intermediate/estimated value (e.g. "WHS -0.135 ns (intermediate, route not finished — hold
         fixing usually comes later)"). Firmware.health must follow the same logic.
 Firmware.eta = {"expected_end": epoch|null, "remaining_s": float|null,
-                "method": "previous build"|"catalog weights"|null, "confidence": "low"|"medium"|"high"} | null
-     # previous build: per-step durations of the last completed build of the same firmware, stored in
-     #   ~/.cache/vmon/durations/<fw_id>.json when a build finishes (also recorded at startup for finished builds);
-     #   remaining = sum(durations of pending steps) + max(prev_dur(current) - elapsed(current), 10% of prev_dur).
+                "low_end": epoch|null, "high_end": epoch|null, "remaining_low_s": float|null, "remaining_high_s": float|null,
+                "method": "history"|"catalog weights"|null, "builds": int, "confidence": "low"|"medium"|"high"} | null
+     # history: durations of up to [eta] history_builds completed builds, stored in
+     #   ~/.cache/vmon/durations/<fw_id>.json as {"builds": [{"build","total_s","steps":{step:s},"phases":{step:{name:s}}}]}
+     #   (phase name = label without number; the old single-build file is read as one build);
+     #   remaining = sum(median of pending steps) + current step (medians of unfinished phases, running phase
+     #   max(median - elapsed, 10% of median); without phase history max(median - elapsed, 10% of median)).
+     #   Band = p10/p90 of the same sum computed per past build (min/max +-15% under 3 builds).
+     #   confidence: >=5 builds and all steps known high, >=2 medium, else low; an unseen step lowers it one level.
      # fallback: catalog weights scaled by elapsed / progress_estimate (confidence low).
 Firmware.info = {"part": str|null, "board": str|null, "top": str|null, "vivado_version": str|null,
                  "host": str|null, "strategy_synth": str|null, "strategy_impl": str|null,
@@ -274,9 +279,9 @@ Docs links (configurable URL templates in flows.toml [docs]):
   "any timing is final once that step is done". Stage text: "<Step> · estimate|intermediate|final|report|final report".
   Final violation message ends with "(final)"; non-final: "WHS -0.135 ns - intermediate value during Route Design, not final
   (hold fixing usually comes later in route)" ("estimated" instead of "intermediate" for place/phys_opt estimates).
-- ETA: only for running builds. Durations file = {"build","total_s","steps":{step_id: s}} of the last completed build (synth under
-  "synth_design"; stored beside recent.json in `durations/`). Confidence "medium" with a previous build ("low" if a pending step has no
-  recorded duration), "low" for catalog weights. Never computed for finished builds (eta null).
+- ETA: only for running builds; never computed for finished builds (eta null). Synth is stored under "synth_design"; the durations file
+  lives beside recent.json in `durations/` (format above, upgraded from the single-build format on the next write). Unknown running
+  step or no history: catalog weights (method "catalog weights", builds 0, confidence low, band +-30%).
 - Info: `jobs` from the impl Run `LaunchOptions` in the .xpr, else `set_param runs.launchOptions` in the run tcl (the launcher log is not
   used). `directives` come from `Command:` lines in the impl log (second phys_opt/power_opt command maps to the post-route/post-place step).
   Files parsed by mtime/size (log incrementally). Log-mode firmwares get only part/top/version/directives.
@@ -392,7 +397,19 @@ GET /api/paths?fw=&path=<report>&type=setup|hold&only_failing=0|1
   -> {"path": str, "paths": [Path], "counts": PathCounts}   (403 unknown report, 400 bad type)
 Path = {"id","type":"setup"|"hold","slack","status":"MET"|"VIOLATED","source","source_clock","destination","dest_clock",
         "from_clock","to_clock","group","path_type","corner","requirement","data_delay","logic_delay","logic_pct",
-        "route_delay","route_pct","levels","cells":{cell:count},"skew","uncertainty"}      # worst first
+        "route_delay","route_pct","levels","cells":{cell:count},"skew","uncertainty",
+        "launch","steps","capture","truncated"}      # worst first; the last four only in /api/paths (not in compact Path)
+  launch  = {"clock","edge":"rise"|"fall","at": source clock arrival at the launch pin (ns),
+             "path":[{"kind":"cell","site","cell","incr","at"} | {"kind":"net","fanout","routing","incr","at"}]} | null
+  steps   = DATA PATH in order (max 200; `truncated` true when cut):
+            {"kind":"cell","site","cell":"LUT3","arc":"Prop_B5LUT_SLICEL_I2_O","from_pin":"I2","to_pin":"O","incr","at","edge":"r"|"f","name"}
+            {"kind":"net","fanout","routing":"routed"|"estimated"|"unplaced"|null,"incr","at","name"}
+            {"kind":"endpoint","site","cell":"FDRE","pin":"D","edge","incr":null,"at":null,"name"}   # always last
+  capture = {"clock","edge","at": destination clock arrival,"path":[like launch.path],"pessimism","uncertainty" (as printed,
+             signed),"setup_or_hold":{"arc","cell","incr"}|null,"constraint":{"kind":"max delay"|"min delay","value"}|null,
+             "required","arrival" (as printed: hold shows required negative, setup arrival negative),"slack"}
+  launch/capture.clock and .at are null for set_max_delay -datapath_only paths; launch/capture/steps are null/[] when the
+  table could not be parsed. The table is parsed in the same single pass (vmon/path_table.py), only for paths that survive the cap.
 PathCounts = {"total","setup","hold","setup_failing","hold_failing","failing","failing_clocks","clocks":[str],
               "shown","capped","worst_setup","worst_hold"}
 Report.summary (timing_summary) += {"paths": [compact Path: id,type,slack,status,source,destination,source_clock,
@@ -413,5 +430,53 @@ attempt summaries also carry "convergence". Alert code "route_not_converging" (w
   strictly dropping, else null. Alert needs `alert_min_iterations`.
 - Parser: iterations are phases matching `[convergence] phase_re` (Global Iteration, Initial (Net) Routing); overlap lines
   outside such phases are ignored. Feeding is incremental (chunk-equivalent). Limits: 500 iterations, 64 values each.
+- Path detail UI: header (slack, type/corner, requirement, data delay, logic/route, levels, skew, uncertainty), proportional
+  cells-vs-nets bar, wrapping block chain (cell, pins, site, delay; nets as labelled connectors; common hierarchy prefix shown
+  once), collapsible "Clock & required" table. `#pth=0,1&pclk=1` opens rows and their clock table (debug).
 - UI: Timing view (clocks, stages, worst paths), worst-paths table in Reports/Timing tabs, header "N failing paths in K
   clocks", Convergence tab with inline SVG chart, overlap sparkline on the running route card.
+
+## Congestion (place_design, route_design)
+```
+Node.congestion = {                       # null when the step log has no congestion table; keys appear as the log is read
+  "placer":         {dir: {"global": L, "long": L, "short": L}},
+  "router_initial": {dir: {"global": L, "long": L, "short": L,
+                           "global_pct"?: float, "long_pct"?: float, "short_pct"?: float}},   # % of tiles: newer Vivado only
+  "router_final":   {dir: {"max_pct": float, "level": L, "congested": bool}},
+  "max_level": int, "level": "ok"|"warn"|"crit", "warn_level": int, "crit_level": int }
+dir = "north"|"south"|"east"|"west";  L = log2 of the region size (1x1 -> 0, 16x16 -> 4, 32x32 -> 5)
+```
+- router_final.level is Vivado's "Effective congestion level" (falls back to the area size level); `congested` is false
+  for "No Congested Regions". max_level is the worst L over all tables; level = crit from `[congestion] crit_level`
+  (default 7), warn from `warn_level` (default 5), else ok.
+- Alert code "congestion" (always warning, never error): "Congestion level N during <placement|initial routing|final
+  routing> (<dir> <slot>, threshold T)". Shown by the UI as a Congestion tab and a "CONG Ln" chip (only when level != ok).
+- Parser: rules `congestion_placer|router|row|final|direction|effective` in flows.toml; incremental (a table cut by a
+  chunk boundary is completed by the next feed); a new step resets the table state.
+
+## Build history
+```
+~/.cache/vmon/history/<fw_id>.json = {"firmware": {"id", "name"}, "builds": [HistoryRecord]}   # oldest first, cap [history] max_builds
+HistoryRecord = {
+  "build": str,                     # same key as the baselines: int(started_at) as text; one record per key
+  "fw_id": str, "firmware": str, "project": str,
+  "started_at": epoch, "ended_at": epoch, "duration_s": float,
+  "result": "met"|"timing_not_met"|"failed"|"stopped"|"done",   # met/timing_not_met need a final timing; done = none
+  "failure": {"step": str|null, "reason": str|null} | null,       # failed/stopped builds
+  "timing": {"wns","tns","whs","ths": float|null, "final": bool} | null,
+  "utilization": {"LUT"|"FF"|"BRAM"|"URAM"|"DSP"|"IO": {"used","available","pct"}} | null,
+  "part", "board", "vivado_version", "strategy_synth", "strategy_impl": str|null,
+  "counts": [errors, critical warnings, warnings, info],
+  "artifacts": [{"kind": str ("timing_summary"|"utilization"|"drc"|...|"bitstream"), "label": str, "step": str|null,
+                 "path": str, "mtime": float, "size": int}] }
+GET /api/history?fw=<id>&limit=N  -> {"builds": [HistoryRecord + artifacts[].current: bool, newest first],
+                                      "firmwares": [{"id","name"}]}     # no fw: every firmware with history
+GET /api/history/report?fw=&build=&path=    -> text/plain
+GET /api/history/artifact?fw=&build=&path=  -> application/octet-stream, Content-Disposition: attachment
+```
+- `current` = the file's mtime and size still equal the recorded ones (Vivado overwrites reports on every run).
+- Report/artifact routes: 404 when the firmware, build or path is not recorded (including any path not in that build's
+  artifacts, e.g. traversal attempts), 410 when the file changed or vanished since the build. Read-only.
+- Recording: when a build is done/failed/stopped, plus backfill of finished builds at startup. A record is replaced only
+  when its result changed. The bitstream is `<runs>/<impl run>/<top>.bit` and only counts if written after the build start.
+- UI: top-bar History button / `h` / `#page=history`; table of builds with firmware filter (default: current firmware).

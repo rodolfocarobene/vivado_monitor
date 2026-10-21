@@ -7,6 +7,8 @@ from test_project import lockin, qick, stage_map
 from test_v2 import make_monitor
 from vmon.alerts import health
 from vmon.discovery import Group
+from vmon.eta import _phases
+from vmon.expected import normalize
 from vmon.project import ProjectSource
 
 T_NOW = 1_010_000.0
@@ -66,29 +68,94 @@ def test_finished_build_met_is_ok_and_final(tmp_path, cfg, report_cache, catalog
 
 
 # ---------------------------------------------------------------- ETA
-def test_eta_previous_build_and_fallback(tmp_path, cfg):
+STEPS = {"synth_design": 100, "init_design": 20, "opt_design": 100, "place_design": 600,
+         "phys_opt_design": 300, "route_design": 1000, "write_bitstream": 80}
+
+
+def running_fw(tmp_path, cfg):
     monitor = make_monitor(tmp_path, cfg)
     runs = lockin(tmp_path, impl_pid=os.getpid())
-    # fallback: no previous build
-    fw = ProjectSource(runs, cfg, monitor.reports, monitor.catalog).snapshot(
+    return ProjectSource(runs, cfg, monitor.reports, monitor.catalog).snapshot(
         Group("project", str(runs), "lockin", {os.getpid()}), now=1_001_000.0)
+
+
+def build(scale=1.0, phases=None, steps=None):
+    steps = steps or STEPS
+    return {"build": str(scale), "total_s": 5000, "steps": {k: v * scale for k, v in steps.items()},
+            "phases": phases or {}}
+
+
+def test_eta_history_and_fallback(tmp_path, cfg):
+    fw = running_fw(tmp_path, cfg)
     from vmon.eta import estimate
-    eta = estimate(fw, None, 1_001_000.0)
+    eta = estimate(fw, [], 1_001_000.0)
     assert eta["method"] == "catalog weights" and eta["confidence"] == "low" and eta["remaining_s"] > 0
-    # previous build durations file
-    previous = {"build": "1", "total_s": 5000, "steps": {
-        "synth_design": 100, "init_design": 20, "opt_design": 100, "place_design": 600,
-        "phys_opt_design": 300, "route_design": 1000, "write_bitstream": 80}}
-    eta = estimate(fw, previous, 1_001_000.0)
+    assert eta["builds"] == 0 and eta["low_end"] < eta["expected_end"] < eta["high_end"]
+    eta = estimate(fw, [build()], 1_001_000.0)
     place = stage_map(fw)["impl_1/place_design"]
     expected = max(600 - place.elapsed_s, 60) + 300 + 1000 + 80
-    assert eta["method"] == "previous build" and eta["confidence"] == "medium"
+    assert eta["method"] == "history" and eta["confidence"] == "low" and eta["builds"] == 1
     assert abs(eta["remaining_s"] - expected) < 0.2
     assert abs(eta["expected_end"] - (1_001_000.0 + expected)) < 0.2
-    # overrun: current step past its previous duration -> at least 10% of it remains
-    previous["steps"]["place_design"] = 1
-    eta = estimate(fw, previous, 1_001_000.0)
+    # overrun: current step past its typical duration -> at least 10% of it remains
+    eta = estimate(fw, [build(steps={**STEPS, "place_design": 1})], 1_001_000.0)
     assert abs(eta["remaining_s"] - (0.1 + 300 + 1000 + 80)) < 0.2
+
+
+def test_eta_band_by_build_count(tmp_path, cfg):
+    fw = running_fw(tmp_path, cfg)
+    from vmon.eta import estimate
+    one = estimate(fw, [build()], 0.0)
+    assert abs(one["remaining_low_s"] - one["remaining_s"] * 0.85) < 0.2
+    assert abs(one["remaining_high_s"] - one["remaining_s"] * 1.15) < 0.2
+    two = estimate(fw, [build(1.0), build(2.0)], 0.0)
+    assert two["confidence"] == "medium" and two["remaining_low_s"] < two["remaining_s"] < two["remaining_high_s"]
+    five = estimate(fw, [build(s) for s in (0.8, 0.9, 1.0, 1.1, 1.2)], 0.0)
+    assert five["confidence"] == "high" and five["builds"] == 5
+    assert five["remaining_low_s"] < five["remaining_s"] < five["remaining_high_s"]
+    assert five["high_end"] == five["remaining_high_s"] and five["low_end"] == five["remaining_low_s"]
+    # p10/p90 sit inside the min/max of the per-build sums
+    assert five["remaining_high_s"] < estimate(fw, [build(1.2)], 0.0)["remaining_s"]
+
+
+def test_eta_phase_medians_mid_step(tmp_path, cfg):
+    fw = running_fw(tmp_path, cfg)
+    from vmon.eta import estimate
+    place = stage_map(fw)["impl_1/place_design"]
+    phases = list(_phases(place))
+    running = [normalize(c.label) for c in phases if c.status == "running"]
+    assert running == ["placer initialization"]
+    ph = {"place_design": {running[0]: 400, "global placement": 120, "detail placement": 60}}
+    eta = estimate(fw, [build(phases=ph)], 0.0)
+    el = next(c.elapsed_s for c in phases if c.status == "running") or 0.0
+    assert abs(eta["remaining_s"] - (max(400 - el, 40) + 120 + 60 + 300 + 1000 + 80)) < 0.2
+
+
+def test_eta_unknown_step_lowers_confidence(tmp_path, cfg):
+    fw = running_fw(tmp_path, cfg)
+    from vmon.eta import estimate
+    known = [build(s) for s in (0.9, 1.0, 1.1, 1.0, 1.0)]
+    partial = [build(s, steps={k: v for k, v in STEPS.items() if k != "write_bitstream"}) for s in (0.9, 1.0, 1.1, 1.0, 1.0)]
+    assert estimate(fw, known, 0.0)["confidence"] == "high"
+    assert estimate(fw, partial, 0.0)["confidence"] == "medium"
+    gone = [build(steps={k: v for k, v in STEPS.items() if k != "place_design"})]
+    assert estimate(fw, gone, 0.0)["method"] == "catalog weights"
+
+
+def test_duration_store_roundtrip_upgrade_and_cap(tmp_path):
+    from vmon.eta import DurationStore
+    store = DurationStore(tmp_path / "d", limit=3)
+    (tmp_path / "d").mkdir()
+    (tmp_path / "d" / "x.json").write_text(json.dumps({"build": "old", "total_s": 9, "steps": {"route_design": 5}}))
+    assert [b["build"] for b in store.load("x")] == ["old"]
+    assert store.record("x", "b1", {"route_design": 6}, 10, {"route_design": {"a": 1.0}})
+    saved = json.loads((tmp_path / "d" / "x.json").read_text())
+    assert [b["build"] for b in saved["builds"]] == ["old", "b1"] and saved["builds"][1]["phases"] == {"route_design": {"a": 1.0}}
+    assert not store.record("x", "b1", {"route_design": 6}, 10, {"route_design": {"a": 1.0}})   # once per build
+    for n in ("b2", "b3", "b4"):
+        store.record("x", n, {"route_design": 7}, 11)
+    assert [b["build"] for b in store.load("x")] == ["b2", "b3", "b4"]
+    assert not (tmp_path / "d" / "x.json.tmp").exists() and store.load("missing") == []
 
 
 def test_durations_recorded_for_finished_build_and_used(tmp_path, cfg):
@@ -97,10 +164,12 @@ def test_durations_recorded_for_finished_build_and_used(tmp_path, cfg):
     monitor.add_path(str(runs))
     monitor.tick()
     fw_id = next(iter(monitor.firmwares))
-    saved = json.loads((tmp_path / "cache" / "durations" / (fw_id + ".json")).read_text())
-    assert saved["steps"]["route_design"] > 0 and "synth_design" in saved["steps"]
+    saved = json.loads((tmp_path / "cache" / "durations" / (fw_id + ".json")).read_text())["builds"]
+    assert len(saved) == 1 and saved[0]["steps"]["route_design"] > 0 and "synth_design" in saved[0]["steps"]
+    assert any(saved[0]["phases"].values())
     assert monitor.firmwares[fw_id].eta is None          # finished build has no ETA
-    assert monitor.durations.load(fw_id)["steps"] == saved["steps"]
+    monitor.tick()
+    assert monitor.durations.load(fw_id) == saved
 
 
 # ---------------------------------------------------------------- info
@@ -162,3 +231,20 @@ def test_triage_group_doc_url_encoded(tmp_path, cfg):
     assert with_id
     g = with_id[0]
     assert g["doc_url"] and g["id"].replace(" ", "+") in g["doc_url"]
+
+
+def test_eta_sizes_never_seen_step_by_catalog_weight():
+    """A pending step with no history is sized from its catalog weight, not counted as zero."""
+    from types import SimpleNamespace as NS
+    from vmon import eta
+
+    def stage(name, status, weight=None, elapsed=None):
+        return NS(id="impl_1/" + name, kind="step", status=status, elapsed_s=elapsed, label=name, expected=False,
+                  estimate={"weight": weight} if weight else None, children=[])
+    fw = NS(status="running", progress_estimate=0.4, elapsed_s=500, flows=[NS(stages=[
+        stage("place_design", "running", elapsed=100), stage("phys_opt_design", "pending", 2), stage("route_design", "pending", 4)])])
+    history = [{"build": "a", "total_s": 1000, "steps": {"place_design": 300, "route_design": 400}}]
+    out = eta.estimate(fw, history, 0)
+    assert out["method"] == "history"
+    assert out["remaining_s"] == 200 + 400 + 2 * (400 / 4)
+    assert out["confidence"] == "low"

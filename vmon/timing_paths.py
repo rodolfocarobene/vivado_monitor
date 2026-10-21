@@ -2,9 +2,11 @@
 
 Reads the report line by line (reports can be several MB) and keeps only the worst
 paths per type, so memory and time stay bounded. Only the header of each path block
-(everything before the "Location / Delay type" table) is looked at.
+and its "Location / Delay type" table (launch/capture clocks, data-path steps) are parsed.
 """
 import re
+
+from vmon.path_table import PathTable
 
 MAX_BYTES = 128_000_000
 _SLACK = re.compile(r"^Slack \((MET|VIOLATED)\)\s*:\s*(-?[\d.]+)ns")
@@ -82,6 +84,9 @@ def parse_paths(lines, max_paths=200):
         if block is None:
             return
         item = _finish(block, block["section"], block["from_clock"], block["to_clock"])
+        found = block["table"].result() if block["table"] is not None else None
+        item["launch"], item["steps"], item["capture"] = found or (None, [], None)
+        item["truncated"] = block["table"] is not None and block["table"].truncated
         kind = item["type"]
         counts["total"] += 1
         counts[kind] += 1
@@ -100,7 +105,7 @@ def parse_paths(lines, max_paths=200):
         if first == " ":
             if block is not None and not block["done"]:
                 if line.startswith("    Location"):
-                    block["done"] = True
+                    block["done"], block["table"] = True, PathTable()
                     continue
                 if pending_key and "clocked by" in line:
                     match = _CLOCKED.search(line)
@@ -129,10 +134,12 @@ def parse_paths(lines, max_paths=200):
                         block["skew"] = value
                     elif key == "Clock Uncertainty":
                         block["uncertainty"] = value
-            elif first == " " and line.startswith("  To Clock:"):
+            elif line.startswith("  To Clock:"):
                 match = _TO.match(line)
                 if match:
                     to_clock = match.group(1)
+            elif block is not None and block["table"] is not None:
+                block["table"].feed(line)
             continue
         if not first:
             continue
@@ -141,7 +148,7 @@ def parse_paths(lines, max_paths=200):
             if match and section:
                 close()
                 block = {"status": match.group(1), "slack": float(match.group(2)), "section": section,
-                         "from_clock": from_clock, "to_clock": to_clock, "done": False}
+                         "from_clock": from_clock, "to_clock": to_clock, "done": False, "table": None}
                 pending_key = None
             continue
         if first == "M":

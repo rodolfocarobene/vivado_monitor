@@ -13,6 +13,7 @@ from pathlib import Path
 
 from . import alerts as alert_rules
 from . import artifacts as artifacts_mod
+from . import congestion as congestion_mod
 from . import convergence as convergence_mod
 from . import failure as failure_mod
 from .attempts import AttemptStore
@@ -237,6 +238,7 @@ class Source:
             node.line_end = section.line_end or plog.line_count
             node.timing = self._timing_from_history(section, step_id, status)
             node.convergence = convergence_mod.summarize(section.iters, self.cfg)
+            node.congestion = congestion_mod.summarize(section.congestion, self.cfg)
             node.progress = self._progress(node)
             if node.started_at is None:
                 node.started_at = section.started_at

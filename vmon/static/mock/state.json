@@ -52,6 +52,12 @@
      "code": "timing_fail",
      "message": "Estimated WNS -0.184 ns (place estimate, route not run yet - later steps usually improve it)",
      "node_id": "impl_1/place_design"
+    },
+    {
+     "level": "warning",
+     "code": "congestion",
+     "message": "Congestion level 5 during placement (south long, threshold 5): may impact timing closure",
+     "node_id": "impl_1/place_design"
     }
    ],
    "counts": {
@@ -1696,6 +1702,12 @@
          "code": "timing_fail",
          "message": "Estimated WNS -0.184 ns (place estimate, route not run yet - later steps usually improve it)",
          "node_id": "impl_1/place_design"
+        },
+        {
+         "level": "warning",
+         "code": "congestion",
+         "message": "Congestion level 5 during placement (south long, threshold 5): may impact timing closure",
+         "node_id": "impl_1/place_design"
         }
        ],
        "children": [
@@ -2014,7 +2026,35 @@
        ],
        "doc_url": "https://docs.amd.com/search?q=place_design",
        "number": null,
-       "number_predicted": false
+       "number_predicted": false,
+       "congestion": {
+        "placer": {
+         "north": {
+          "global": 4,
+          "long": 4,
+          "short": 4
+         },
+         "south": {
+          "global": 4,
+          "long": 5,
+          "short": 4
+         },
+         "east": {
+          "global": 4,
+          "long": 4,
+          "short": 5
+         },
+         "west": {
+          "global": 2,
+          "long": 2,
+          "short": 5
+         }
+        },
+        "max_level": 5,
+        "level": "warn",
+        "warn_level": 5,
+        "crit_level": 7
+       }
       },
       {
        "id": "impl_1/phys_opt_design",
@@ -2763,8 +2803,13 @@
    "eta": {
     "expected_end": 1760004800.0,
     "remaining_s": 4800,
-    "method": "previous build",
-    "confidence": "medium"
+    "low_end": 1760004000.0,
+    "high_end": 1760006100.0,
+    "remaining_low_s": 4000,
+    "remaining_high_s": 6100,
+    "method": "history",
+    "builds": 6,
+    "confidence": "high"
    },
    "info": {
     "part": "xczu48dr-ffvg1517-2-e",
@@ -4377,7 +4422,35 @@
        ],
        "doc_url": "https://docs.amd.com/search?q=place_design",
        "number": null,
-       "number_predicted": false
+       "number_predicted": false,
+       "congestion": {
+        "placer": {
+         "north": {
+          "global": 0,
+          "long": 4,
+          "short": 2
+         },
+         "south": {
+          "global": 1,
+          "long": 4,
+          "short": 1
+         },
+         "east": {
+          "global": 0,
+          "long": 0,
+          "short": 3
+         },
+         "west": {
+          "global": 0,
+          "long": 0,
+          "short": 3
+         }
+        },
+        "max_level": 4,
+        "level": "ok",
+        "warn_level": 5,
+        "crit_level": 7
+       }
       },
       {
        "id": "impl_1/phys_opt_design",
@@ -5383,7 +5456,69 @@
         "trend": "converging"
        },
        "number": null,
-       "number_predicted": false
+       "number_predicted": false,
+       "congestion": {
+        "router_initial": {
+         "north": {
+          "global": 3,
+          "global_pct": 1.57,
+          "long": 4,
+          "long_pct": 5.64,
+          "short": 3,
+          "short_pct": 3.22
+         },
+         "south": {
+          "global": 2,
+          "global_pct": 0.92,
+          "long": 4,
+          "long_pct": 4.35,
+          "short": 2,
+          "short_pct": 2.1
+         },
+         "east": {
+          "global": 4,
+          "global_pct": 1.55,
+          "long": 4,
+          "long_pct": 2.4,
+          "short": 3,
+          "short_pct": 6.52
+         },
+         "west": {
+          "global": 2,
+          "global_pct": 1.32,
+          "long": 2,
+          "long_pct": 1.84,
+          "short": 3,
+          "short_pct": 8.72
+         }
+        },
+        "router_final": {
+         "north": {
+          "max_pct": 81.2207,
+          "level": 0,
+          "congested": false
+         },
+         "south": {
+          "max_pct": 80.5687,
+          "level": 0,
+          "congested": false
+         },
+         "east": {
+          "max_pct": 85.5769,
+          "level": 1,
+          "congested": true
+         },
+         "west": {
+          "max_pct": 79.8077,
+          "level": 0,
+          "congested": false
+         }
+        },
+        "max_level": 4,
+        "level": "ok",
+        "warn_level": 5,
+        "crit_level": 7
+       }
       },
       {
        "id": "impl_1/write_bitstream",

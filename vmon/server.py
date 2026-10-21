@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import browse as browse_mod
+from . import history as history_mod
 
 STATIC_DIR = Path(__file__).parent / "static"
 HEARTBEAT_S = 15
@@ -60,6 +61,8 @@ def make_server(monitor, host, port):
                     return self._json(browse_mod.browse(query.get("path", [""])[0], str(Path.home()), live, recent))
                 except browse_mod.BrowseError as exc:
                     return self._error(exc.status, str(exc))
+            if route in ("/api/history", "/api/history/report", "/api/history/artifact"):
+                return self._history(route, query)
             if route in ("/api/messages", "/api/log", "/api/report", "/api/triage", "/api/paths"):
                 source = self._source(query)
                 if source is None:
@@ -150,6 +153,35 @@ def make_server(monitor, host, port):
                 monitor.tick()
                 return self._json({"ok": True})
             self._error(409, "unknown or still running")
+
+        def _history(self, route, query):
+            fw_id = query.get("fw", [""])[0]
+            store = monitor.history
+            if route == "/api/history":
+                if fw_id and not history_mod.ID_RE.match(fw_id):
+                    return self._error(404, "unknown firmware")
+                return self._json(store.listing(fw_id or None, _int(query, "limit", store.cap)))
+            art, err = store.artifact(fw_id, query.get("build", [""])[0], query.get("path", [""])[0])
+            if err:
+                return self._error(*err)
+            try:
+                fh = open(art["path"], "rb")
+            except OSError:
+                return self._error(410, "file no longer readable")
+            with fh:
+                if route == "/api/history/report":
+                    return self._send(200, fh.read(MAX_REPORT_BYTES), "text/plain; charset=utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Content-Length", str(art["size"]))
+                self.send_header("Content-Disposition", 'attachment; filename="%s"' % os.path.basename(art["path"]).replace('"', ""))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                try:
+                    while chunk := fh.read(1 << 20):
+                        self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    self.close_connection = True
 
         def _report(self, source, path):
             real = os.path.realpath(path)

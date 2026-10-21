@@ -130,6 +130,7 @@ let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
 let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
+let hashPclk = false; // #pclk=1: also open the "Clock & required" table of those rows
 let hashPth = []; // #pth=0,3: pre-expand those worst-path rows (screenshots/debug)
 
 function parseHash() {
@@ -143,7 +144,9 @@ function parseHash() {
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
+  hashPclk = p.get('pclk') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
+  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
   if (p.get('popover') === 'notif' && typeof openPop === 'function') openPop();
   if (p.get('popover') === 'explore' && typeof openExplore === 'function') openExplore(p.get('path'));
@@ -179,7 +182,7 @@ function shiftTimes(o, d) {
   if (Array.isArray(o)) { o.forEach((x) => shiftTimes(x, d)); return o; }
   if (o && typeof o === 'object') {
     for (const k of Object.keys(o)) {
-      if (['started_at', 'ended_at', 'updated_at', 'generated_at', 't', 'mtime', 'expected_end'].includes(k) && typeof o[k] === 'number') o[k] += d;
+      if (['started_at', 'ended_at', 'updated_at', 'generated_at', 't', 'mtime', 'expected_end', 'low_end', 'high_end'].includes(k) && typeof o[k] === 'number') o[k] += d;
       else shiftTimes(o[k], d);
     }
   }
@@ -406,14 +409,14 @@ const BASE_TITLE = document.title;
 const PAGE_T = MOCK ? nowS() - 7200 : nowS();   // mock: pretend we loaded 2 h ago so seeded events show up
 const EVENT_KINDS = [['step_done', 'Step finished'], ['step_failed', 'Step failed'], ['run_done', 'Run finished'], ['run_failed', 'Run failed']];
 const ALERT_CODES = [['timing_fail', 'Timing not met'], ['critical_warning', 'Critical warnings'], ['error', 'Errors'], ['drc', 'DRC issues'],
-  ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['route_not_converging', 'Router not converging'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
+  ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['route_not_converging', 'Router not converging'], ['congestion', 'Congestion'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
 const CODE_ALIAS = { utilization: 'util_high', step_failed: 'step_failed' };
 const ALERT_NAME = { timing_fail: 'Timing', critical_warning: 'Critical warnings', error: 'Errors', drc: 'DRC', unrouted: 'Unrouted nets',
-  util_high: 'Utilization', utilization: 'Utilization', stalled: 'Stalled', route_not_converging: 'Router', process_gone: 'Process gone', step_failed: 'Step failed' };
+  util_high: 'Utilization', utilization: 'Utilization', stalled: 'Stalled', route_not_converging: 'Router', congestion: 'Congestion', process_gone: 'Process gone', step_failed: 'Step failed' };
 const alertName = (a) => ALERT_NAME[a.code] || (a.code ? a.code.replace(/_/g, ' ') : a.level);
 const NOTIF_DEFAULTS = {
   kinds: { step_done: false, step_failed: true, run_done: true, run_failed: true },
-  codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, process_gone: true, other: true },
+  codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, congestion: true, process_gone: true, other: true },
 };
 const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false };
 try {
@@ -477,7 +480,7 @@ function checkAlerts() {
 
 function openEntry(e) {
   if (!state.firmwares.some((f) => f.id === e.fw)) return;
-  selected = e.fw; lsSet('vmon.tab', selected);
+  hist.on = false; selected = e.fw; lsSet('vmon.tab', selected);
   closePop();
   const fw = curFw();
   if (e.node_id) gotoNode(fw, e.node_id); else { ui.view.set(fw.id, 'flow'); render(); }
@@ -697,13 +700,18 @@ const TOP_ISSUES_SHOWN = 3;
 let issuesOpen = lsGet('vmon.issuesOpen') === '1';
 const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
 
-const ETA_METHOD = { 'previous build': 'based on previous build', 'catalog weights': 'rough estimate' };
 function etaParts(fw) {
   const e = fw.eta;
   if (fw.status !== 'running' || !e || e.expected_end == null) return null;
   const rem = e.expected_end - nowS();
-  const how = [ETA_METHOD[e.method] || e.method, e.confidence === 'low' ? 'low confidence' : ''].filter(Boolean).join(' · ');
-  return { clock: fmtClock(e.expected_end), end: e.expected_end, how, inTxt: rem > 30 ? `in ${fmtDur(rem)}` : 'any moment now' };
+  const hist = e.method === 'history';
+  const band = e.low_end != null && e.high_end != null ? `${fmtClock(e.low_end)}–${fmtClock(e.high_end)}` : '';
+  const src = hist ? `${e.builds} build${e.builds === 1 ? '' : 's'}` : e.method === 'catalog weights' ? 'rough estimate' : e.method || '';
+  const how = [src, e.confidence === 'low' ? 'low confidence' : ''].filter(Boolean).join(' · ');
+  const tip = (hist ? `Median of per-phase and per-step durations of ${e.builds} previous build${e.builds === 1 ? '' : 's'}; ` : 'No usable build history: catalog weights scaled by progress; ')
+    + (band ? (e.builds >= 3 ? 'the range is the 10th to 90th percentile of those builds' : 'the range is widened around the few builds seen') : '')
+    + `. Confidence: ${e.confidence || 'low'}.`;
+  return { clock: fmtClock(e.expected_end), end: e.expected_end, band, how, tip, inTxt: rem > 30 ? `in ${fmtDur(rem)}` : 'any moment now' };
 }
 const endedAt = (fw) => (fw.started_at && fw.elapsed_s != null ? fw.started_at + fw.elapsed_s : fw.updated_at);
 
@@ -753,8 +761,8 @@ function renderHeader(fw) {
   r.etaWrap.hidden = !(ep || (fin && endedAt(fw)));
   if (ep) {
     setText(r.etak, 'Expected end'); setText(r.eta, `~${ep.clock}`);
-    setHTML(r.etasub, `<span data-end="${ep.end}">${ep.inTxt}</span>${ep.how ? ` · <span class="how">${esc(ep.how)}</span>` : ''}`);
-    r.etaWrap.title = 'Estimated finish time' + (ep.how ? ` (${ep.how}${fw.eta.confidence ? `, ${fw.eta.confidence} confidence` : ''})` : '');
+    setHTML(r.etasub, `${ep.band ? `<span class="band nwb">${ep.band}</span>` : ''}<span class="nw"><span data-end="${ep.end}">${ep.inTxt}</span>${ep.how ? ` · <span class="how">${esc(ep.how)}</span>` : ''}</span>`);
+    r.etaWrap.title = `Estimated finish time. ${ep.tip}`;
   } else if (fin && endedAt(fw)) { setText(r.etak, 'Ended'); setText(r.eta, fmtClock(endedAt(fw))); setHTML(r.etasub, ''); r.etaWrap.title = ''; }
   const ih = infoHTML(fw);
   r.info.hidden = !ih; setHTML(r.infoGrid, ih);
@@ -826,7 +834,7 @@ function updateNode(el, n, fw, depth) {
   r.rchips.hidden = !(n.reports || []).length;
   setAttr(el, 'data-alert', lvl); setAttr(el, 'data-expected', n.expected ? '1' : '0'); setAttr(el, 'data-optional', n.optional ? '1' : '0');
   setHTML(r.badges, badgesHTML(n.counts));
-  setHTML(r.chip, chipHTML(n.timing));
+  setHTML(r.chip, chipHTML(n.timing) + congChip(n.congestion));
   setHTML(r.doc, docBtn(n.doc_url, `${n.label} documentation`));
   const running = n.status === 'running' && n.started_at;
   const el_s = running ? nowS() - n.started_at : n.elapsed_s;
@@ -873,7 +881,7 @@ function updateStage(el, n, fw, isSel) {
   r.fstrip.hidden = !fl;
   setHTML(r.fstrip, fl ? `<b>${failKind(n.failure)}:</b> ${esc(n.failure.reason || 'Error')} in ${esc(failWhere(n))}` : '');
   setHTML(r.badges, badgesHTML(n.counts));
-  setHTML(r.chip, chipHTML(n.timing));
+  setHTML(r.chip, chipHTML(n.timing) + congChip(n.congestion));
   const cvs = n.status === 'running' && n.convergence ? overlapSpark(n.convergence) : '';
   setHTML(r.cv, cvs ? `<span class="cvchip" title="Router overlaps (log scale) · ${esc((n.convergence.trend || 'collecting').toUpperCase())}">${cvs}</span>` : '');
   setHTML(r.doc, docBtn(n.doc_url, `${n.label} documentation`));
@@ -1020,6 +1028,7 @@ function availableTabs(n) {
   if (!NO_FETCH.has(n.status)) { tabs.push(['messages', 'Messages']); tabs.push(['log', 'Log']); }
   if (n.reports && n.reports.length) tabs.push(['reports', `Reports<small>${n.reports.length}</small>`]);
   if (n.timing && ((n.timing.history && n.timing.history.length) || n.timing.report)) tabs.push(['timing', `Timing<small>${(n.timing.history || []).length || ''}</small>`]);
+  if (n.congestion) tabs.push(['congestion', `Congestion<small>L${n.congestion.max_level}</small>`]);
   const cv = convOf(n);
   if (cv) tabs.push(['convergence', `Convergence<small>${cv.conv.iterations.length}</small>`]);
   return tabs;
@@ -1042,10 +1051,10 @@ function syncBody(el, n, fw, depth) {
   if (open) {
     clearTimeout(el._clearT); el._clearT = null;
     if (!r.panel) {
-      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div><div class="pane pane-convergence"></div>');
+      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div><div class="pane pane-congestion"></div><div class="pane pane-convergence"></div>');
       r.bodyin.appendChild(r.panel);
       r.tabs = $('.dtabs', r.panel);
-      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel), convergence: $('.pane-convergence', r.panel) };
+      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel), congestion: $('.pane-congestion', r.panel), convergence: $('.pane-convergence', r.panel) };
     }
     const tabs = availableTabs(n);
     const act = activeTab(fw, n, tabs);
@@ -1063,6 +1072,7 @@ function syncBody(el, n, fw, depth) {
     else if (act === 'log') ensureLog(el, n, fw);
     else if (act === 'reports') renderReports(r.panes.reports, n, keyOf(fw, n), fw);
     else if (act === 'timing') renderTiming(r.panes.timing, n, fw);
+    else if (act === 'congestion') renderCongestion(r.panes.congestion, n);
     else if (act === 'convergence') renderConvergence(r.panes.convergence, n);
   } else if (r.panel && !el._clearT) {
     el._clearT = setTimeout(() => {
@@ -1442,7 +1452,7 @@ function renderSummary(fw, flow) {
   const running = fw.status === 'running' && fw.started_at;
   const ep = etaParts(fw);
   const fin = ['done', 'failed', 'stopped'].includes(fw.status);
-  setHTML(sr.time, `<span class="num" ${running ? `data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</span>${ep ? `<span class="sm-eta" title="${esc(ep.how)}">ETA ~${ep.clock} <span data-end="${ep.end}">${ep.inTxt}</span></span>` : fin && endedAt(fw) ? `<span class="sm-eta">ended ${fmtClock(endedAt(fw))}</span>` : ''}`);
+  setHTML(sr.time, `<span class="num" ${running ? `data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</span>${ep ? `<span class="sm-eta" title="${esc(ep.tip)}">ETA ~${ep.clock}${ep.band ? ` (${ep.band})` : ''} <span data-end="${ep.end}">${ep.inTxt}</span></span>` : fin && endedAt(fw) ? `<span class="sm-eta">ended ${fmtClock(endedAt(fw))}</span>` : ''}`);
   setHTML(sr.counts, badgesHTML(fw.counts));
   const t = fw.timing; const tl = fwTimingLevel(fw);
   const tv = (k, l) => {
@@ -1485,6 +1495,7 @@ function render() {
   if (fws.length) firstLoad = false;
   patchList(tabsEl, fws, (f) => f.id, createTab, updateTab);
   syncTabsOverflow();
+  if (syncHistoryPage()) return;
 
   const fw = curFw();
   if (!fw) {
@@ -1620,7 +1631,19 @@ document.addEventListener('click', async (ev) => {
       toast(`Stopped watching ${fw.name}. Add it again with Watch or Explore.`);
       return;
     }
-    selected = el._key; lsSet('vmon.tab', selected); render();
+    hist.on = false; selected = el._key; lsSet('vmon.tab', selected); render();
+  } else if (act === 'history' || act === 'history-close') {
+    setHistory(act === 'history' ? !hist.on : false);
+  } else if (act === 'hsort') {
+    hist.asc = !hist.asc; render();
+  } else if (act === 'hrep') {
+    openHistoryReport(t);
+  } else if (act === 'hbit') {
+    if (t.getAttribute('aria-disabled') === 'true') ev.preventDefault();
+    else if (MOCK) { ev.preventDefault(); toast('Mock mode: download disabled'); }
+  } else if (act === 'hrow' || act === 'hopen') {
+    if (act === 'hrow' && ev.target.closest('a, button')) return;
+    openFromHistory(t.dataset.fw, t.dataset.project, t.dataset.name);
   } else if (act === 'toggle' && nodeEl) {
     const k = keyOf(nodeEl._fw, nodeEl._node);
     const au = autoOf(nodeEl._fw); const sl = ui.sel.get(nodeEl._fw.id);
@@ -1667,6 +1690,10 @@ document.addEventListener('click', async (ev) => {
   } else if (act === 'raw' && nodeEl) {
     const rp = nodeEl._node.reports[+t.dataset.i];
     try { showModal(rp.name + ' — ' + rp.path, await apiReportRaw(nodeEl._fw, rp.path)); } catch (e) { toast('Could not load report: ' + e.message); }
+  } else if (act === 'pth-clk') {
+    const st = ui.paths.get(t.dataset.key); if (!st) return;
+    const i = +t.dataset.i; st.clk.has(i) ? st.clk.delete(i) : st.clk.add(i);
+    render();
   } else if (act === 'pth-row' || act === 'pth-type' || act === 'pth-fail') {
     const st = ui.paths.get(t.dataset.key); if (!st) return;
     if (act === 'pth-row') { const i = +t.dataset.i; st.open.has(i) ? st.open.delete(i) : st.open.add(i); }
@@ -1740,6 +1767,7 @@ function mvAction(act, t) {
   }
 }
 
+for (const [type, on] of [['mouseover', true], ['mouseout', false], ['focusin', true], ['focusout', false]]) document.addEventListener(type, (ev) => pathHover(ev, on));
 document.addEventListener('input', (ev) => {
   if (!ev.target.classList.contains('mv-q')) return;
   const fw = curFw(); if (!fw) return;
@@ -1758,6 +1786,7 @@ const SHORTCUTS = `1-9   switch firmware tab
 f     Flow view
 m     Messages view
 t     Timing view (when available)
+h     Build history (again, or Esc, to leave)
 j / k next / previous stage
 n     jump to the next alert
 c     collapse all expanded steps
@@ -1783,14 +1812,18 @@ document.addEventListener('keydown', (ev) => {
     ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
     return;
   }
-  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } return; }
+  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) setHistory(false); return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
   const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
     const f = state.firmwares[+ev.key - 1];
-    if (f) { selected = f.id; lsSet('vmon.tab', selected); render(); }
+    if (f) { hist.on = false; selected = f.id; lsSet('vmon.tab', selected); render(); }
   } else if (ev.key === '?') {
     showModal('Keyboard shortcuts', SHORTCUTS);
+  } else if (ev.key === 'h') {
+    setHistory(!hist.on);
+  } else if (hist.on) {
+    return;
   } else if (!fw || !mainEl._r) {
     return;
   } else if (ev.key === 'f' || ev.key === 'm' || (ev.key === 't' && hasTimingView(fw))) {
@@ -2018,20 +2051,40 @@ async function exploreWatch() {
   const t = exploreTarget(); if (!t) return;
   closeExplore();
   if (MOCK) { toast(`Mock mode: would watch ${t.path}`); return; }
+  await watchAndOpen(t.path);
+}
+
+const normPath = (x) => String(x || '').replace(/\/+$/, '');
+const fwForPath = (path) => {
+  const base = normPath(path).replace(/\.(xpr|log)$/, '');
+  return state.firmwares.find((f) => normPath(f.path) === normPath(path) || normPath(f.path).startsWith(base) || normPath(path).startsWith(normPath(f.path)));
+};
+function openFirmware(id) { hist.on = false; selected = id; lsSet('vmon.tab', selected); render(); window.scrollTo({ top: 0 }); }
+// Watch a path (POST /api/watch), wait for its firmware to show up in the state, then switch to its tab.
+async function watchAndOpen(path) {
   const before = new Set(state.firmwares.map((f) => f.id));
   try {
-    const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: t.path }) });
+    const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
     if (!r.ok) throw new Error((await r.text()) || r.status);
-  } catch (e) { toast('Watch failed: ' + e.message); return; }
-  toast('Watching ' + t.path);
-  const norm = (x) => String(x || '').replace(/\/+$/, '');
-  const base = norm(t.path).replace(/\.(xpr|log)$/, '');
+  } catch (e) { toast('Could not open: ' + e.message); return false; }
+  toast('Opening ' + path);
   for (let i = 0; i < 14; i++) {
     await poll();
-    const hit = state.firmwares.find((f) => !before.has(f.id)) || state.firmwares.find((f) => norm(f.path) === norm(t.path) || norm(f.path).startsWith(base) || norm(t.path).startsWith(norm(f.path)));
-    if (hit) { selected = hit.id; lsSet('vmon.tab', selected); render(); return; }
+    const hit = state.firmwares.find((f) => !before.has(f.id)) || fwForPath(path);
+    if (hit) { openFirmware(hit.id); return true; }
     await new Promise((res) => setTimeout(res, 700));
   }
+  toast('The project did not load: ' + path);
+  return false;
+}
+// A history row opens its project in the standard view: its tab if loaded, else the project is watched again.
+// The view always shows the project's current (latest) build, since the run directory is reused by every build.
+async function openFromHistory(fwId, project, name) {
+  const loaded = state.firmwares.find((f) => f.id === fwId) || (project && fwForPath(project));
+  if (loaded) { openFirmware(loaded.id); return; }
+  if (!project) { toast(`No project path recorded for ${name}`); return; }
+  if (MOCK) { toast(`Mock mode: would open ${project}`); return; }
+  await watchAndOpen(project);
 }
 
 function renderExplore() {
@@ -2295,7 +2348,7 @@ function reportOf(fw, path) {
 const pstOf = (fw, path) => {
   const k = `${fw.id}|${path}`;
   let s = ui.paths.get(k);
-  if (!s) { s = { key: k, type: 'all', failing: false, open: new Set(hashPth), data: null, sig: null, busy: false, err: null }; ui.paths.set(k, s); }
+  if (!s) { s = { key: k, type: 'all', failing: false, open: new Set(hashPth), clk: new Set(hashPclk ? hashPth : []), data: null, sig: null, busy: false, err: null }; ui.paths.set(k, s); }
   return s;
 };
 async function apiPaths(fw, path) {
@@ -2321,25 +2374,83 @@ const clkPair = (p) => {
   return a === b || !b ? `<span class="mono" title="${esc(a || b)}">${esc(a || b)}</span>`
     : `<span class="mono" title="${esc(a)} → ${esc(b)}">${esc(a)}<i class="arr">→</i>${esc(b)}</span>`;
 };
-function pathDetail(p) {
-  const kv = (k, v) => `<div class="pd-kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
-  const ns = (v) => (v == null ? '—' : `${v.toFixed(3)} ns`);
+// ---- expanded path: header, time bar, block chain, clock table
+const nsOf = (v, d = 3) => (v == null ? '—' : `${v.toFixed(d)} ns`);
+const instOf = (s) => (s.kind === 'net' ? '' : String(s.name || '').split('/').slice(0, -1).join('/'));
+function commonPrefix(insts) {
+  const lists = insts.filter(Boolean).map((i) => i.split('/'));
+  if (!lists.length) return [];
+  const max = Math.min(...lists.map((l) => l.length)) - 1; // always leave the leaf
+  let n = 0;
+  while (n < max && lists.every((l) => l[n] === lists[0][n])) n++;
+  return lists[0].slice(0, n);
+}
+function leafName(inst, skip) {
+  const rest = inst.split('/').slice(skip);
+  return (rest.length > 2 ? '…/' : '') + rest.slice(-2).join('/');
+}
+function pathHead(p) {
+  const stat = (k, v) => `<div class="pd-stat"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   const cells = Object.entries(p.cells || {}).map(([c, n]) => `${esc(c)}×${n}`).join(' ');
-  return `<div class="pd">
-    <div class="pd-names"><div><span class="k">Source</span><code>${esc(p.source || '—')}</code><small>${esc(p.source_clock || '')}</small></div>
-    <div><span class="k">Destination</span><code>${esc(p.destination || '—')}</code><small>${esc(p.dest_clock || '')}</small></div></div>
-    <div class="pd-grid">
-      ${kv('Slack', `<b class="num ${slackCls(p.slack)}">${fmtSlack(p.slack)} ns</b> (${esc(p.status)})`)}
-      ${kv('Type', `${esc(p.path_type || p.type)}${p.corner ? ` <small>(${esc(p.corner)})</small>` : ''}`)}
-      ${kv('Path group', esc(p.group || '—'))}
-      ${kv('Requirement', ns(p.requirement))}
-      ${kv('Data path delay', ns(p.data_delay))}
-      ${kv('Logic / route', p.logic_delay == null ? '—' : `${ns(p.logic_delay)} (${p.logic_pct.toFixed(1)}%) / ${ns(p.route_delay)} (${p.route_pct.toFixed(1)}%)`)}
-      ${kv('Logic levels', `${p.levels ?? '—'}${cells ? ` <small>${cells}</small>` : ''}`)}
-      ${kv('Clock path skew', ns(p.skew))}
-      ${kv('Clock uncertainty', ns(p.uncertainty))}
-      ${kv('From → to clock', `${esc(p.from_clock || '—')} → ${esc(p.to_clock || '—')}`)}
-    </div></div>`;
+  const split = p.logic_delay == null ? '—' : `<b>${p.logic_delay.toFixed(3)}</b> logic (${p.logic_pct.toFixed(0)}%) · <b>${p.route_delay.toFixed(3)}</b> route (${p.route_pct.toFixed(0)}%)`;
+  return `<div class="pd-top"><b class="num pd-sl ${slackCls(p.slack)}">${fmtSlack(p.slack)} ns</b><span class="pd-ok">${esc(p.status)}</span>
+      <span class="ptype ${p.type}">${p.type}</span>${p.corner ? `<small>${esc(p.corner)}</small>` : ''}
+      <span class="pd-clk mono" title="Path group ${esc(p.group || '—')}">${esc(p.from_clock || '—')}<i class="arr">→</i>${esc(p.to_clock || '—')}</span></div>
+    <div class="pd-stats">${stat('Requirement', nsOf(p.requirement))}${stat('Data path', nsOf(p.data_delay))}${stat('Logic / route', split)}
+      ${stat('Levels', `${p.levels ?? '—'}${cells ? ` <small>${cells}</small>` : ''}`)}${stat('Clock skew', nsOf(p.skew))}${stat('Uncertainty', nsOf(p.uncertainty))}</div>`;
+}
+function pathBar(steps, total) {
+  const segs = steps.map((s, i) => (s.incr == null || s.incr <= 0 ? '' : `<i class="seg ${s.kind === 'net' ? 'net' : 'cell'}" style="flex:${Math.round(s.incr * 1000)} 1 0" data-s="${i}" tabindex="0" title="${esc(s.kind === 'net' ? `net · fo ${s.fanout}` : s.cell)} · ${s.incr.toFixed(3)} ns (${(100 * s.incr / total).toFixed(1)}%)"></i>`)).join('');
+  return `<div class="pbar" role="group" aria-label="Where the data path delay goes"><div class="pbar-t">${segs}</div>
+    <div class="pbar-l"><span><i class="sw cell"></i>cells</span><span><i class="sw net"></i>nets</span><span class="num">${total.toFixed(3)} ns</span></div></div>`;
+}
+function pathChain(p) {
+  const st = p.steps, big = st.reduce((m, s, i) => ((s.incr || 0) > (st[m].incr || 0) ? i : m), 0);
+  const pre = commonPrefix(st.map(instOf)), skip = pre.length;
+  const last = st.length - 1, cap = p.capture || {}, hold = p.type === 'hold';
+  const clk = (c, at, what) => (c ? `<span class="pb-cap" title="${esc(c)}">${esc(what)} ${esc(c)} ${at == null ? '' : `@ ${at.toFixed(3)}`}</span>` : '');
+  const block = (s, i) => {
+    const inst = instOf(s), end = s.kind === 'endpoint';
+    const pins = end ? `→ ${esc(s.pin)}` : s.from_pin ? `${esc(s.from_pin)}→${esc(s.to_pin)}` : '';
+    const delay = end ? (cap.setup_or_hold ? `${hold ? 'hold' : 'setup'} ${cap.setup_or_hold.incr.toFixed(3)} ns` : '') : `${s.incr.toFixed(3)} ns`;
+    const cp = i === 0 ? clk((p.launch || {}).clock, (p.launch || {}).at, 'launch') : end ? clk(cap.clock, cap.required, 'capture') : '';
+    return `<div class="pb${end ? ' end' : ''}${i === big ? ' max' : ''}" data-s="${i}" title="${esc(`${s.name || ''}\n${s.arc || ''}${i === big ? '\nlargest delay on this path' : ''}`.trim())}">
+      ${cp}<b class="pb-t">${esc(s.cell)}</b><span class="pb-p mono">${pins}</span><span class="pb-n mono">${esc(leafName(inst, skip))}</span>
+      <span class="pb-s mono">${esc(s.site || '')}</span><span class="pb-d num">${delay}</span></div>`;
+  };
+  const link = (s, i) => `<div class="pl${i === big ? ' max' : ''}" data-s="${i}" title="${esc(`${s.name || ''}\n${s.routing || ''}${i === big ? '\nlargest delay on this path' : ''}`.trim())}">
+      <span class="pl-d num">${s.incr.toFixed(3)} ns</span><span class="pl-a" aria-hidden="true"></span>
+      <span class="pl-f${s.fanout >= 32 ? ' hi' : ''}">fo ${s.fanout}${s.routing && s.routing !== 'routed' ? ` · ${esc(s.routing)}` : ''}</span></div>`;
+  let html = '';
+  for (let i = 0; i < st.length; i++) {
+    if (st[i].kind === 'net') html += `<div class="pu">${link(st[i], i)}${st[i + 1] ? block(st[i + 1], i + 1) : ''}</div>`;
+    else if (i === 0 || st[i - 1].kind !== 'net') html += `<div class="pu">${block(st[i], i)}</div>`;
+  }
+  return `<div class="pchain-w">${pre.length ? `<div class="pchain-p">in <code>${esc(pre.join('/'))}/</code></div>` : ''}<div class="pchain">${html}</div>${p.truncated ? `<div class="pchain-p">Path truncated after ${st.length} elements.</div>` : ''}</div>`;
+}
+function clockTable(p, s) {
+  const c = p.capture, l = p.launch;
+  if (!c) return '';
+  const open = s.clk.has(p.id), hold = p.type === 'hold';
+  const row = (k, v, extra = '') => (v == null ? '' : `<tr><th>${k}</th><td class="num">${v}</td><td class="mono">${extra}</td></tr>`);
+  const n = (v) => (v == null ? null : v.toFixed(3));
+  const edge = (x) => (x && x.clock ? `${esc(x.clock)} ${x.edge === 'fall' ? 'fall' : 'rise'}` : '');
+  const check = c.setup_or_hold, cons = c.constraint;
+  return `<div class="pclk"><button class="rchip pf${open ? ' on' : ''}" data-act="pth-clk" data-key="${esc(s.key)}" data-i="${p.id}" aria-expanded="${open}">Clock &amp; required</button>
+    ${open ? `<table class="hist pclk-t"><tbody>${row('Source clock arrival', n(l && l.at), edge(l))}${row('Destination clock arrival', n(c.at), edge(c))}
+      ${cons ? row(esc(cons.kind), n(cons.value), 'datapath only') : ''}${row('Clock pessimism', n(c.pessimism))}${row('Clock uncertainty', n(c.uncertainty))}
+      ${check ? row(`${hold ? 'Hold' : 'Setup'} time`, n(check.incr), `${esc(check.cell)} ${esc(check.arc || '')}`) : ''}
+      ${row('Required time', n(c.required == null ? null : Math.abs(c.required)))}${row('Arrival time', n(c.arrival == null ? null : Math.abs(c.arrival)))}${row('Slack', n(c.slack))}</tbody></table>` : ''}</div>`;
+}
+function pathDetail(p, s) {
+  if (!p.steps || !p.steps.length) return `<div class="pd">${pathHead(p)}<div class="none">Path elements are not available for this report.</div></div>`;
+  const total = p.steps.reduce((a, x) => a + (x.incr > 0 ? x.incr : 0), 0) || 1;
+  return `<div class="pd">${pathHead(p)}${pathBar(p.steps, total)}${pathChain(p)}${clockTable(p, s)}</div>`;
+}
+// highlight the matching bar segment / block while one of them is hovered or focused
+function pathHover(ev, on) {
+  const t = ev.target.closest && ev.target.closest('.pd [data-s]');
+  if (t) for (const e of t.closest('.pd').querySelectorAll(`[data-s="${t.dataset.s}"]`)) e.classList.toggle('hl', on);
 }
 function pathsHTML(fw, path, sig, anchor = '') {
   const s = ensurePaths(fw, path, sig);
@@ -2358,7 +2469,7 @@ function pathsHTML(fw, path, sig, anchor = '') {
       <td class="clk">${clkPair(p)}</td>
       <td class="pn"><span class="mono" title="${esc(p.source || '')}">${esc(shortPath(p.source))}</span><i class="arr">→</i><span class="mono" title="${esc(p.destination || '')}">${esc(shortPath(p.destination))}</span></td>
       <td class="num lv" title="${esc(Object.entries(p.cells || {}).map(([k, n]) => `${k}×${n}`).join(' '))}">${p.levels ?? '—'}</td>
-      <td>${splitBar(p)}</td><td class="num sk">${p.skew == null ? '—' : p.skew.toFixed(3)}</td></tr>${open ? `<tr class="pdrow"><td colspan="7">${pathDetail(p)}</td></tr>` : ''}`;
+      <td>${splitBar(p)}</td><td class="num sk">${p.skew == null ? '—' : p.skew.toFixed(3)}</td></tr>${open ? `<tr class="pdrow"><td colspan="7">${pathDetail(p, s)}</td></tr>` : ''}`;
   }).join('');
   return `${head}<span class="paths-info">${info}</span></div>
     <div class="pfilters">${chip('pth-type', 'all', 'All', s.type === 'all')}${chip('pth-type', 'setup', 'Setup', s.type === 'setup')}${chip('pth-type', 'hold', 'Hold', s.type === 'hold')}${chip('pth-fail', '1', 'Failing only', s.failing, c.failing ? ' bad' : '')}</div>
@@ -2558,6 +2669,184 @@ function renderConvergence(pane, n) {
       ${from ? `<div class="cv-from">From attempt ${from.n} (${esc(from.summary || from.status)}); the log of the current attempt is not available.</div>` : ''}`);
   setHTML(cv.svg, convChartSVG(conv, running));
   setHTML(cv.legend, '<span><i class="lg bar"></i>final overlaps per iteration (log scale)</span><span><i class="lg dot"></i>overlap passes inside the iteration, in order</span><span><i class="lg wns"></i>WNS</span><span><i class="lg whs"></i>WHS</span>');
+}
+
+// ---- congestion (place_design / route_design)
+const CG_DIRS = ['north', 'south', 'east', 'west'];
+const CG_SCALE = 8;                                             // bar full at level 8 (256x256 regions)
+const cgCls = (v, cg) => (v >= cg.crit_level ? 'crit' : v >= cg.warn_level ? 'warn' : '');
+function congChip(cg) {
+  if (!cg || cg.level === 'ok') return '';
+  return `<span class="chip ${cg.level === 'crit' ? 'cgcrit' : 'softbad'}" title="Congestion level ${cg.max_level} (warn from ${cg.warn_level}, high from ${cg.crit_level}). Levels of 5 and greater may impact timing closure.">CONG L${cg.max_level}</span>`;
+}
+function cgBar(v, cg, pct) {
+  if (v == null) return '<span class="cg-cell nil">—</span>';
+  return `<span class="cg-cell"><span class="cg-bar ${cgCls(v, cg)}"><i style="width:${Math.min(100, (v / CG_SCALE) * 100)}%"></i></span><span class="cg-txt"><b class="num">${v}</b>${pct != null ? `<small class="num">${pct}%</small>` : ''}</span></span>`;
+}
+function cgTable(title, note, rows, cg, withPct) {
+  const heads = ['Global', 'Long', 'Short'].map((t) => `<span class="cg-h">${t}</span>`).join('');
+  const body = CG_DIRS.filter((d) => rows[d]).map((d) => `<span class="cg-d">${d[0].toUpperCase() + d.slice(1)}</span>${['global', 'long', 'short'].map((k) => cgBar(rows[d][k], cg, withPct ? rows[d][k + '_pct'] : null)).join('')}`).join('');
+  return `<div class="cg-sec"><div class="cg-title">${title}<small>${note}</small></div><div class="cg-grid"><span></span>${heads}${body}</div></div>`;
+}
+function cgFinal(rows, cg) {
+  const body = CG_DIRS.filter((d) => rows[d]).map((d) => {
+    const r = rows[d];
+    return `<span class="cg-d">${d[0].toUpperCase() + d.slice(1)}</span><b class="num cg-pct">${r.max_pct.toFixed(1)}%</b>${cgBar(r.level, cg)}<small class="cg-reg">${r.congested ? 'regions' : 'none'}</small>`;
+  }).join('');
+  return `<div class="cg-sec"><div class="cg-title">Final routing<small>max congestion, effective level, congested regions</small></div><div class="cg-grid fin">${body}</div></div>`;
+}
+function renderCongestion(pane, n) {
+  const cg = n.congestion;
+  if (!cg) { setHTML(pane, '<div class="none">No congestion table seen yet.</div>'); return; }
+  const lv = cg.level === 'ok' ? '' : cg.level;
+  const advice = lv ? `Level ${cg.warn_level} or more may impact timing closure: look at the placement and the congested regions if timing fails.` : 'Below the level where Vivado warns about timing closure.';
+  const hit = convOf(n);
+  const spark = hit ? overlapSpark(hit.conv, 160, 34) : '';
+  setHTML(pane, `<div class="cg-top"><span class="cg-lvl ${lv}">LEVEL ${cg.max_level}</span><span class="cg-note">${advice}</span></div>
+    ${cg.placer ? cgTable('Placement estimate', 'region size as level (2^level tiles)', cg.placer, cg, false) : ''}
+    ${cg.router_initial ? cgTable('Router initial estimate', 'level and % of tiles', cg.router_initial, cg, true) : ''}
+    ${cg.router_final ? cgFinal(cg.router_final, cg) : ''}
+    ${spark ? `<div class="cg-sec"><div class="cg-title">Router overlaps<small>per pass, log scale (see Convergence)</small></div><span class="cvchip">${spark}</span></div>` : ''}`);
+}
+
+/* ------------------------------------------------------------------ build history page (GET /api/history) */
+const hist = { on: false, fw: null, fwName: null, asc: false, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
+const HX_KIND = { timing_summary: 'Timing', utilization: 'Util', drc: 'DRC', methodology: 'Method', power: 'Power', route_status: 'Route', clock_utilization: 'Clocks', control_sets: 'Ctrl sets' };
+const HX_RESULT = {
+  met: { key: 'done', text: 'Finished, timing met' }, timing_not_met: { key: 'done-fail', text: 'Finished, timing not met' },
+  failed: { key: 'failed', text: 'Failed' }, stopped: { key: 'stopped', text: 'Stopped' }, done: { key: 'idle', text: 'Finished' },
+};
+const HX_ICON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1h-6.5a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h.5"/></svg>';
+const HX_GONE = 'Replaced by a later build';
+
+function setHistory(on) {
+  if (on === hist.on) return;
+  hist.on = on;
+  if (on) { hist.fw = null; hist.sig = null; window.scrollTo(0, 0); }
+  render();
+  if (on) { const b = $('select', hist.root) || $('#history-btn'); if (b) b.focus(); }
+}
+
+// Returns true when the history page owns the content area (render() then skips the firmware view).
+function syncHistoryPage() {
+  document.body.dataset.page = hist.on ? 'history' : '';
+  const btn = $('#history-btn'); setAttr(btn, 'aria-pressed', String(hist.on));
+  mainEl.hidden = hist.on; hist.root.hidden = !hist.on;
+  if (!hist.on) return false;
+  if (hist.fw === null) {
+    const named = hist.fwName && state.firmwares.find((f) => f.name === hist.fwName || f.id === hist.fwName);
+    hist.fw = named ? named.id : (hist.fwName === 'all' ? '' : selected || '');
+  }
+  const sig = state.firmwares.map((f) => `${f.id}:${f.status}`).join('|') + `#${hist.fw}`;
+  if (sig !== hist.sig) { hist.sig = sig; loadHistory(); }
+  renderHistory();
+  return true;
+}
+
+async function loadHistory() {
+  const id = ++hist.reqId, fwId = hist.fw;
+  try {
+    let d;
+    if (MOCK) {
+      if (!hist.mock) { hist.mock = syncJson('mock/history.json'); shiftTimes(hist.mock, nowS() - hist.mock.generated_at); }
+      d = { firmwares: hist.mock.firmwares, builds: hist.mock.builds.filter((b) => !fwId || b.fw_id === fwId) };
+    } else d = await jget(`/api/history${fwId ? `?fw=${q(fwId)}` : ''}`);
+    if (id !== hist.reqId) return;
+    hist.data = d; hist.error = null;
+  } catch (e) { if (id !== hist.reqId) return; hist.error = String(e.message || e); }
+  if (hist.on) renderHistory();
+}
+
+const fmtWhen = (t) => { if (t == null) return '—'; const d = new Date(t * 1000); return `${d.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}`; };
+
+function hxTiming(b) {
+  const t = b.timing;
+  if (!t || (t.wns == null && t.whs == null)) return '<span class="dim">—</span>';
+  const cell = (k, v) => `<div title="${t.final ? 'Final result' : 'Not a final result'}"><i>${k}</i><span${t.final && v != null && v < 0 ? ' class="neg"' : ''}>${fmtSlack(v)}</span></div>`;
+  return cell('WNS', t.wns) + cell('WHS', t.whs);
+}
+function hxUtil(b) {
+  const u = b.utilization;
+  if (!u) return '<span class="dim">—</span>';
+  const rows = ['LUT', 'FF', 'BRAM', 'DSP'].filter((k) => u[k]);
+  const worst = rows.reduce((w, k) => (w == null || u[k].pct > u[w].pct ? k : w), null);
+  return rows.map((k) => {
+    const p = u[k].pct, cls = k === worst && p >= 80 ? (p >= 90 ? ' class="u-crit"' : ' class="u-warn"') : '';
+    return `<span title="${esc(k)}: ${fmtInt(u[k].used)} of ${fmtInt(u[k].available)}"><i>${k}</i><b${cls}>${p == null ? '—' : p.toFixed(p < 10 ? 1 : 0)}%</b></span>`;
+  }).join('') || '<span class="dim">—</span>';
+}
+function hxLinks(b) {
+  const art = b.artifacts || [];
+  const at = (a) => `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}" data-path="${esc(a.path)}"`;
+  const reports = art.filter((a) => a.kind !== 'bitstream').map((a) => {
+    const name = HX_KIND[a.kind] || a.label;
+    const tip = a.current ? `Open ${a.label}${a.step ? ` (${a.step})` : ''}` : `${HX_GONE}: ${a.label}`;
+    return `<button type="button" class="hx-chip" data-act="hrep" ${at(a)} data-label="${esc(a.label)}" title="${esc(tip)}"${a.current ? '' : ' aria-disabled="true"'}>${esc(name)}</button>`;
+  }).join('');
+  const bit = art.find((a) => a.kind === 'bitstream');
+  let bitHTML = '';
+  if (bit) {
+    const href = `/api/history/artifact?fw=${q(b.fw_id)}&build=${q(b.build)}&path=${q(bit.path)}`;
+    bitHTML = bit.current
+      ? `<span class="hx-bitgrp"><a class="hx-chip bit" data-act="hbit" href="${esc(href)}" download title="Download ${esc(bit.path)} (${fmtMem(bit.size / 1048576)})">.bit</a><button type="button" class="hx-chip" data-act="copy" data-copy="${esc(bit.path)}" title="Copy the bitstream path" aria-label="Copy the bitstream path">${HX_ICON}</button></span>`
+      : `<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="${HX_GONE}">.bit</span>`;
+  } else bitHTML = '<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="No bitstream was recorded for this build">.bit</span>';
+  return `<div class="links">${reports || '<span class="dim">no reports</span>'}<span class="hx-bit"><span class="hx-sep"></span>${bitHTML}</span></div>`;
+}
+function hxRow(b, loaded) {
+  const res = HX_RESULT[b.result] || HX_RESULT.done;
+  const why = b.failure && b.failure.reason ? `${b.failure.step ? `${b.failure.step}: ` : ''}${b.failure.reason}` : '';
+  const where = [b.part, b.strategy_impl].filter(Boolean).join(' · ');
+  const tip = `Open ${b.firmware} in the standard view${loaded ? '' : ' (loads the project again)'}; it shows the project's latest build`;
+  const ds = `data-fw="${esc(b.fw_id)}" data-project="${esc(b.project || '')}" data-name="${esc(b.firmware)}"`;
+  return `<tr class="go" data-act="hrow" ${ds} title="${esc(tip)}">
+    <td class="when" data-label="Date">${fmtWhen(b.started_at)}</td>
+    <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
+    <td class="dur" data-label="Duration">${fmtDur(b.duration_s)}</td>
+    <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
+    <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
+    <td class="ut" data-label="Utilization">${hxUtil(b)}</td>
+    <td class="links-c" data-label="Reports">${hxLinks(b)}</td></tr>`;
+}
+
+function renderHistory() {
+  const d = hist.data;
+  if (!d && !hist.error) { setHTML(hist.root, '<div class="hx-empty">Loading…</div>'); return; }
+  const fws = [...(d ? d.firmwares : [])];
+  for (const f of state.firmwares) if (!fws.some((x) => x.id === f.id)) fws.push({ id: f.id, name: f.name });
+  const opts = `<option value=""${hist.fw ? '' : ' selected'}>All firmwares</option>` + fws.map((f) => `<option value="${esc(f.id)}"${f.id === hist.fw ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
+  const builds = d ? [...d.builds].sort((a, b) => (hist.asc ? 1 : -1) * ((a.started_at || 0) - (b.started_at || 0))) : [];
+  const loaded = new Set(state.firmwares.map((f) => f.id));
+  const arrow = hist.asc ? '↑' : '↓';
+  let body;
+  if (hist.error) body = `<div class="hx-empty">Could not load the history (${esc(hist.error)}).</div>`;
+  else if (!builds.length) body = '<div class="hx-empty">No finished builds recorded yet. Builds are recorded when they finish.</div>';
+  else body = `<table class="hx"><thead><tr><th aria-sort="${hist.asc ? 'ascending' : 'descending'}"><button type="button" data-act="hsort" title="Sort by date">Date <span aria-hidden="true">${arrow}</span></button></th><th>Firmware</th><th>Duration</th><th>Result</th><th>WNS / WHS</th><th>Utilization</th><th>Reports</th></tr></thead><tbody>${builds.map((b) => hxRow(b, loaded.has(b.fw_id))).join('')}</tbody></table>`;
+  const sel = $('select', hist.root);
+  const focusSel = sel && document.activeElement === sel;
+  setHTML(hist.root, `<div class="hx-head"><h1>Build history</h1><span class="hx-n">${builds.length} build${builds.length === 1 ? '' : 's'}</span>
+    <div class="hx-tools"><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
+    <div class="hx-wrap">${body}</div>`);
+  if (focusSel) $('select', hist.root).focus();
+}
+hist.root.addEventListener('change', (ev) => {
+  if (ev.target.id !== 'hx-fw') return;
+  hist.fw = ev.target.value; hist.sig = null; hist.data = null; render();
+});
+
+async function openHistoryReport(t) {
+  if (t.getAttribute('aria-disabled') === 'true') { toast(HX_GONE); return; }
+  const { fw, build, path, label } = t.dataset;
+  try {
+    let text;
+    if (MOCK) text = (await jget('mock/report_raw.txt.json')).text;
+    else {
+      const r = await fetch(`/api/history/report?fw=${q(fw)}&build=${q(build)}&path=${q(path)}`, { cache: 'no-store' });
+      if (!r.ok) { let m = r.status; try { m = (await r.json()).error || m; } catch { /* plain text */ } throw new Error(m); }
+      text = await r.text();
+    }
+    showModal(`${label} — ${path}`, text);
+  } catch (e) { toast('Could not load report: ' + e.message); }
 }
 
 /* ------------------------------------------------------------------ boot */

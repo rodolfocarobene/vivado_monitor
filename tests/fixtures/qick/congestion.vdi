@@ -1,0 +1,73 @@
+Command: place_design
+Starting Placer Task
+
+Phase 4.3.1 Print Estimated Congestion
+INFO: [Place 30-612] Post-Placement Estimated Congestion 
+ ________________________________________________________________________
+|           | Global Congestion | Long Congestion   | Short Congestion  |
+| Direction | Region Size       | Region Size       | Region Size       |
+|___________|___________________|___________________|___________________|
+|      North|                1x1|              16x16|                4x4|
+|___________|___________________|___________________|___________________|
+|      South|                2x2|              16x16|                2x2|
+|___________|___________________|___________________|___________________|
+|       East|                1x1|                1x1|                8x8|
+|___________|___________________|___________________|___________________|
+|       West|                1x1|                1x1|              32x32|
+|___________|___________________|___________________|___________________|
+
+Phase 4.3.1 Print Estimated Congestion | Checksum: 284095b20
+
+place_design completed successfully
+Command: route_design
+Starting Routing Task
+
+INFO: [Route 35-449] Initial Estimated Congestion
+ ________________________________________________________________________
+|           | Global Congestion | Long Congestion   | Short Congestion  |
+|           |___________________|___________________|___________________|
+| Direction | Size   | % Tiles  | Size   | % Tiles  | Size   | % Tiles  |
+|___________|________|__________|________|__________|________|__________|
+|      NORTH|     8x8|      1.57|   16x16|      5.64|     8x8|      3.22|
+|___________|________|__________|________|__________|________|__________|
+|      SOUTH|     4x4|      0.92|   16x16|      4.35|     4x4|      2.10|
+|___________|________|__________|________|__________|________|__________|
+|       EAST|   16x16|      1.55|   16x16|      2.40|     8x8|      6.52|
+|___________|________|__________|________|__________|________|__________|
+|       WEST|     4x4|      1.32|     4x4|      1.84|     8x8|      8.72|
+|___________|________|__________|________|__________|________|__________|
+Congestion Report
+GLOBAL Congestion bounded by tiles (Lower Left Tile -> Upper Right Tile):
+EAST
+	INT_X4Y180->INT_X19Y187 (CLEM_X4Y180->DSP_X19Y185)
+
+Phase 4 Rip-up And Reroute
+
+Phase 4.1 Global Iteration 0
+ Number of Nodes with overlaps = 31678
+ Number of Nodes with overlaps = 2749
+ Number of Nodes with overlaps = 0
+Phase 4.1 Global Iteration 0 | Checksum: 1a2b3c4d
+
+--GLOBAL Congestion:
+Utilization threshold used for congestion level computation: 0.85
+Congestion Report
+North Dir 1x1 Area, Max Cong = 81.2207%, No Congested Regions.
+South Dir 1x1 Area, Max Cong = 80.5687%, No Congested Regions.
+East Dir 1x1 Area, Max Cong = 85.5769%, Congestion bounded by tiles (Lower Left Tile -> Upper Right Tile):
+   INT_X42Y168 -> INT_X42Y168
+West Dir 1x1 Area, Max Cong = 79.8077%, No Congested Regions.
+
+------------------------------
+Reporting congestion hotspots
+------------------------------
+Direction: North
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 0
+Direction: East
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 2 Aspect Ratio: 1 Sparse Ratio: 1
+
+route_design completed successfully

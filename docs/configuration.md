@@ -30,6 +30,9 @@ Other files:
 | `[resume]`, `[resume.checkpoints]` | Recognising non-project sessions that resume a run from a checkpoint |
 | `[timing_paths]` | Worst paths kept per timing report (`max_paths`) and how many go in the state JSON (`summary_paths`) |
 | `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
+| `[eta]` | ETA: history size, band quantiles, small-sample margin, floor for a running step/phase, builds needed for high confidence |
+| `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
+| `[history]` | Build history: builds kept per firmware, report kinds recorded, bitstream |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -140,6 +143,41 @@ tolerance_s = 1
 '^{top}\.bit$' = "write_bitstream"
 '^{top}_routed\.dcp$' = "route_design"
 ```
+
+## ETA
+
+```toml
+[eta]
+history_builds = 20           # completed builds kept per firmware
+low_quantile = 0.10           # band = these quantiles of the per-build remaining time
+high_quantile = 0.90
+quantile_min_builds = 3       # fewer builds: min/max widened by small_sample_margin
+small_sample_margin = 0.15
+current_floor = 0.10          # a running step/phase keeps at least this fraction of its median
+high_confidence_builds = 5    # with every remaining step known, gives "high" confidence
+```
+
+## Build history
+
+```toml
+[history]
+max_builds = 100      # finished builds kept per firmware in ~/.cache/vmon/history/<fw_id>.json
+bitstream = true      # record <top>.bit of the impl run when this build wrote it
+kinds = ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]   # [] = every report kind
+```
+
+`kinds` values are the `kind` of `[reports.types.*]`. Only reports that are not stale are recorded, and they stay linked in the History page only while the file on disk is unchanged.
+
+## Congestion
+
+```toml
+[congestion]
+warn_level = 5     # worst level at or above this: amber "congestion" alert and CONG chip (Vivado: may impact timing)
+crit_level = 7     # at or above this: the chip and bars turn orange (still only a warning alert)
+alert = true       # warning "congestion"
+```
+
+The table rows and the final report are matched by `[rules.congestion_*]`; a region size `NxN` maps to level log2(N) (1x1 = 0, 8x8 = 3, 32x32 = 5). Estimates are never shown red.
 
 ## Router convergence
 

@@ -1,0 +1,329 @@
+From Clock:  RFADC0_CLK
+  To Clock:  RFADC0_CLK
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             42.694ns  (required time - arrival time)
+  Source:                 d_1_i/rst_adc0/U0/EXT_LPF/POR_SRL_I/CLK
+                            (rising edge-triggered cell SRL16E clocked by RFADC0_CLK  {rise@0.000ns fall@21.701ns period=43.403ns})
+  Destination:            d_1_i/rst_adc0/U0/EXT_LPF/lpf_int_reg/D
+                            (rising edge-triggered cell FDRE clocked by RFADC0_CLK  {rise@0.000ns fall@21.701ns period=43.403ns})
+  Path Group:             RFADC0_CLK
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            43.403ns  (RFADC0_CLK rise@43.403ns - RFADC0_CLK rise@0.000ns)
+  Data Path Delay:        0.637ns  (logic 0.465ns (72.998%)  route 0.172ns (27.002%))
+  Logic Levels:           1  (LUT3=1)
+  Clock Path Skew:        -0.062ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.128ns = ( 45.531 - 43.403 ) 
+    Source Clock Delay      (SCD):    2.520ns
+    Clock Pessimism Removal (CPR):    0.330ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+  Clock Net Delay (Source):      1.994ns (routing 1.114ns, distribution 0.880ns)
+  Clock Net Delay (Destination): 1.742ns (routing 1.012ns, distribution 0.730ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock RFADC0_CLK rise edge)
+                                                      0.000     0.000 r  
+    RFADC_X0Y0           RFADC                        0.000     0.000 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/INTERNAL_FBRC_DIV1_MUX
+    RFADC_X0Y0           RFADC (Prop_RFADC_INTERNAL_FBRC_DIV1_MUX_CLK_ADC)
+                                                      0.150     0.150 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/CLK_ADC
+                         net (fo=2, routed)           0.246     0.396    d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt_0
+    BUFG_GT_X1Y8         BUFG_GT (Prop_BUFG_GT_I_O)
+                                                      0.130     0.526 r  d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt/O
+    X3Y1 (CLOCK_ROOT)    net (fo=35, routed)          1.994     2.520    d_1_i/rst_adc0/U0/EXT_LPF/slowest_sync_clk
+    SLICE_X72Y152        SRL16E                                       r  d_1_i/rst_adc0/U0/EXT_LPF/POR_SRL_I/CLK
+  -------------------------------------------------------------------    -------------------
+    SLICE_X72Y152        SRL16E (Prop_H6LUT_SLICEM_CLK_Q)
+                                                      0.392     2.912 r  d_1_i/rst_adc0/U0/EXT_LPF/POR_SRL_I/Q
+                         net (fo=1, routed)           0.154     3.066    d_1_i/rst_adc0/U0/EXT_LPF/Q
+    SLICE_X73Y152        LUT3 (Prop_B5LUT_SLICEL_I2_O)
+                                                      0.073     3.139 r  d_1_i/rst_adc0/U0/EXT_LPF/lpf_int0/O
+                         net (fo=1, routed)           0.018     3.157    d_1_i/rst_adc0/U0/EXT_LPF/lpf_int0__0
+    SLICE_X73Y152        FDRE                                         r  d_1_i/rst_adc0/U0/EXT_LPF/lpf_int_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock RFADC0_CLK rise edge)
+                                                     43.403    43.403 r  
+    RFADC_X0Y0           RFADC                        0.000    43.403 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/INTERNAL_FBRC_DIV1_MUX
+    RFADC_X0Y0           RFADC (Prop_RFADC_INTERNAL_FBRC_DIV1_MUX_CLK_ADC)
+                                                      0.122    43.525 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/CLK_ADC
+                         net (fo=2, routed)           0.150    43.675    d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt_0
+    BUFG_GT_X1Y8         BUFG_GT (Prop_BUFG_GT_I_O)
+                                                      0.114    43.789 r  d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt/O
+    X3Y1 (CLOCK_ROOT)    net (fo=35, routed)          1.742    45.531    d_1_i/rst_adc0/U0/EXT_LPF/slowest_sync_clk
+    SLICE_X73Y152        FDRE                                         r  d_1_i/rst_adc0/U0/EXT_LPF/lpf_int_reg/C
+                         clock pessimism              0.330    45.861    
+                         clock uncertainty           -0.035    45.826    
+    SLICE_X73Y152        FDRE (Setup_BFF2_SLICEL_C_D)
+                                                      0.025    45.851    d_1_i/rst_adc0/U0/EXT_LPF/lpf_int_reg
+  -------------------------------------------------------------------
+                         required time                         45.851    
+                         arrival time                          -3.157    
+  -------------------------------------------------------------------
+                         slack                                 42.694    
+
+From Clock:  RFADC0_CLK
+  To Clock:  RFADC0_CLK
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.020ns  (arrival time - required time)
+  Source:                 d_1_i/rst_adc0/U0/EXT_LPF/ACTIVE_LOW_EXT.ACT_LO_EXT/GENERATE_LEVEL_P_S_CDC.SINGLE_BIT.CROSS_PLEVEL_IN2SCNDRY_s_level_out_d4/C
+                            (rising edge-triggered cell FDRE clocked by RFADC0_CLK  {rise@0.000ns fall@21.701ns period=43.403ns})
+  Destination:            d_1_i/rst_adc0/U0/EXT_LPF/EXT_LPF[1].exr_lpf_reg[1]/D
+                            (rising edge-triggered cell FDRE clocked by RFADC0_CLK  {rise@0.000ns fall@21.701ns period=43.403ns})
+  Path Group:             RFADC0_CLK
+  Path Type:              Hold (Min at Slow Process Corner)
+  Requirement:            0.000ns  (RFADC0_CLK rise@0.000ns - RFADC0_CLK rise@0.000ns)
+  Data Path Delay:        0.155ns  (logic 0.058ns (37.427%)  route 0.097ns (62.573%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.073ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.494ns
+    Source Clock Delay      (SCD):    2.140ns
+    Clock Pessimism Removal (CPR):    0.282ns
+  Clock Net Delay (Source):      1.754ns (routing 1.012ns, distribution 0.742ns)
+  Clock Net Delay (Destination): 1.968ns (routing 1.114ns, distribution 0.854ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock RFADC0_CLK rise edge)
+                                                      0.000     0.000 r  
+    RFADC_X0Y0           RFADC                        0.000     0.000 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/INTERNAL_FBRC_DIV1_MUX
+    RFADC_X0Y0           RFADC (Prop_RFADC_INTERNAL_FBRC_DIV1_MUX_CLK_ADC)
+                                                      0.122     0.122 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/CLK_ADC
+                         net (fo=2, routed)           0.150     0.272    d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt_0
+    BUFG_GT_X1Y8         BUFG_GT (Prop_BUFG_GT_I_O)
+                                                      0.114     0.386 r  d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt/O
+    X3Y1 (CLOCK_ROOT)    net (fo=35, routed)          1.754     2.140    d_1_i/rst_adc0/U0/EXT_LPF/ACTIVE_LOW_EXT.ACT_LO_EXT/slowest_sync_clk
+    SLICE_X74Y152        FDRE                                         r  d_1_i/rst_adc0/U0/EXT_LPF/ACTIVE_LOW_EXT.ACT_LO_EXT/GENERATE_LEVEL_P_S_CDC.SINGLE_BIT.CROSS_PLEVEL_IN2SCNDRY_s_level_out_d4/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X74Y152        FDRE (Prop_FFF_SLICEL_C_Q)
+                                                      0.058     2.198 r  d_1_i/rst_adc0/U0/EXT_LPF/ACTIVE_LOW_EXT.ACT_LO_EXT/GENERATE_LEVEL_P_S_CDC.SINGLE_BIT.CROSS_PLEVEL_IN2SCNDRY_s_level_out_d4/Q
+                         net (fo=2, routed)           0.097     2.295    d_1_i/rst_adc0/U0/EXT_LPF/p_3_in6_in
+    SLICE_X73Y152        FDRE                                         r  d_1_i/rst_adc0/U0/EXT_LPF/EXT_LPF[1].exr_lpf_reg[1]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock RFADC0_CLK rise edge)
+                                                      0.000     0.000 r  
+    RFADC_X0Y0           RFADC                        0.000     0.000 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/INTERNAL_FBRC_DIV1_MUX
+    RFADC_X0Y0           RFADC (Prop_RFADC_INTERNAL_FBRC_DIV1_MUX_CLK_ADC)
+                                                      0.150     0.150 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/rx0_u_adc/CLK_ADC
+                         net (fo=2, routed)           0.246     0.396    d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt_0
+    BUFG_GT_X1Y8         BUFG_GT (Prop_BUFG_GT_I_O)
+                                                      0.130     0.526 r  d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/adc0_bufg_gt/O
+    X3Y1 (CLOCK_ROOT)    net (fo=35, routed)          1.968     2.494    d_1_i/rst_adc0/U0/EXT_LPF/slowest_sync_clk
+    SLICE_X73Y152        FDRE                                         r  d_1_i/rst_adc0/U0/EXT_LPF/EXT_LPF[1].exr_lpf_reg[1]/C
+                         clock pessimism             -0.282     2.212    
+    SLICE_X73Y152        FDRE (Hold_FFF2_SLICEL_C_D)
+                                                      0.062     2.274    d_1_i/rst_adc0/U0/EXT_LPF/EXT_LPF[1].exr_lpf_reg[1]
+  -------------------------------------------------------------------
+                         required time                         -2.274    
+                         arrival time                           2.295    
+  -------------------------------------------------------------------
+                         slack                                  0.020    
+
+From Clock:  clk_out_dac_d_1_clk_wiz_0_0
+  To Clock:  clk_out_dac_d_1_clk_wiz_0_0
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.139ns  (required time - arrival time)
+  Source:                 d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/time_en_r_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_out_dac_d_1_clk_wiz_0_0  {rise@0.000ns fall@1.250ns period=2.500ns})
+  Destination:            d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/gen_wr_a.gen_word_narrow.mem_reg_2/ENARDEN
+                            (rising edge-triggered cell RAMB36E2 clocked by clk_out_dac_d_1_clk_wiz_0_0  {rise@0.000ns fall@1.250ns period=2.500ns})
+  Path Group:             clk_out_dac_d_1_clk_wiz_0_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            2.500ns  (clk_out_dac_d_1_clk_wiz_0_0 rise@2.500ns - clk_out_dac_d_1_clk_wiz_0_0 rise@0.000ns)
+  Data Path Delay:        1.674ns  (logic 0.206ns (12.306%)  route 1.468ns (87.694%))
+  Logic Levels:           2  (LUT3=1 LUT4=1)
+  Clock Path Skew:        -0.292ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.278ns = ( 4.778 - 2.500 ) 
+    Source Clock Delay      (SCD):    2.893ns
+    Clock Pessimism Removal (CPR):    0.324ns
+  Clock Uncertainty:      0.053ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.078ns
+    Phase Error              (PE):    0.000ns
+  Clock Net Delay (Source):      3.261ns (routing 1.787ns, distribution 1.474ns)
+  Clock Net Delay (Destination): 2.805ns (routing 1.623ns, distribution 1.182ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_out_dac_d_1_clk_wiz_0_0 rise edge)
+                                                      0.000     0.000 r  
+    E10                                               0.000     0.000 r  PL_CLK_clk_p[0] (IN)
+                         net (fo=0)                   0.000     0.000    d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/I
+    HDIOBDIFFINBUF_X0Y42 DIFFINBUF (Prop_DIFFINBUF_HDIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      1.172     1.172 r  d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/DIFFINBUF_INST/O
+                         net (fo=1, estimated)        0.045     1.217    d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/OUT
+    E10                  IBUFCTRL (Prop_IBUFCTRL_HDIOB_M_I_O)
+                                                      0.000     1.217 r  d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/IBUFCTRL_INST/O
+                         net (fo=1, estimated)        0.204     1.421    d_1_i/MTS/BUFG_PL_CLK/U0/BUFG_I[0]
+    BUFGCE_HDIO_X1Y6     BUFGCE (Prop_BUFCE_BUFGCE_HDIO_I_O)
+                                                      0.028     1.449 r  d_1_i/MTS/BUFG_PL_CLK/U0/USE_BUFG.GEN_BUFG[0].BUFG_U/O
+                         net (fo=3, estimated)        1.498     2.947    d_1_i/MTS/clk_wiz_0/inst/clk_in1
+    MMCM_X0Y7            MMCME4_ADV (Prop_MMCM_CLKIN1_CLKOUT0)
+                                                     -3.584    -0.637 r  d_1_i/MTS/clk_wiz_0/inst/mmcme4_adv_inst/CLKOUT0
+                         net (fo=1, estimated)        0.241    -0.396    d_1_i/MTS/clk_wiz_0/inst/clk_out_dac_d_1_clk_wiz_0_0
+    BUFGCE_X0Y174        BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.028    -0.368 r  d_1_i/MTS/clk_wiz_0/inst/clkout1_buf/O
+    X2Y3 (CLOCK_ROOT)    net (fo=140955, estimated)
+                                                      3.261     2.893    d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/t_clk_i
+    SLICE_X29Y253        FDRE                                         r  d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/time_en_r_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X29Y253        FDRE (Prop_EFF_SLICEL_C_Q)
+                                                      0.079     2.972 r  d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/time_en_r_reg/Q
+                         net (fo=58, estimated)       0.697     3.669    d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/time_en_r
+    SLICE_X38Y249        LUT3 (Prop_E6LUT_SLICEL_I0_O)
+                                                      0.090     3.759 r  d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst_i_2__28/O
+                         net (fo=11, estimated)       0.252     4.011    d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/rdp_inst/rd_en
+    SLICE_X41Y245        LUT4 (Prop_E6LUT_SLICEM_I2_O)
+                                                      0.037     4.048 r  d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/rdp_inst/gen_sdpram.xpm_memory_base_inst_i_2/O
+                         net (fo=24, estimated)       0.519     4.567    d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/enb
+    RAMB36_X4Y47         RAMB36E2                                     r  d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/gen_wr_a.gen_word_narrow.mem_reg_2/ENARDEN
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_out_dac_d_1_clk_wiz_0_0 rise edge)
+                                                      2.500     2.500 r  
+    E10                                               0.000     2.500 r  PL_CLK_clk_p[0] (IN)
+                         net (fo=0)                   0.000     2.500    d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/I
+    HDIOBDIFFINBUF_X0Y42 DIFFINBUF (Prop_DIFFINBUF_HDIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.837     3.337 r  d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/DIFFINBUF_INST/O
+                         net (fo=1, estimated)        0.034     3.371    d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/OUT
+    E10                  IBUFCTRL (Prop_IBUFCTRL_HDIOB_M_I_O)
+                                                      0.000     3.371 r  d_1_i/MTS/IBUFDS_PL_CLK/U0/USE_IBUFDS.GEN_IBUFDS[0].IBUFDS_I/IBUFCTRL_INST/O
+                         net (fo=1, estimated)        0.169     3.540    d_1_i/MTS/BUFG_PL_CLK/U0/BUFG_I[0]
+    BUFGCE_HDIO_X1Y6     BUFGCE (Prop_BUFCE_BUFGCE_HDIO_I_O)
+                                                      0.024     3.564 r  d_1_i/MTS/BUFG_PL_CLK/U0/USE_BUFG.GEN_BUFG[0].BUFG_U/O
+                         net (fo=3, estimated)        1.343     4.907    d_1_i/MTS/clk_wiz_0/inst/clk_in1
+    MMCM_X0Y7            MMCME4_ADV (Prop_MMCM_CLKIN1_CLKOUT0)
+                                                     -3.170     1.737 r  d_1_i/MTS/clk_wiz_0/inst/mmcme4_adv_inst/CLKOUT0
+                         net (fo=1, estimated)        0.212     1.949    d_1_i/MTS/clk_wiz_0/inst/clk_out_dac_d_1_clk_wiz_0_0
+    BUFGCE_X0Y174        BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.024     1.973 r  d_1_i/MTS/clk_wiz_0/inst/clkout1_buf/O
+    X2Y3 (CLOCK_ROOT)    net (fo=140955, estimated)
+                                                      2.805     4.778    d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/clkb
+    RAMB36_X4Y47         RAMB36E2                                     r  d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/gen_wr_a.gen_word_narrow.mem_reg_2/CLKARDCLK
+                         clock pessimism              0.324     5.101    
+                         clock uncertainty           -0.053     5.049    
+    RAMB36_X4Y47         RAMB36E2 (Setup_RAMB36E2_RAMB36_CLKARDCLK_ENARDEN)
+                                                     -0.342     4.707    d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/WAVE_PORT[2].wave_fifo_inst/xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/gen_wr_a.gen_word_narrow.mem_reg_2
+  -------------------------------------------------------------------
+                         required time                          4.707    
+                         arrival time                          -4.567    
+  -------------------------------------------------------------------
+                         slack                                  0.139    
+
+From Clock:  RFDAC2_CLK
+  To Clock:  RFDAC2_CLK
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.067ns  (required time - arrival time)
+  Source:                 d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_M_DATA_INST/CLK
+                            (rising edge-triggered cell DSP_M_DATA clocked by RFDAC2_CLK  {rise@0.000ns fall@0.814ns period=1.628ns})
+  Destination:            d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/stdy_latency_reg_i/m_axis_tdata[173]_INST_0_psdsp/D
+                            (rising edge-triggered cell FDRE clocked by RFDAC2_CLK  {rise@0.000ns fall@0.814ns period=1.628ns})
+  Path Group:             RFDAC2_CLK
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            1.628ns  (RFDAC2_CLK rise@1.628ns - RFDAC2_CLK rise@0.000ns)
+  Data Path Delay:        1.397ns  (logic 0.957ns (68.504%)  route 0.440ns (31.496%))
+  Logic Levels:           2  (DSP_ALU=1 DSP_OUTPUT=1)
+  Clock Path Skew:        -0.153ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.573ns = ( 4.201 - 1.628 ) 
+    Source Clock Delay      (SCD):    2.979ns
+    Clock Pessimism Removal (CPR):    0.253ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+  Clock Net Delay (Source):      2.268ns (routing 0.902ns, distribution 1.366ns)
+  Clock Net Delay (Destination): 2.029ns (routing 0.816ns, distribution 1.213ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock RFDAC2_CLK rise edge)
+                                                      0.000     0.000 r  
+    RFDAC_X0Y2           RFDAC                        0.000     0.000 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/tx2_u_dac/INTERNAL_FBRC_MUX
+    RFDAC_X0Y2           RFDAC (Prop_RFDAC_INTERNAL_FBRC_MUX_CLK_DAC)
+                                                      0.336     0.336 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/tx2_u_dac/CLK_DAC
+                         net (fo=2, routed)           0.245     0.581    d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/dac2_bufg_gt_0
+    BUFG_GT_X1Y155       BUFG_GT (Prop_BUFG_GT_I_O)
+                                                      0.130     0.711 r  d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/dac2_bufg_gt/O
+    X4Y5 (CLOCK_ROOT)    net (fo=23553, routed)       2.268     2.979    d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/CLK
+    DSP48E2_X22Y142      DSP_M_DATA                                   r  d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_M_DATA_INST/CLK
+  -------------------------------------------------------------------    -------------------
+    DSP48E2_X22Y142      DSP_M_DATA (Prop_DSP_M_DATA_DSP48E2_CLK_V_DATA[28])
+                                                      0.277     3.256 r  d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_M_DATA_INST/V_DATA[28]
+                         net (fo=1, routed)           0.000     3.256    d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_M_DATA.V_DATA<28>
+    DSP48E2_X22Y142      DSP_ALU (Prop_DSP_ALU_DSP48E2_V_DATA[28]_ALU_OUT[28])
+                                                      0.571     3.827 f  d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_ALU_INST/ALU_OUT[28]
+                         net (fo=1, routed)           0.000     3.827    d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_ALU.ALU_OUT<28>
+    DSP48E2_X22Y142      DSP_OUTPUT (Prop_DSP_OUTPUT_DSP48E2_ALU_OUT[28]_P[28])
+                                                      0.109     3.936 r  d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/GEN_dds[10].prodg_y_full_real_r2_reg[10]/DSP_OUTPUT_INST/P[28]
+                         net (fo=1, routed)           0.440     4.376    d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/stdy_latency_reg_i/m_axis_tdata[173]_INST_0_psdsp_n
+    SLICE_X113Y363       FDRE                                         r  d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/stdy_latency_reg_i/m_axis_tdata[173]_INST_0_psdsp/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock RFDAC2_CLK rise edge)
+                                                      1.628     1.628 r  
+    RFDAC_X0Y2           RFDAC                        0.000     1.628 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/tx2_u_dac/INTERNAL_FBRC_MUX
+    RFDAC_X0Y2           RFDAC (Prop_RFDAC_INTERNAL_FBRC_MUX_CLK_DAC)
+                                                      0.281     1.909 r  d_1_i/usp_rf_data_converter_0/inst/d_1_usp_rf_data_converter_0_0_rf_wrapper_i/tx2_u_dac/CLK_DAC
+                         net (fo=2, routed)           0.149     2.058    d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/dac2_bufg_gt_0
+    BUFG_GT_X1Y155       BUFG_GT (Prop_BUFG_GT_I_O)
+                                                      0.114     2.172 r  d_1_i/usp_rf_data_converter_0/inst/i_d_1_usp_rf_data_converter_0_0_bufg_gt_ctrl/dac2_bufg_gt/O
+    X4Y5 (CLOCK_ROOT)    net (fo=23553, routed)       2.029     4.201    d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/stdy_latency_reg_i/aclk
+    SLICE_X113Y363       FDRE                                         r  d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/stdy_latency_reg_i/m_axis_tdata[173]_INST_0_psdsp/C
+                         clock pessimism              0.253     4.454    
+                         clock uncertainty           -0.035     4.418    
+    SLICE_X113Y363       FDRE (Setup_EFF2_SLICEM_C_D)
+                                                      0.025     4.443    d_1_i/axis_signal_gen_v6_0/inst/signal_gen_top_i/signal_gen_i/stdy_latency_reg_i/m_axis_tdata[173]_INST_0_psdsp
+  -------------------------------------------------------------------
+                         required time                          4.443    
+                         arrival time                          -4.376    
+  -------------------------------------------------------------------
+                         slack                                  0.067    
+
+From Clock:  clk_122_88_MHZ_main_clk_wiz_0_0
+  To Clock:  clk_pl_0
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             7.598ns  (required time - arrival time)
+  Source:                 main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/src_gray_ff_reg[1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_122_88_MHZ_main_clk_wiz_0_0  {rise@0.000ns fall@4.069ns period=8.138ns})
+  Destination:            main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/dest_graysync_ff_reg[0][1]/D
+                            (rising edge-triggered cell FDRE clocked by clk_pl_0  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             clk_pl_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.138ns  (MaxDelay Path 8.138ns)
+  Data Path Delay:        0.565ns  (logic 0.081ns (14.336%)  route 0.484ns (85.664%))
+  Logic Levels:           0  
+  Timing Exception:       MaxDelay Path 8.138ns -datapath_only
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+    SLICE_X81Y325                                     0.000     0.000 r  main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/src_gray_ff_reg[1]/C
+    SLICE_X81Y325        FDRE (Prop_DFF2_SLICEL_C_Q)
+                                                      0.081     0.081 r  main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/src_gray_ff_reg[1]/Q
+                         net (fo=1, routed)           0.484     0.565    main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/async_path[1]
+    SLICE_X86Y325        FDRE                                         r  main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/dest_graysync_ff_reg[0][1]/D
+  -------------------------------------------------------------------    -------------------
+
+                         max delay                    8.138     8.138    
+    SLICE_X86Y325        FDRE (Setup_DFF2_SLICEM_C_D)
+                                                      0.025     8.163    main_i/adc_224_1/group_3/dma/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/I_CMD_STATUS/GEN_INCLUDE_STATUS_FIFO.I_STS_FIFO/USE_ASYNC_FIFO.I_ASYNC_FIFO/I_ASYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_async_inst/gnuram_async_fifo.xpm_fifo_base_inst/gen_cdc_pntr.wr_pntr_cdc_inst/dest_graysync_ff_reg[0][1]
+  -------------------------------------------------------------------
+                         required time                          8.163    
+                         arrival time                          -0.565    
+  -------------------------------------------------------------------
+                         slack                                  7.598    
+

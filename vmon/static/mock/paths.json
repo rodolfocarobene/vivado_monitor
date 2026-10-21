@@ -29,7 +29,153 @@
     },
     "skew": -0.181,
     "uncertainty": 0.059,
-    "id": 0
+    "id": 0,
+    "launch": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 2.529,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.929
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.529
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X92Y74",
+      "cell": "FDRE",
+      "incr": 0.226,
+      "at": 2.755,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[34]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 420,
+      "routing": "routed",
+      "incr": 0.881,
+      "at": 3.636,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/cnt_nxt[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X95Y77",
+      "cell": "CARRY8",
+      "incr": 0.113,
+      "at": 3.749,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/acc_sum_i0/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.178,
+      "at": 3.927,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/ovf_det[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X91Y80",
+      "cell": "LUT4",
+      "incr": 0.056,
+      "at": 3.983,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.537,
+      "at": 4.52,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/valid_i[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X95Y74",
+      "cell": "LUT1",
+      "incr": 0.028,
+      "at": 4.548,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/addr_gen_i2/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.198,
+      "at": 4.746,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/state_next[3]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X92Y79",
+      "cell": "FDRE",
+      "pin": "R",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[18]/R"
+     }
+    ],
+    "capture": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 4.413,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 2.813
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 4.413
+      }
+     ],
+     "pessimism": 0.331,
+     "uncertainty": -0.059,
+     "setup_or_hold": {
+      "arc": "Setup_HFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.067
+     },
+     "constraint": null,
+     "required": 4.752,
+     "arrival": -4.746,
+     "slack": 0.006
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -54,7 +200,93 @@
     "cells": {},
     "skew": 0.184,
     "uncertainty": null,
-    "id": 1
+    "id": 1,
+    "launch": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 1.955,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.355
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.955
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X76Y168",
+      "cell": "FDRE",
+      "incr": 0.08,
+      "at": 2.035,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[52]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 128,
+      "routing": "routed",
+      "incr": 0.175,
+      "at": 2.21,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/wr_en_i[0]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X75Y168",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[95]/D"
+     }
+    ],
+    "capture": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 1.939,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.339
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.939
+      }
+     ],
+     "pessimism": -0.172,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.089
+     },
+     "constraint": null,
+     "required": -2.2,
+     "arrival": 2.21,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -79,7 +311,93 @@
     "cells": {},
     "skew": -0.131,
     "uncertainty": null,
-    "id": 2
+    "id": 2,
+    "launch": {
+     "clock": "RFDAC2_CLK",
+     "edge": "rise",
+     "at": 1.771,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.171
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.771
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X108Y243",
+      "cell": "FDRE",
+      "incr": 0.08,
+      "at": 1.851,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[27]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.043,
+      "at": 1.894,
+      "name": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/cnt_nxt[0]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X108Y243",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/storage_data1_reg[53]/D"
+     }
+    ],
+    "capture": {
+     "clock": "RFDAC2_CLK",
+     "edge": "rise",
+     "at": 1.532,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": -0.068
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.532
+      }
+     ],
+     "pessimism": -0.271,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.081
+     },
+     "constraint": null,
+     "required": -1.884,
+     "arrival": 1.894,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -106,7 +424,113 @@
     },
     "skew": -0.214,
     "uncertainty": null,
-    "id": 3
+    "id": 3,
+    "launch": {
+     "clock": "mmcm_clkout0",
+     "edge": "rise",
+     "at": 2.975,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.375
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.975
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X62Y235",
+      "cell": "FDRE",
+      "incr": 0.155,
+      "at": 3.13,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[116]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 2,
+      "routing": "routed",
+      "incr": 0.016,
+      "at": 3.146,
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/addr_gen[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X65Y237",
+      "cell": "LUT4",
+      "incr": 0.039,
+      "at": 3.185,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 128,
+      "routing": "routed",
+      "incr": 0.06,
+      "at": 3.245,
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mux_out[1]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X65Y238",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[104]/CE"
+     }
+    ],
+    "capture": {
+     "clock": "mmcm_clkout0",
+     "edge": "rise",
+     "at": 2.936,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.336
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.936
+      }
+     ],
+     "pessimism": -0.215,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.084
+     },
+     "constraint": null,
+     "required": -3.235,
+     "arrival": 3.245,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -133,7 +557,113 @@
     },
     "skew": -0.264,
     "uncertainty": null,
-    "id": 4
+    "id": 4,
+    "launch": {
+     "clock": "clk_out1_d_1_clk_core_0",
+     "edge": "rise",
+     "at": 2.82,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.22
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.82
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y169",
+      "cell": "FDRE",
+      "incr": 0.137,
+      "at": 2.957,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[81]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.065,
+      "at": 3.022,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/cnt_nxt[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y170",
+      "cell": "LUT2",
+      "incr": 0.021,
+      "at": 3.043,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 128,
+      "routing": "routed",
+      "incr": 0.059,
+      "at": 3.102,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/ovf_det[1]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X104Y168",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[39]/CE"
+     }
+    ],
+    "capture": {
+     "clock": "clk_out1_d_1_clk_core_0",
+     "edge": "rise",
+     "at": 2.767,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.167
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.767
+      }
+     ],
+     "pessimism": -0.236,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.089
+     },
+     "constraint": null,
+     "required": -3.092,
+     "arrival": 3.102,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -161,7 +691,133 @@
     },
     "skew": 0.004,
     "uncertainty": null,
-    "id": 5
+    "id": 5,
+    "launch": {
+     "clock": "clk_pl_0",
+     "edge": "rise",
+     "at": 2.025,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.425
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.025
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X47Y249",
+      "cell": "FDRE",
+      "incr": 0.17,
+      "at": 2.195,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[19]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.059,
+      "at": 2.254,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/ovf_det[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X49Y249",
+      "cell": "LUT4",
+      "incr": 0.043,
+      "at": 2.297,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.022,
+      "at": 2.319,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/valid_i[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X48Y246",
+      "cell": "CARRY8",
+      "incr": 0.085,
+      "at": 2.404,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/mux_out_i1/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.02,
+      "at": 2.424,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/state_next[2]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X48Y249",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[108]/CE"
+     }
+    ],
+    "capture": {
+     "clock": "clk_pl_0",
+     "edge": "rise",
+     "at": 2.076,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.476
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.076
+      }
+     ],
+     "pessimism": -0.242,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.096
+     },
+     "constraint": null,
+     "required": -2.414,
+     "arrival": 2.424,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -751,10 +1407,11 @@
     "logic_pct": 53.46,
     "route_delay": 0.343,
     "route_pct": 46.54,
-    "levels": 3,
+    "levels": 4,
     "cells": {
      "LUT3": 2,
-     "LUT1": 1
+     "LUT1": 1,
+     "DSP48E2": 1
     },
     "skew": -0.028,
     "uncertainty": 0.045,
@@ -1093,10 +1750,11 @@
     "logic_pct": 41.225,
     "route_delay": 0.854,
     "route_pct": 58.775,
-    "levels": 4,
+    "levels": 5,
     "cells": {
      "LUT5": 3,
-     "LUT1": 1
+     "LUT1": 1,
+     "DSP48E2": 1
     },
     "skew": 0.164,
     "uncertainty": 0.048,
@@ -1315,7 +1973,233 @@
     },
     "skew": -0.037,
     "uncertainty": 0.078,
-    "id": 0
+    "id": 0,
+    "launch": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 1.575,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": -0.025
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.575
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X70Y74",
+      "cell": "FDRE",
+      "incr": 0.362,
+      "at": 1.937,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/q_reg_reg[106]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.12,
+      "at": 2.057,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/sel_i[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X67Y70",
+      "cell": "LUT2",
+      "incr": 0.054,
+      "at": 2.111,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.175,
+      "at": 2.286,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/addr_gen[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X69Y69",
+      "cell": "LUT4",
+      "incr": 0.09,
+      "at": 2.376,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.145,
+      "at": 2.521,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/mux_out[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X70Y68",
+      "cell": "LUT2",
+      "incr": 0.054,
+      "at": 2.575,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/addr_gen_i2/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.064,
+      "at": 2.639,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/acc_sum[3]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X70Y70",
+      "cell": "LUT1",
+      "incr": 0.045,
+      "at": 2.684,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/sel_i_i3/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.132,
+      "at": 2.816,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/wr_en_i[4]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X70Y74",
+      "cell": "LUT2",
+      "incr": 0.054,
+      "at": 2.87,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/state_next_i4/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.069,
+      "at": 2.939,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/coef_sel[5]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X67Y68",
+      "cell": "LUT1",
+      "incr": 0.045,
+      "at": 2.984,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/valid_i_i5/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.073,
+      "at": 3.057,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/cnt_nxt[6]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X70Y72",
+      "cell": "LUT6",
+      "incr": 0.127,
+      "at": 3.184,
+      "arc": "Prop_LUT6_I5_O",
+      "from_pin": "I5",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/ovf_det_i6/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.133,
+      "at": 3.317,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/ovf_det[7]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X67Y70",
+      "cell": "FDRE",
+      "pin": "R",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[49]/R"
+     }
+    ],
+    "capture": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 2.826,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.226
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.826
+      }
+     ],
+     "pessimism": 0.326,
+     "uncertainty": -0.078,
+     "setup_or_hold": {
+      "arc": "Setup_HFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.056
+     },
+     "constraint": null,
+     "required": 3.13,
+     "arrival": -3.317,
+     "slack": -0.187
+    },
+    "truncated": false
    },
    {
     "type": "setup",
@@ -1347,7 +2231,253 @@
     },
     "skew": -0.213,
     "uncertainty": 0.038,
-    "id": 1
+    "id": 1,
+    "launch": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 2.716,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.116
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.716
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X91Y73",
+      "cell": "FDRE",
+      "incr": 0.408,
+      "at": 3.124,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/q_reg_reg[105]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 2,
+      "routing": "routed",
+      "incr": 0.05,
+      "at": 3.174,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/sel_i[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X95Y71",
+      "cell": "LUT2",
+      "incr": 0.061,
+      "at": 3.235,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.043,
+      "at": 3.278,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/addr_gen[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X93Y69",
+      "cell": "LUT3",
+      "incr": 0.082,
+      "at": 3.36,
+      "arc": "Prop_LUT3_I2_O",
+      "from_pin": "I2",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.034,
+      "at": 3.394,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/mux_out[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X93Y71",
+      "cell": "LUT2",
+      "incr": 0.061,
+      "at": 3.455,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/addr_gen_i2/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.061,
+      "at": 3.516,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/acc_sum[3]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X94Y71",
+      "cell": "CARRY8",
+      "incr": 0.204,
+      "at": 3.72,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/sel_i_i3/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.056,
+      "at": 3.776,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/wr_en_i[4]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X94Y67",
+      "cell": "LUT4",
+      "incr": 0.102,
+      "at": 3.878,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/state_next_i4/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.031,
+      "at": 3.909,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/coef_sel[5]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X91Y69",
+      "cell": "LUT5",
+      "incr": 0.123,
+      "at": 4.032,
+      "arc": "Prop_LUT5_I4_O",
+      "from_pin": "I4",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/valid_i_i5/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.049,
+      "at": 4.081,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/cnt_nxt[6]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X94Y72",
+      "cell": "LUT1",
+      "incr": 0.051,
+      "at": 4.132,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/ovf_det_i6/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 420,
+      "routing": "routed",
+      "incr": 0.121,
+      "at": 4.253,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/ovf_det[7]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X91Y67",
+      "cell": "LUT3",
+      "incr": 0.082,
+      "at": 4.335,
+      "arc": "Prop_LUT3_I2_O",
+      "from_pin": "I2",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/cnt_nxt_i7/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.067,
+      "at": 4.402,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/valid_i[8]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "RAMB36_X8Y60",
+      "cell": "RAMB36E2",
+      "pin": "ADDRARDADDR[7]",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/mem_reg/ADDRARDADDR[7]"
+     }
+    ],
+    "capture": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 3.898,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 2.298
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 3.898
+      }
+     ],
+     "pessimism": 0.331,
+     "uncertainty": -0.038,
+     "setup_or_hold": {
+      "arc": "Setup_RAMB36E2_RAMB36_SLICEL_C_D",
+      "cell": "RAMB36E2",
+      "incr": 0.035
+     },
+     "constraint": null,
+     "required": 4.226,
+     "arrival": -4.402,
+     "slack": -0.176
+    },
+    "truncated": false
    },
    {
     "type": "setup",
@@ -1378,7 +2508,233 @@
     },
     "skew": 0.129,
     "uncertainty": 0.07,
-    "id": 2
+    "id": 2,
+    "launch": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 1.407,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": -0.193
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.407
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X111Y130",
+      "cell": "FDRE",
+      "incr": 0.425,
+      "at": 1.832,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/q_reg_reg[26]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.118,
+      "at": 1.95,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/acc_sum[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X111Y129",
+      "cell": "LUT3",
+      "incr": 0.085,
+      "at": 2.035,
+      "arc": "Prop_LUT3_I2_O",
+      "from_pin": "I2",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.263,
+      "at": 2.298,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/wr_en_i[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X109Y128",
+      "cell": "LUT4",
+      "incr": 0.106,
+      "at": 2.404,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.166,
+      "at": 2.57,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/coef_sel[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X109Y129",
+      "cell": "LUT5",
+      "incr": 0.127,
+      "at": 2.697,
+      "arc": "Prop_LUT5_I4_O",
+      "from_pin": "I4",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/addr_gen_i2/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.149,
+      "at": 2.846,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/cnt_nxt[3]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X109Y133",
+      "cell": "LUT6",
+      "incr": 0.149,
+      "at": 2.995,
+      "arc": "Prop_LUT6_I5_O",
+      "from_pin": "I5",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/sel_i_i3/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.13,
+      "at": 3.125,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/ovf_det[4]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X109Y128",
+      "cell": "LUT4",
+      "incr": 0.106,
+      "at": 3.231,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/state_next_i4/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.364,
+      "at": 3.595,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/valid_i[5]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X111Y134",
+      "cell": "LUT4",
+      "incr": 0.106,
+      "at": 3.701,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/valid_i_i5/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 420,
+      "routing": "routed",
+      "incr": 0.398,
+      "at": 4.099,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/state_next[6]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X112Y129",
+      "cell": "LUT1",
+      "incr": 0.053,
+      "at": 4.152,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/ovf_det_i6/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.192,
+      "at": 4.344,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/sel_i[7]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X110Y130",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[100]/D"
+     }
+    ],
+    "capture": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 3.973,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 2.373
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 3.973
+      }
+     ],
+     "pessimism": 0.248,
+     "uncertainty": -0.07,
+     "setup_or_hold": {
+      "arc": "Setup_HFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.041
+     },
+     "constraint": null,
+     "required": 4.192,
+     "arrival": -4.344,
+     "slack": -0.152
+    },
+    "truncated": false
    },
    {
     "type": "setup",
@@ -1399,17 +2755,204 @@
     "logic_pct": 57.439,
     "route_delay": 0.698,
     "route_pct": 42.561,
-    "levels": 6,
+    "levels": 7,
     "cells": {
      "LUT6": 1,
      "LUT5": 1,
      "LUT4": 2,
      "LUT3": 1,
-     "LUT1": 1
+     "LUT1": 1,
+     "DSP48E2": 1
     },
     "skew": -0.158,
     "uncertainty": 0.059,
-    "id": 3
+    "id": 3,
+    "launch": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 1.672,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.072
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.672
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X65Y169",
+      "cell": "FDRE",
+      "incr": 0.271,
+      "at": 1.943,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[56]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.073,
+      "at": 2.016,
+      "name": "radar_i/axi_if/regs/slv_reg/wr_en_i[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "DSP48E2_X13Y41",
+      "cell": "DSP_M_DATA",
+      "incr": 0.169,
+      "at": 2.185,
+      "arc": "Prop_DSP_M_DATA_A2_U10",
+      "from_pin": "A2",
+      "to_pin": "U[10]",
+      "edge": "r",
+      "name": "radar_i/axi_if/regs/slv_reg/mac_dsp/U[10]"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.111,
+      "at": 2.296,
+      "name": "radar_i/axi_if/regs/slv_reg/coef_sel[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "DSP48E2_X13Y41",
+      "cell": "DSP_ALU",
+      "incr": 0.169,
+      "at": 2.465,
+      "arc": "Prop_DSP_ALU_U10_ALU_OUT7",
+      "from_pin": "U[10]",
+      "to_pin": "ALU_OUT[7]",
+      "edge": "r",
+      "name": "radar_i/axi_if/regs/slv_reg/mac_dsp/ALU_OUT[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.119,
+      "at": 2.584,
+      "name": "radar_i/axi_if/regs/slv_reg/cnt_nxt[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "DSP48E2_X13Y41",
+      "cell": "DSP_OUTPUT",
+      "incr": 0.169,
+      "at": 2.753,
+      "arc": "Prop_DSP_OUTPUT_ALU_OUT7_P7",
+      "from_pin": "ALU_OUT[7]",
+      "to_pin": "P[7]",
+      "edge": "r",
+      "name": "radar_i/axi_if/regs/slv_reg/mac_dsp/P[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.244,
+      "at": 2.997,
+      "name": "radar_i/axi_if/regs/slv_reg/ovf_det[3]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X66Y173",
+      "cell": "LUT4",
+      "incr": 0.068,
+      "at": 3.065,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/axi_if/regs/slv_reg/sel_i_i3/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.083,
+      "at": 3.148,
+      "name": "radar_i/axi_if/regs/slv_reg/valid_i[4]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X64Y169",
+      "cell": "LUT6",
+      "incr": 0.095,
+      "at": 3.243,
+      "arc": "Prop_LUT6_I5_O",
+      "from_pin": "I5",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/axi_if/regs/slv_reg/state_next_i4/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.069,
+      "at": 3.312,
+      "name": "radar_i/axi_if/regs/slv_reg/state_next[5]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X64Y173",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[0]/D"
+     }
+    ],
+    "capture": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 2.96,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.36
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.96
+      }
+     ],
+     "pessimism": 0.245,
+     "uncertainty": -0.059,
+     "setup_or_hold": {
+      "arc": "Setup_HFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.025
+     },
+     "constraint": null,
+     "required": 3.171,
+     "arrival": -3.312,
+     "slack": -0.141
+    },
+    "truncated": false
    },
    {
     "type": "setup",
@@ -1440,7 +2983,233 @@
     },
     "skew": 0.101,
     "uncertainty": 0.046,
-    "id": 4
+    "id": 4,
+    "launch": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 2.305,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.705
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.305
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X66Y193",
+      "cell": "FDRE",
+      "incr": 0.203,
+      "at": 2.508,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[12]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.216,
+      "at": 2.724,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/cnt_nxt[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X68Y192",
+      "cell": "LUT3",
+      "incr": 0.041,
+      "at": 2.765,
+      "arc": "Prop_LUT3_I2_O",
+      "from_pin": "I2",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.157,
+      "at": 2.922,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/ovf_det[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X68Y194",
+      "cell": "LUT4",
+      "incr": 0.051,
+      "at": 2.973,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.353,
+      "at": 3.326,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/valid_i[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X64Y197",
+      "cell": "LUT6",
+      "incr": 0.071,
+      "at": 3.397,
+      "arc": "Prop_LUT6_I5_O",
+      "from_pin": "I5",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/addr_gen_i2/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.075,
+      "at": 3.472,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/state_next[3]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X66Y196",
+      "cell": "CARRY8",
+      "incr": 0.101,
+      "at": 3.573,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/sel_i_i3/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 2,
+      "routing": "routed",
+      "incr": 0.138,
+      "at": 3.711,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/sel_i[4]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X66Y193",
+      "cell": "LUT5",
+      "incr": 0.061,
+      "at": 3.772,
+      "arc": "Prop_LUT5_I4_O",
+      "from_pin": "I4",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/state_next_i4/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.22,
+      "at": 3.992,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/addr_gen[5]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X66Y198",
+      "cell": "LUT6",
+      "incr": 0.071,
+      "at": 4.063,
+      "arc": "Prop_LUT6_I5_O",
+      "from_pin": "I5",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/valid_i_i5/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.137,
+      "at": 4.2,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/mux_out[6]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X65Y196",
+      "cell": "LUT5",
+      "incr": 0.061,
+      "at": 4.261,
+      "arc": "Prop_LUT5_I4_O",
+      "from_pin": "I4",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/ovf_det_i6/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.108,
+      "at": 4.369,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/acc_sum[7]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X68Y198",
+      "cell": "FDRE",
+      "pin": "R",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[60]/R"
+     }
+    ],
+    "capture": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 3.885,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 2.285
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 3.885
+      }
+     ],
+     "pessimism": 0.345,
+     "uncertainty": -0.046,
+     "setup_or_hold": {
+      "arc": "Setup_HFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.052
+     },
+     "constraint": null,
+     "required": 4.236,
+     "arrival": -4.369,
+     "slack": -0.133
+    },
+    "truncated": false
    },
    {
     "type": "setup",
@@ -1471,7 +3240,273 @@
     },
     "skew": 0.161,
     "uncertainty": 0.082,
-    "id": 5
+    "id": 5,
+    "launch": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 3.188,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.588
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 3.188
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X101Y295",
+      "cell": "FDRE",
+      "incr": 0.348,
+      "at": 3.536,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[119]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.035,
+      "at": 3.571,
+      "name": "radar_i/adc_if/deser/q_reg/valid_i[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X99Y295",
+      "cell": "LUT1",
+      "incr": 0.043,
+      "at": 3.614,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.018,
+      "at": 3.632,
+      "name": "radar_i/adc_if/deser/q_reg/state_next[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X99Y292",
+      "cell": "LUT3",
+      "incr": 0.07,
+      "at": 3.702,
+      "arc": "Prop_LUT3_I2_O",
+      "from_pin": "I2",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.018,
+      "at": 3.72,
+      "name": "radar_i/adc_if/deser/q_reg/sel_i[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y292",
+      "cell": "CARRY8",
+      "incr": 0.174,
+      "at": 3.894,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/addr_gen_i2/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.031,
+      "at": 3.925,
+      "name": "radar_i/adc_if/deser/q_reg/addr_gen[3]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y292",
+      "cell": "LUT2",
+      "incr": 0.052,
+      "at": 3.977,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/sel_i_i3/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.03,
+      "at": 4.007,
+      "name": "radar_i/adc_if/deser/q_reg/mux_out[4]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X101Y289",
+      "cell": "LUT1",
+      "incr": 0.043,
+      "at": 4.05,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/state_next_i4/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.135,
+      "at": 4.185,
+      "name": "radar_i/adc_if/deser/q_reg/acc_sum[5]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X102Y292",
+      "cell": "LUT5",
+      "incr": 0.104,
+      "at": 4.289,
+      "arc": "Prop_LUT5_I4_O",
+      "from_pin": "I4",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/valid_i_i5/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 2,
+      "routing": "routed",
+      "incr": 0.065,
+      "at": 4.354,
+      "name": "radar_i/adc_if/deser/q_reg/wr_en_i[6]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X102Y294",
+      "cell": "LUT3",
+      "incr": 0.07,
+      "at": 4.424,
+      "arc": "Prop_LUT3_I2_O",
+      "from_pin": "I2",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/ovf_det_i6/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.039,
+      "at": 4.463,
+      "name": "radar_i/adc_if/deser/q_reg/coef_sel[7]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X99Y294",
+      "cell": "LUT5",
+      "incr": 0.104,
+      "at": 4.567,
+      "arc": "Prop_LUT5_I4_O",
+      "from_pin": "I4",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/cnt_nxt_i7/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.064,
+      "at": 4.631,
+      "name": "radar_i/adc_if/deser/q_reg/cnt_nxt[8]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y290",
+      "cell": "LUT2",
+      "incr": 0.052,
+      "at": 4.683,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "radar_i/adc_if/deser/q_reg/coef_sel_i8/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 4,
+      "routing": "routed",
+      "incr": 0.067,
+      "at": 4.75,
+      "name": "radar_i/adc_if/deser/q_reg/ovf_det[9]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "RAMB36_X8Y60",
+      "cell": "RAMB36E2",
+      "pin": "ADDRARDADDR[7]",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "radar_i/adc_if/deser/q_reg/mem_reg/ADDRARDADDR[7]"
+     }
+    ],
+    "capture": {
+     "clock": "clk_dsp",
+     "edge": "rise",
+     "at": 4.354,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 2.754
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 4.354
+      }
+     ],
+     "pessimism": 0.336,
+     "uncertainty": -0.082,
+     "setup_or_hold": {
+      "arc": "Setup_RAMB36E2_RAMB36_SLICEL_C_D",
+      "cell": "RAMB36E2",
+      "incr": 0.021
+     },
+     "constraint": null,
+     "required": 4.629,
+     "arrival": -4.75,
+     "slack": -0.121
+    },
+    "truncated": false
    },
    {
     "type": "setup",
@@ -2404,11 +4439,12 @@
     "logic_pct": 37.903,
     "route_delay": 1.291,
     "route_pct": 62.097,
-    "levels": 5,
+    "levels": 6,
     "cells": {
      "LUT5": 2,
      "LUT1": 2,
-     "LUT4": 1
+     "LUT4": 1,
+     "DSP48E2": 1
     },
     "skew": -0.027,
     "uncertainty": 0.031,
@@ -2720,7 +4756,153 @@
     },
     "skew": -0.181,
     "uncertainty": 0.059,
-    "id": 0
+    "id": 0,
+    "launch": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 2.529,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.929
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.529
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X92Y74",
+      "cell": "FDRE",
+      "incr": 0.226,
+      "at": 2.755,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[34]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 420,
+      "routing": "routed",
+      "incr": 0.881,
+      "at": 3.636,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/cnt_nxt[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X95Y77",
+      "cell": "CARRY8",
+      "incr": 0.113,
+      "at": 3.749,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/acc_sum_i0/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.178,
+      "at": 3.927,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/ovf_det[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X91Y80",
+      "cell": "LUT4",
+      "incr": 0.056,
+      "at": 3.983,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/mux_out_i1/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.537,
+      "at": 4.52,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/valid_i[2]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X95Y74",
+      "cell": "LUT1",
+      "incr": 0.028,
+      "at": 4.548,
+      "arc": "Prop_LUT1_I0_O",
+      "from_pin": "I0",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/addr_gen_i2/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.198,
+      "at": 4.746,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/state_next[3]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X92Y79",
+      "cell": "FDRE",
+      "pin": "R",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[18]/R"
+     }
+    ],
+    "capture": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 4.413,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 2.813
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 4.413
+      }
+     ],
+     "pessimism": 0.331,
+     "uncertainty": -0.059,
+     "setup_or_hold": {
+      "arc": "Setup_HFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.067
+     },
+     "constraint": null,
+     "required": 4.752,
+     "arrival": -4.746,
+     "slack": 0.006
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -2745,7 +4927,93 @@
     "cells": {},
     "skew": 0.184,
     "uncertainty": null,
-    "id": 1
+    "id": 1,
+    "launch": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 1.955,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.355
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.955
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X76Y168",
+      "cell": "FDRE",
+      "incr": 0.08,
+      "at": 2.035,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[52]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 128,
+      "routing": "routed",
+      "incr": 0.175,
+      "at": 2.21,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/wr_en_i[0]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X75Y168",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[95]/D"
+     }
+    ],
+    "capture": {
+     "clock": "clk_out1_d_1_clk_adc0_x2_0",
+     "edge": "rise",
+     "at": 1.939,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.339
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.939
+      }
+     ],
+     "pessimism": -0.172,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.089
+     },
+     "constraint": null,
+     "required": -2.2,
+     "arrival": 2.21,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -2770,7 +5038,93 @@
     "cells": {},
     "skew": -0.131,
     "uncertainty": null,
-    "id": 2
+    "id": 2,
+    "launch": {
+     "clock": "RFDAC2_CLK",
+     "edge": "rise",
+     "at": 1.771,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.171
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.771
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X108Y243",
+      "cell": "FDRE",
+      "incr": 0.08,
+      "at": 1.851,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[27]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.043,
+      "at": 1.894,
+      "name": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/cnt_nxt[0]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X108Y243",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/storage_data1_reg[53]/D"
+     }
+    ],
+    "capture": {
+     "clock": "RFDAC2_CLK",
+     "edge": "rise",
+     "at": 1.532,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": -0.068
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 1.532
+      }
+     ],
+     "pessimism": -0.271,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.081
+     },
+     "constraint": null,
+     "required": -1.884,
+     "arrival": 1.894,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -2797,7 +5151,113 @@
     },
     "skew": -0.214,
     "uncertainty": null,
-    "id": 3
+    "id": 3,
+    "launch": {
+     "clock": "mmcm_clkout0",
+     "edge": "rise",
+     "at": 2.975,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.375
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.975
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X62Y235",
+      "cell": "FDRE",
+      "incr": 0.155,
+      "at": 3.13,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[116]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 2,
+      "routing": "routed",
+      "incr": 0.016,
+      "at": 3.146,
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/addr_gen[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X65Y237",
+      "cell": "LUT4",
+      "incr": 0.039,
+      "at": 3.185,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 128,
+      "routing": "routed",
+      "incr": 0.06,
+      "at": 3.245,
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mux_out[1]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X65Y238",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[104]/CE"
+     }
+    ],
+    "capture": {
+     "clock": "mmcm_clkout0",
+     "edge": "rise",
+     "at": 2.936,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.336
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.936
+      }
+     ],
+     "pessimism": -0.215,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.084
+     },
+     "constraint": null,
+     "required": -3.235,
+     "arrival": 3.245,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -2824,7 +5284,113 @@
     },
     "skew": -0.264,
     "uncertainty": null,
-    "id": 4
+    "id": 4,
+    "launch": {
+     "clock": "clk_out1_d_1_clk_core_0",
+     "edge": "rise",
+     "at": 2.82,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.22
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.82
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y169",
+      "cell": "FDRE",
+      "incr": 0.137,
+      "at": 2.957,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[81]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 1,
+      "routing": "routed",
+      "incr": 0.065,
+      "at": 3.022,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/cnt_nxt[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X100Y170",
+      "cell": "LUT2",
+      "incr": 0.021,
+      "at": 3.043,
+      "arc": "Prop_LUT2_I1_O",
+      "from_pin": "I1",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 128,
+      "routing": "routed",
+      "incr": 0.059,
+      "at": 3.102,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/ovf_det[1]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X104Y168",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[39]/CE"
+     }
+    ],
+    "capture": {
+     "clock": "clk_out1_d_1_clk_core_0",
+     "edge": "rise",
+     "at": 2.767,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 1.167
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.767
+      }
+     ],
+     "pessimism": -0.236,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.089
+     },
+     "constraint": null,
+     "required": -3.092,
+     "arrival": 3.102,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -2852,7 +5418,133 @@
     },
     "skew": 0.004,
     "uncertainty": null,
-    "id": 5
+    "id": 5,
+    "launch": {
+     "clock": "clk_pl_0",
+     "edge": "rise",
+     "at": 2.025,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.425
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.025
+      }
+     ]
+    },
+    "steps": [
+     {
+      "kind": "cell",
+      "site": "SLICE_X47Y249",
+      "cell": "FDRE",
+      "incr": 0.17,
+      "at": 2.195,
+      "arc": "Prop_CFF_SLICEL_C_Q",
+      "from_pin": "C",
+      "to_pin": "Q",
+      "edge": "r",
+      "name": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[19]/Q"
+     },
+     {
+      "kind": "net",
+      "fanout": 64,
+      "routing": "routed",
+      "incr": 0.059,
+      "at": 2.254,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/ovf_det[0]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X49Y249",
+      "cell": "LUT4",
+      "incr": 0.043,
+      "at": 2.297,
+      "arc": "Prop_LUT4_I3_O",
+      "from_pin": "I3",
+      "to_pin": "O",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/acc_sum_i0/O"
+     },
+     {
+      "kind": "net",
+      "fanout": 3,
+      "routing": "routed",
+      "incr": 0.022,
+      "at": 2.319,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/valid_i[1]"
+     },
+     {
+      "kind": "cell",
+      "site": "SLICE_X48Y246",
+      "cell": "CARRY8",
+      "incr": 0.085,
+      "at": 2.404,
+      "arc": "Prop_CARRY8_S3_O7",
+      "from_pin": "S[3]",
+      "to_pin": "O[7]",
+      "edge": "r",
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/mux_out_i1/O[7]"
+     },
+     {
+      "kind": "net",
+      "fanout": 7,
+      "routing": "routed",
+      "incr": 0.02,
+      "at": 2.424,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/state_next[2]"
+     },
+     {
+      "kind": "endpoint",
+      "site": "SLICE_X48Y249",
+      "cell": "FDRE",
+      "pin": "D",
+      "edge": "r",
+      "incr": null,
+      "at": null,
+      "name": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[108]/CE"
+     }
+    ],
+    "capture": {
+     "clock": "clk_pl_0",
+     "edge": "rise",
+     "at": 2.076,
+     "path": [
+      {
+       "kind": "cell",
+       "site": "BUFGCE_X0Y106",
+       "cell": "BUFGCE",
+       "incr": 0.028,
+       "at": 0.476
+      },
+      {
+       "kind": "net",
+       "fanout": 4120,
+       "routing": "routed",
+       "incr": 1.6,
+       "at": 2.076
+      }
+     ],
+     "pessimism": -0.242,
+     "uncertainty": null,
+     "setup_or_hold": {
+      "arc": "Hold_FFF2_SLICEL_C_D",
+      "cell": "FDRE",
+      "incr": 0.096
+     },
+     "constraint": null,
+     "required": -2.414,
+     "arrival": 2.424,
+     "slack": 0.01
+    },
+    "truncated": false
    },
    {
     "type": "hold",
@@ -3442,10 +6134,11 @@
     "logic_pct": 53.46,
     "route_delay": 0.343,
     "route_pct": 46.54,
-    "levels": 3,
+    "levels": 4,
     "cells": {
      "LUT3": 2,
-     "LUT1": 1
+     "LUT1": 1,
+     "DSP48E2": 1
     },
     "skew": -0.028,
     "uncertainty": 0.045,
@@ -3784,10 +6477,11 @@
     "logic_pct": 41.225,
     "route_delay": 0.854,
     "route_pct": 58.775,
-    "levels": 4,
+    "levels": 5,
     "cells": {
      "LUT5": 3,
-     "LUT1": 1
+     "LUT1": 1,
+     "DSP48E2": 1
     },
     "skew": 0.164,
     "uncertainty": 0.048,
