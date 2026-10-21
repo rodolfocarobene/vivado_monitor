@@ -1,0 +1,195 @@
+Command: route_design -directive NoTimingRelaxation
+Running DRC as a precondition to command route_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors, 1 Warnings
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+
+Starting Routing Task
+INFO: [Route 35-270] Using Router directive 'NoTimingRelaxation'.
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 8 CPUs
+
+Phase 1 Build RT Design
+Checksum: PlaceDB: 644745eb ConstDB: 0 ShapeSum: 9f99cd53 RouteDB: e7d34be3
+Nodegraph reading from file.  Time (s): cpu = 00:00:00.74 ; elapsed = 00:00:00.76 . Memory (MB): peak = 8063.383 ; gain = 0.000 ; free physical = 1869 ; free virtual = 20004
+Post Restoration Checksum: NetGraph: f9a45dc7 | NumContArr: 4c0ec341 | Constraints: 35ebdf9c | Timing: c2a8fa9d
+Phase 1 Build RT Design | Checksum: 23e47fb41
+
+Time (s): cpu = 00:03:00 ; elapsed = 00:00:27 . Memory (MB): peak = 8063.383 ; gain = 0.000 ; free physical = 1777 ; free virtual = 19973
+
+Phase 2 Router Initialization
+
+Phase 2.1 Fix Topology Constraints
+Phase 2.1 Fix Topology Constraints | Checksum: 23e47fb41
+
+Time (s): cpu = 00:03:02 ; elapsed = 00:00:28 . Memory (MB): peak = 8063.383 ; gain = 0.000 ; free physical = 1776 ; free virtual = 19973
+
+Phase 2.2 Pre Route Cleanup
+Phase 2.2 Pre Route Cleanup | Checksum: 23e47fb41
+
+Time (s): cpu = 00:03:04 ; elapsed = 00:00:28 . Memory (MB): peak = 8063.383 ; gain = 0.000 ; free physical = 1776 ; free virtual = 19974
+
+Phase 2.3 Global Clock Net Routing
+ Number of Nodes with overlaps = 0
+Phase 2.3 Global Clock Net Routing | Checksum: 209135670
+
+Time (s): cpu = 00:03:29 ; elapsed = 00:00:42 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1649 ; free virtual = 19878
+
+Phase 2.4 Update Timing
+Phase 2.4 Update Timing | Checksum: 18b7687f3
+
+Time (s): cpu = 00:05:30 ; elapsed = 00:01:07 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1644 ; free virtual = 19877
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.078  | TNS=0.000  | WHS=-0.118 | THS=-126.375|
+
+
+Phase 2.5 Update Timing for Bus Skew
+
+Phase 2.5.1 Update Timing
+Phase 2.5.1 Update Timing | Checksum: 1f2929aac
+
+Time (s): cpu = 00:11:26 ; elapsed = 00:02:15 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1630 ; free virtual = 19929
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.078  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 2.5 Update Timing for Bus Skew | Checksum: 1e3955f1f
+
+Time (s): cpu = 00:11:27 ; elapsed = 00:02:15 . Memory (MB): peak = 8121.227 ; gain = 57.844 ; free physical = 1630 ; free virtual = 19932
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 0.00112615 %
+  Global Horizontal Routing Utilization  = 0.000237793 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 209434
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 190106
+  Number of Partially Routed Nets     = 19328
+  Number of Node Overlaps             = 0
+
+Phase 2 Router Initialization | Checksum: 24e70a126
+
+Time (s): cpu = 00:11:41 ; elapsed = 00:02:18 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1581 ; free virtual = 19887
+
+Phase 3 Initial Routing
+
+Phase 3.1 Global Routing
+Phase 3.1 Global Routing | Checksum: 24e70a126
+
+Time (s): cpu = 00:11:41 ; elapsed = 00:02:19 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1581 ; free virtual = 19887
+
+Phase 3.2 Initial Net Routing
+Phase 3.2 Initial Net Routing | Checksum: 19d6e7904
+
+Time (s): cpu = 00:13:59 ; elapsed = 00:02:51 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1498 ; free virtual = 19802
+Phase 3 Initial Routing | Checksum: 1362549b5
+
+Time (s): cpu = 00:14:05 ; elapsed = 00:02:52 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1498 ; free virtual = 19801
+
+Phase 4 Rip-up And Reroute
+
+Phase 4.1 Global Iteration 0
+ Number of Nodes with overlaps = 31569
+ Number of Nodes with overlaps = 2267
+ Number of Nodes with overlaps = 230
+ Number of Nodes with overlaps = 35
+ Number of Nodes with overlaps = 9
+ Number of Nodes with overlaps = 2
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.050 | TNS=-2.259 | WHS=-0.021 | THS=-0.206 |
+
+Phase 4.1 Global Iteration 0 | Checksum: 196364bc1
+
+Time (s): cpu = 00:26:03 ; elapsed = 00:06:23 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1594 ; free virtual = 19668
+
+Phase 4.2 Global Iteration 1
+ Number of Nodes with overlaps = 146
+ Number of Nodes with overlaps = 20
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.030 | TNS=-0.036 | WHS=N/A    | THS=N/A    |
+
+Phase 4.2 Global Iteration 1 | Checksum: 2643b36ae
+
+Time (s): cpu = 00:27:41 ; elapsed = 00:06:59 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1237 ; free virtual = 19325
+
+Phase 4.3 Global Iteration 2
+ Number of Nodes with overlaps = 39
+ Number of Nodes with overlaps = 5
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.030 | TNS=-0.030 | WHS=N/A    | THS=N/A    |
+
+Phase 4.3 Global Iteration 2 | Checksum: 1e7ecb60c
+
+Time (s): cpu = 00:28:06 ; elapsed = 00:07:10 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1611 ; free virtual = 19655
+Phase 4 Rip-up And Reroute | Checksum: 1e7ecb60c
+
+Time (s): cpu = 00:28:07 ; elapsed = 00:07:10 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1611 ; free virtual = 19655
+
+Phase 5 Delay and Skew Optimization
+
+Phase 5.1 Delay CleanUp
+
+Phase 5.1.1 Update Timing
+Phase 5.1.1 Update Timing | Checksum: 1d908479d
+
+Time (s): cpu = 00:30:00 ; elapsed = 00:07:30 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1600 ; free virtual = 19644
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.030 | TNS=-0.030 | WHS=0.010  | THS=0.000  |
+
+
+Phase 5.1.2 Update Timing
+Phase 5.1.2 Update Timing | Checksum: 168ffa100
+
+Time (s): cpu = 00:31:26 ; elapsed = 00:07:47 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1595 ; free virtual = 19640
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.030 | TNS=-0.030 | WHS=0.010  | THS=0.000  |
+
+ Number of Nodes with overlaps = 0
+Phase 5.1 Delay CleanUp | Checksum: 1f1903470
+
+Time (s): cpu = 00:31:39 ; elapsed = 00:07:49 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1587 ; free virtual = 19636
+
+Phase 5.2 Clock Skew Optimization
+Phase 5.2 Clock Skew Optimization | Checksum: 1f1903470
+
+Time (s): cpu = 00:31:40 ; elapsed = 00:07:49 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1590 ; free virtual = 19635
+Phase 5 Delay and Skew Optimization | Checksum: 1f1903470
+
+Time (s): cpu = 00:31:41 ; elapsed = 00:07:50 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1590 ; free virtual = 19635
+
+Phase 6 Post Hold Fix
+
+Phase 6.1 Hold Fix Iter
+
+Phase 6.1.1 Update Timing
+Phase 6.1.1 Update Timing | Checksum: 149b1f578
+
+Time (s): cpu = 00:33:10 ; elapsed = 00:08:06 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1590 ; free virtual = 19635
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.030 | TNS=-0.030 | WHS=0.010  | THS=0.000  |
+
+Phase 6.1 Hold Fix Iter | Checksum: 1a0343135
+
+Time (s): cpu = 00:33:11 ; elapsed = 00:08:07 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1590 ; free virtual = 19635
+Phase 6 Post Hold Fix | Checksum: 1a0343135
+
+Time (s): cpu = 00:33:12 ; elapsed = 00:08:07 . Memory (MB): peak = 8166.156 ; gain = 102.773 ; free physical = 1590 ; free virtual = 19635
+
+Phase 7 Route finalize
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 10.7753 %
+  Global Horizontal Routing Utilization  = 7.71269 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 0
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 0
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+
+--GLOBAL Congestion:
+Utilization threshold used for congestion level computation: 0.85
+Congestion Report

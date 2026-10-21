@@ -7,6 +7,7 @@ import threading
 import time
 from pathlib import Path
 
+from . import clocks as clocks_mod
 from .docs import DocLinks
 from .eta import DurationStore, estimate, step_durations
 from .expected import CatalogSet
@@ -60,6 +61,7 @@ class Monitor:
         self.user_rules = UserRules(rules_file)
         self.baselines = BaselineStore(self.recent_file.parent / "msgs")
         self.durations = DurationStore(self.recent_file.parent / "durations")
+        self.clock_store = clocks_mod.ClockStore(self.recent_file.parent / "timing")
         self.docs = DocLinks(config.data)
         self.sampler = Sampler()
         self._recorded = set()         # (fw_id, build) already stored as a baseline this session
@@ -178,6 +180,7 @@ class Monitor:
                 self._observe(fw, now)
                 self._record_baseline(fw_id, fw)
                 self._record_durations(fw_id, fw)
+                self._record_clocks(fw_id, fw)
                 fw.eta = estimate(fw, self.durations.load(fw_id) if fw.status == "running" else None, now)
                 fw.events = list(self._events.get(fw_id, ()))
                 fw.top_messages = self._top_messages(fw_id, fw)
@@ -277,6 +280,14 @@ class Monitor:
         """Per-step durations of a finished build, for the next build's ETA."""
         if fw.status == "done" and fw.flows:
             self.durations.record(fw_id, self._build_key(fw), step_durations(fw), fw.elapsed_s)
+
+    def _record_clocks(self, fw_id, fw):
+        """Final per-clock timing of a finished build (also catches up on builds not stored yet)."""
+        stages = clocks_mod.stages_of(fw, self.cfg)
+        final = clocks_mod.final_stage(fw, stages, self.cfg)
+        if final is not None:
+            self.clock_store.record(fw_id, fw.started_at, final["per_clock"])
+        fw.clock_history = clocks_mod.history(fw, self.clock_store, self.cfg)
 
     def triage(self, fw_id, node_id=None, severities=None, query=None, include_muted=False, limit=500):
         source = self.sources.get(fw_id)

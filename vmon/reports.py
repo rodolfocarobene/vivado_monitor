@@ -7,6 +7,8 @@ Reports are re-parsed only when (mtime, size) changes.
 import os
 import re
 
+from . import timing_paths
+
 HEAD_BYTES = 3_000_000          # tables of interest are near the top of big reports
 _NUM = re.compile(r"^<?-?\d+(\.\d+)?$")
 PARSERS = {}
@@ -204,17 +206,26 @@ def parse_timing_text(text, cfg):
     if cpos >= 0:
         block = text[cpos:].split("\n")
         start = next((i for i, l in enumerate(block) if l.startswith("Clock ") and "WNS(ns)" in l), None)
-        if start is not None:
+        if start is not None and start + 1 < len(block):
+            fields = [cfg.timing_columns.get(n) for n in re.split(r"\s{2,}", block[start].strip())[1:]]
+            spans = [m.span() for m in re.finditer(r"-+", block[start + 1])]
             for row in block[start + 2:start + 2 + 200]:
                 if not row.strip():
                     break
-                parts = row.split()
-                if len(parts) >= 5 and _NUM.match(parts[1]):
-                    clocks.append({"name": parts[0], "period": periods.get(parts[0]),
-                                   "wns": to_float(parts[1]), "tns": to_float(parts[2]),
-                                   "tns_fail": to_int(parts[3]),
-                                   "whs": to_float(parts[5]) if len(parts) > 6 else None,
-                                   "ths": to_float(parts[6]) if len(parts) > 6 else None})
+                # fixed-width columns: rows without WNS (pulse-width-only clocks) must not shift values
+                if len(spans) != len(fields) + 1 or len(row) < spans[1][0]:
+                    continue
+                cells = {}
+                for i, field in enumerate(fields, start=1):
+                    left = spans[1][0] - 1 if i == 1 else spans[i - 1][1]
+                    cells[field] = row[left:spans[i][1]].strip()
+                name = row[:spans[1][0] - 1].strip()
+                if name and _NUM.match(cells.get("wns", "")):
+                    clocks.append({"name": name, "period": periods.get(name),
+                                   "wns": to_float(cells["wns"]), "tns": to_float(cells.get("tns")),
+                                   "tns_fail": to_int(cells.get("tns_fail")),
+                                   "whs": to_float(cells.get("whs")), "ths": to_float(cells.get("ths")),
+                                   "ths_fail": to_int(cells.get("ths_fail"))})
     clocks.sort(key=lambda c: (c["wns"] is None, c["wns"] or 0))
     result["clocks"] = clocks[:30]
     return result
@@ -229,6 +240,7 @@ class ReportCache:
     def __init__(self, cfg):
         self.cfg = cfg
         self._cache = {}            # path -> ((mtime, size), (summary, alerts))
+        self._paths = {}            # path -> ((mtime, size), {"paths", "counts"}) for timing reports
 
     def parse(self, path, parser_name):
         try:
@@ -248,8 +260,31 @@ class ReportCache:
             result = PARSERS.get(parser_name, parse_generic)(text, self.cfg)
         except Exception as exc:        # a malformed report must never take the monitor down
             result = ({"parse_error": str(exc)}, [])
+        if parser_name == "timing" and result[0]:
+            result = (self._with_paths(path, sig, result[0]), result[1])
         self._cache[path] = (sig, result)
         return result
+
+    def _with_paths(self, path, sig, summary):
+        """Adds the worst paths (compact) and path counts; the full list stays in self._paths."""
+        settings = self.cfg.data.get("timing_paths", {})
+        try:
+            found = timing_paths.parse_file(path, settings.get("max_paths", 200))
+        except Exception as exc:        # path parsing is best effort
+            summary["paths_error"] = str(exc)
+            return summary
+        if found is None:
+            return summary
+        self._paths[path] = (sig, found)
+        summary["paths"] = [timing_paths.compact(p) for p in found["paths"][:settings.get("summary_paths", 8)]]
+        summary["path_counts"] = found["counts"]
+        return summary
+
+    def paths(self, path, parser_name="timing"):
+        """Full parsed path list of a timing report ({"paths", "counts"}) or None."""
+        self.parse(path, parser_name)
+        hit = self._paths.get(path)
+        return hit[1] if hit else None
 
     def timing(self, path):
         result = self.parse(path, "timing")

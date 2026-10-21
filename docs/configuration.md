@@ -28,6 +28,8 @@ Other files:
 | `[messages.*]` | Message triage scoring, keywords and rules |
 | `[failure]`, `[failure.signals]`, `[failure.patterns.*]` | Crash and failure detection (segfault, lost license, out of memory, ...) |
 | `[resume]`, `[resume.checkpoints]` | Recognising non-project sessions that resume a run from a checkpoint |
+| `[timing_paths]` | Worst paths kept per timing report (`max_paths`) and how many go in the state JSON (`summary_paths`) |
+| `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -138,3 +140,15 @@ tolerance_s = 1
 '^{top}\.bit$' = "write_bitstream"
 '^{top}_routed\.dcp$' = "route_design"
 ```
+
+## Router convergence
+
+```toml
+[convergence]
+window = 3                 # iterations the trend looks at
+min_improvement_pct = 20   # stalled = still > 0 and down by less than this over the window
+alert = true               # warning "route_not_converging" (live attempts only)
+alert_min_iterations = 4   # ...once this many iterations were seen
+```
+
+`diverging` means the final overlaps strictly increased over the window. The `Number of Nodes with overlaps` line is matched by `[rules.overlaps]`.

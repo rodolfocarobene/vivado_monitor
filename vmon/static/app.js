@@ -118,6 +118,7 @@ const ui = {
   mv: new Map(),          // fw id -> messages (triage) view state
   auto: new Map(),        // fw id -> {keys:Set auto-opened node keys, dismissed:Set, sig}: follow-live auto-expansion
   rsel: new Map(),        // node key -> path of the report shown in the Reports tab
+  paths: new Map(),       // `${fw}|${report path}` -> worst-paths table state (filters, expanded rows, fetched data)
 };
 let hashOpen = new Set();
 let hashTab = new Map();
@@ -125,6 +126,7 @@ let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
 let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
+let hashPth = []; // #pth=0,3: pre-expand those worst-path rows (screenshots/debug)
 
 function parseHash() {
   const p = new URLSearchParams(location.hash.replace(/^#/, ''));
@@ -137,6 +139,7 @@ function parseHash() {
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
+  hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
   if (p.get('theme')) applyTheme(p.get('theme'));
   if (p.get('popover') === 'notif' && typeof openPop === 'function') openPop();
   if (p.get('popover') === 'explore' && typeof openExplore === 'function') openExplore(p.get('path'));
@@ -146,7 +149,7 @@ const keyOf = (fw, n) => `${fw.id}|${n.id}`;
 const autoOf = (fw) => { let a = ui.auto.get(fw.id); if (!a) { a = { keys: new Set(), dismissed: new Set(), sig: null }; ui.auto.set(fw.id, a); } return a; };
 const isOpen = (fw, n) => (ui.open.has(keyOf(fw, n)) ? ui.open.get(keyOf(fw, n)) : (autoOf(fw).keys.has(keyOf(fw, n)) || hashOpen.has(n.id)));
 const curFw = () => state.firmwares.find((f) => f.id === selected);
-const curView = (fw) => ui.view.get(fw.id) || (hashView === 'messages' ? 'messages' : 'flow');
+const curView = (fw) => ui.view.get(fw.id) || (hashView === 'messages' || hashView === 'timing' ? hashView : 'flow');
 
 // Forget open-state, chosen details tab and fetched data of a node and all its descendants,
 // so that reopening it looks freshly opened.
@@ -399,11 +402,11 @@ const BASE_TITLE = document.title;
 const PAGE_T = MOCK ? nowS() - 7200 : nowS();   // mock: pretend we loaded 2 h ago so seeded events show up
 const EVENT_KINDS = [['step_done', 'Step finished'], ['step_failed', 'Step failed'], ['run_done', 'Run finished'], ['run_failed', 'Run failed']];
 const ALERT_CODES = [['timing_fail', 'Timing not met'], ['critical_warning', 'Critical warnings'], ['error', 'Errors'], ['drc', 'DRC issues'],
-  ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
+  ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['route_not_converging', 'Router not converging'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
 const CODE_ALIAS = { utilization: 'util_high', step_failed: 'step_failed' };
 const NOTIF_DEFAULTS = {
   kinds: { step_done: false, step_failed: true, run_done: true, run_failed: true },
-  codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, process_gone: true, other: true },
+  codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, process_gone: true, other: true },
 };
 const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false };
 try {
@@ -569,7 +572,12 @@ function timingCardHTML(fw) {
   const nums = `${t && t.wns != null && t.wns < 0 ? `WNS ${fmtNs(t.wns)} ns` : ''}${t && t.whs != null && t.whs < 0 ? `${t.wns != null && t.wns < 0 ? ', ' : ''}WHS ${fmtNs(t.whs)} ns` : ''}`;
   const verdict = tl === 'fail' ? `<div class="tc-verdict">Final timing fails${from ? ' at <b>' + esc(from.label) + '</b>' : ''}${nums ? ' — ' + nums : ''}</div>`
     : tl === 'warn' ? `<div class="tc-verdict soft">Failing for now${nums ? ': ' + nums : ''} — later steps may still fix it</div>` : '';
-  return { tl, html: `<div class="tc-top"><span class="tc-title">Timing · ns</span>${badge}</div>${stageRow}${verdict}<div class="tc-grid">${cells}</div><div class="tc-foot"><span class="src" title="${src}">${src}</span>${sp}</div>` };
+  const pc = t && t.report && t.path_counts && t.path_counts.total ? t.path_counts : null;
+  const plural = (n, w) => `${fmtInt(n)} ${w}${n === 1 ? '' : 's'}`;
+  const pathLine = !pc ? '' : pc.failing
+    ? `<div class="tc-paths bad"><b>${plural(pc.failing, 'failing path')}</b> in ${plural(pc.failing_clocks, 'clock')} <button class="linkbtn" data-act="paths-open" data-failing="1">view →</button></div>`
+    : `<div class="tc-paths">Worst slack: setup <b class="num ${slackCls(pc.worst_setup)}">${fmtSlack(pc.worst_setup)}</b> · hold <b class="num ${slackCls(pc.worst_hold)}">${fmtSlack(pc.worst_hold)}</b> <button class="linkbtn" data-act="paths-open">view paths →</button></div>`;
+  return { tl, html: `<div class="tc-top"><span class="tc-title">Timing · ns</span>${badge}</div>${stageRow}${verdict}${pathLine}<div class="tc-grid">${cells}</div><div class="tc-foot"><span class="src" title="${src}">${src}</span>${sp}</div>` };
 }
 
 function countsHTML(c) {
@@ -586,7 +594,7 @@ function buildView() {
   head = h('section', 'fw-head', `
     <div class="fwl">
       <div class="fw-title"><h1></h1><span class="pill"></span><span class="est" hidden></span>
-        <div class="seg viewseg" role="tablist"><button data-act="view" data-view="flow">Flow</button><button data-act="view" data-view="messages">Messages</button></div></div>
+        <div class="seg viewseg" role="tablist"><button data-act="view" data-view="flow">Flow</button><button data-act="view" data-view="messages">Messages</button><button data-act="view" data-view="timing">Timing</button></div></div>
       <div class="eprog" hidden><i></i></div>
       <div class="fw-path mono"></div>
       <div class="fw-attempt" hidden></div>
@@ -613,8 +621,10 @@ function buildView() {
     <div class="mv-hint" hidden></div>
     <div class="mv-list"></div>`);
   mv.hidden = true;
-  mainEl.append(head, banner, segWrap, split, mv);
-  mainEl._r = { banner, seg: segWrap, split, stages: $('.stagelist', split), detail: $('.detail', split), followBtn: $('.followbtn', split), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), fwId: null, selId: null, selFlow: null, detEl: null };
+  const tv = h('section', 'tview');
+  tv.hidden = true;
+  mainEl.append(head, banner, segWrap, split, mv, tv);
+  mainEl._r = { banner, seg: segWrap, split, stages: $('.stagelist', split), detail: $('.detail', split), followBtn: $('.followbtn', split), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
 }
 
 function utilCardHTML(fw) {
@@ -709,7 +719,7 @@ function renderHeader(fw) {
   const ti = topIssuesHTML(fw);
   r.top.hidden = !ti; setHTML(r.top, ti);
   const view = curView(fw);
-  for (const b of r.seg.children) b.classList.toggle('on', b.dataset.view === view);
+  for (const b of r.seg.children) { b.classList.toggle('on', b.dataset.view === view); if (b.dataset.view === 'timing') b.hidden = !hasTimingView(fw) && view !== 'timing'; }
 }
 
 /* ------------------------------------------------------------------ rendering: flow nodes */
@@ -785,12 +795,12 @@ function createStage() {
     <div class="main">
       <div class="card" data-act="select" role="button" tabindex="0">
         <div class="crow"><div class="label"></div><span class="docwrap"></span><div class="meta"></div></div>
-        <div class="srow"><div class="badges"></div><span class="chipwrap"></span><span class="attwrap"></span></div>
+        <div class="srow"><div class="badges"></div><span class="chipwrap"></span><span class="cvwrap"></span><span class="attwrap"></span></div>
         <div class="fstrip" hidden></div>
         <div class="prog"><i></i></div>
       </div>
     </div>`);
-  el._r = { card: $('.card', el), icon: $('.nicon', el), label: $('.label', el), badges: $('.badges', el), chip: $('.chipwrap', el), doc: $('.docwrap', el), meta: $('.meta', el), prog: $('.prog', el), bar: $('.prog i', el), srow: $('.srow', el), att: $('.attwrap', el), fstrip: $('.fstrip', el) };
+  el._r = { card: $('.card', el), icon: $('.nicon', el), label: $('.label', el), badges: $('.badges', el), chip: $('.chipwrap', el), doc: $('.docwrap', el), meta: $('.meta', el), prog: $('.prog', el), bar: $('.prog i', el), srow: $('.srow', el), att: $('.attwrap', el), fstrip: $('.fstrip', el), cv: $('.cvwrap', el) };
   return el;
 }
 
@@ -813,8 +823,10 @@ function updateStage(el, n, fw, isSel) {
   setHTML(r.fstrip, fl ? `<b>${failKind(n.failure)}:</b> ${esc(n.failure.reason || 'Error')} in ${esc(failWhere(n))}` : '');
   setHTML(r.badges, badgesHTML(n.counts));
   setHTML(r.chip, chipHTML(n.timing));
+  const cvs = n.status === 'running' && n.convergence ? overlapSpark(n.convergence) : '';
+  setHTML(r.cv, cvs ? `<span class="cvchip" title="Router overlaps (log scale) · ${esc((n.convergence.trend || 'collecting').toUpperCase())}">${cvs}</span>` : '');
   setHTML(r.doc, docBtn(n.doc_url, `${n.label} documentation`));
-  r.srow.hidden = !r.badges.innerHTML && !r.chip.innerHTML && !r.att.innerHTML;
+  r.srow.hidden = !r.badges.innerHTML && !r.chip.innerHTML && !r.att.innerHTML && !cvs;
   const running = n.status === 'running' && n.started_at;
   const el_s = running ? nowS() - n.started_at : n.elapsed_s;
   setHTML(r.meta, el_s != null ? `<span ${running ? `data-start="${n.started_at}"` : ''}>${fmtDur(el_s)}</span>` : '');
@@ -946,7 +958,9 @@ function availableTabs(n) {
   if (n.children && n.children.length) tabs.push(['flow', `Steps<small>${n.children.length}</small>`]);
   if (!NO_FETCH.has(n.status)) { tabs.push(['messages', 'Messages']); tabs.push(['log', 'Log']); }
   if (n.reports && n.reports.length) tabs.push(['reports', `Reports<small>${n.reports.length}</small>`]);
-  if (n.timing && n.timing.history && n.timing.history.length) tabs.push(['timing', `Timing<small>${n.timing.history.length}</small>`]);
+  if (n.timing && ((n.timing.history && n.timing.history.length) || n.timing.report)) tabs.push(['timing', `Timing<small>${(n.timing.history || []).length || ''}</small>`]);
+  const cv = convOf(n);
+  if (cv) tabs.push(['convergence', `Convergence<small>${cv.conv.iterations.length}</small>`]);
   return tabs;
 }
 
@@ -965,10 +979,10 @@ function syncBody(el, n, fw, depth) {
   if (open) {
     clearTimeout(el._clearT); el._clearT = null;
     if (!r.panel) {
-      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div>');
+      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div><div class="pane pane-convergence"></div>');
       r.bodyin.appendChild(r.panel);
       r.tabs = $('.dtabs', r.panel);
-      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel) };
+      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel), convergence: $('.pane-convergence', r.panel) };
     }
     const tabs = availableTabs(n);
     const act = activeTab(fw, n, tabs);
@@ -984,8 +998,9 @@ function syncBody(el, n, fw, depth) {
       patchList(r.panes.flow, n.children, (c) => c.id, createNode, (e, c) => updateNode(e, c, fw, depth + 1));
     } else if (act === 'messages') ensureMessages(el, n, fw);
     else if (act === 'log') ensureLog(el, n, fw);
-    else if (act === 'reports') renderReports(r.panes.reports, n, keyOf(fw, n));
-    else if (act === 'timing') renderTiming(r.panes.timing, n);
+    else if (act === 'reports') renderReports(r.panes.reports, n, keyOf(fw, n), fw);
+    else if (act === 'timing') renderTiming(r.panes.timing, n, fw);
+    else if (act === 'convergence') renderConvergence(r.panes.convergence, n);
   } else if (r.panel && !el._clearT) {
     el._clearT = setTimeout(() => {
       el._clearT = null;
@@ -1141,7 +1156,7 @@ const REPORT_RENDERERS = {
 };
 REPORT_RENDERERS.methodology = REPORT_RENDERERS.drc;
 
-function renderReports(pane, n, key) {
+function renderReports(pane, n, key, fw) {
   const reps = n.reports || [];
   // one report at a time: the chip clicked on the card, else one with alerts, else the first
   let cur = reps.findIndex((rp) => rp.path === ui.rsel.get(key));
@@ -1155,6 +1170,7 @@ function renderReports(pane, n, key) {
     const al = (rp.alerts || []).map((a) => `<div class="alert lvl-${esc(a.level)} small">${alertIcon(a.level)}<span class="amsg">${esc(a.message)}</span></div>`).join('');
     const age = rp.mtime ? `${fmtDur(nowS() - rp.mtime)} ago` : '';
     const soft = rp.kind === 'timing_summary' && n.timing && !n.timing.final;
+    if (rp.kind === 'timing_summary' && rp.summary && rp.summary.path_counts) body += `<div class="paths-sec">${pathsHTML(fw, rp.path, rp.mtime, 'r')}</div>`;
     return `<section class="report${rp.stale ? ' stale' : ''}${soft ? ' soft' : ''}"><header><b>${esc(rp.label || rp.name)}</b><span class="kind">${esc(rp.name)}</span><span class="kind">${esc(rp.kind)}</span>${rp.stale ? '<span class="stag">stale</span>' : ''}<span class="age">${age}</span>${docBtn(rp.doc_url, `${rp.label || rp.name} documentation`)}<button class="rawbtn" data-act="raw" data-i="${i}">raw</button></header>${al}${body}</section>`;
   }).join('');
   setHTML(pane, html ? bar + html : '<div class="none">No reports yet.</div>');
@@ -1168,7 +1184,7 @@ function showModal(title, text) {
 }
 
 /* ---- details: timing history */
-function renderTiming(pane, n) {
+function renderTiming(pane, n, fw) {
   const t = n.timing;
   const hist = (t && t.history) || [];
   const cls = (k, v) => (v == null ? '' : v < 0 ? 'neg' : 'pos');
@@ -1177,7 +1193,7 @@ function renderTiming(pane, n) {
     const c = carriedOf(t, k);
     return `<td class="${cls(k, t[k])}${c ? ' carried' : ''}"${c ? ` title="${esc(carriedTip(c))}"` : ''}><b>${fmtNs(t[k])}</b>${c ? '<i class="ctag">stale</i>' : ''}</td>`;
   }).join('')}<td></td></tr>` : '';
-  setHTML(pane, `<div class="pane-t${t && !t.final ? ' soft' : ''}">${t ? `<div class="pt-stage">${esc(t.stage || t.label || '')} · ${t.final ? 'final' : 'not final (estimate / intermediate)'}</div>` : ''}${spark(hist.map((x) => x.wns), 600, 56, { fluid: true, dots: true, warn: !(t && t.final) })}<table class="hist"><thead><tr><th>Summary</th><th>WNS</th><th>TNS</th><th>WHS</th><th>THS</th><th>Line</th></tr></thead><tbody>${rows}${cur}</tbody></table></div>`);
+  setHTML(pane, `<div class="pane-t${t && !t.final ? ' soft' : ''}">${t ? `<div class="pt-stage">${esc(t.stage || t.label || '')} · ${t.final ? 'final' : 'not final (estimate / intermediate)'}</div>` : ''}${spark(hist.map((x) => x.wns), 600, 56, { fluid: true, dots: true, warn: !(t && t.final) })}<table class="hist"><thead><tr><th>Summary</th><th>WNS</th><th>TNS</th><th>WHS</th><th>THS</th><th>Line</th></tr></thead><tbody>${rows}${cur}</tbody></table>${t && t.report && reportOf(fw, t.report) ? `<div class="paths-sec">${pathsHTML(fw, t.report, reportOf(fw, t.report).mtime, 't')}</div>` : ''}</div>`);
 }
 
 /* ------------------------------------------------------------------ messages (triage) view */
@@ -1411,7 +1427,7 @@ function render() {
   }
   if (!mainEl._r) { buildView(); observeHead(); }
   const v = mainEl._r;
-  if (v.fwId !== fw.id) { v.fwId = fw.id; v.stages.innerHTML = ''; v.detail.innerHTML = ''; v.detEl = null; v.selId = null; v.mvList._h = null; v.mvList.innerHTML = ''; v.mvQ.value = mvOf(fw).q; }
+  if (v.fwId !== fw.id) { v.fwId = fw.id; v.stages.innerHTML = ''; v.detail.innerHTML = ''; v.detEl = null; v.selId = null; v.mvList._h = null; v.mvList.innerHTML = ''; v.tv._h = null; v.tv.innerHTML = ''; v.mvQ.value = mvOf(fw).q; }
   renderHeader(fw);
   const als = fwAlerts(fw);
   setHTML(v.banner, als.length ? `<div class="alerts" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention</div>${als.map((a) => {
@@ -1421,13 +1437,14 @@ function render() {
   }).join('')}</div>` : '');
 
   const view = curView(fw);
-  v.split.hidden = view !== 'flow'; v.mv.hidden = view !== 'messages';
+  v.split.hidden = view !== 'flow'; v.mv.hidden = view !== 'messages'; v.tv.hidden = view !== 'timing';
   // flow selector (only when several flows)
   const flow = fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
   if (fw.flows.length > 1) {
     setHTML(v.seg, `<div class="seg">${fw.flows.map((f) => `<button class="${f === flow ? 'on' : ''}" data-act="flow" data-flow="${esc(f.id)}">${esc(f.label)}</button>`).join('')}</div>`);
   } else setHTML(v.seg, '');
   if (view === 'messages') { renderMsgView(fw); ensureTriage(fw); renderSummary(fw, flow); afterRender(); return; }
+  if (view === 'timing') { renderTimingView(fw); renderSummary(fw, flow); afterRender(); return; }
   if (!flow || !flow.stages.length) { v.stages.innerHTML = ''; v.detail.innerHTML = '<div class="empty"><p>No flow data yet.</p></div>'; v.detEl = null; v.selId = null; renderSummary(fw, flow); afterRender(); return; }
   renderFlowView(fw, flow);
   renderSummary(fw, flow);
@@ -1532,6 +1549,17 @@ document.addEventListener('click', async (ev) => {
   } else if (act === 'raw' && nodeEl) {
     const rp = nodeEl._node.reports[+t.dataset.i];
     try { showModal(rp.name + ' — ' + rp.path, await apiReportRaw(nodeEl._fw, rp.path)); } catch (e) { toast('Could not load report: ' + e.message); }
+  } else if (act === 'pth-row' || act === 'pth-type' || act === 'pth-fail') {
+    const st = ui.paths.get(t.dataset.key); if (!st) return;
+    if (act === 'pth-row') { const i = +t.dataset.i; st.open.has(i) ? st.open.delete(i) : st.open.add(i); }
+    else if (act === 'pth-type') st.type = t.dataset.v;
+    else st.failing = !st.failing;
+    render();
+  } else if (act === 'paths-open') {
+    const fw = curFw(); if (!fw) return;
+    if (fw.timing && fw.timing.report) { const st = pstOf(fw, fw.timing.report); st.failing = !!t.dataset.failing; if (st.failing) st.type = 'all'; }
+    ui.view.set(fw.id, 'timing'); render();
+    const el = $('.tv-sec .paths-h', mainEl); if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   } else if (act === 'flow') {
     ui.flow.set(curFw().id, t.dataset.flow); mainEl._r.stages.innerHTML = ''; mainEl._r.selId = null; render();
   } else if (act === 'select') {
@@ -2072,6 +2100,290 @@ function startMock() {
   mock.logs.lockin = syncJson('mock/log_lockin.json');
   setState(s);
   setInterval(mockAdvance, 1000);
+}
+
+/* ------------------------------------------------------------------ v6: worst paths, clocks, router convergence */
+const fmtSlack = (v) => (v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(3)}`);
+const fmtInt = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US'));
+const slackCls = (v) => (v == null ? 'nil' : v < 0 ? 'neg' : v < 0.05 ? 'tight' : 'pos');
+function shortPath(s) {
+  if (!s) return '—';
+  const parts = String(s).split('/');
+  return parts.length <= 3 ? s : `…/${parts.slice(-2).join('/')}`;
+}
+function reportOf(fw, path) {
+  let found = null;
+  for (const f of fw.flows || []) walk(f.stages, (n) => { for (const r of n.reports || []) if (r.path === path) found = r; });
+  return found;
+}
+
+// ---- worst paths table (shared by the Timing view, the step Timing tab and the Reports tab)
+const pstOf = (fw, path) => {
+  const k = `${fw.id}|${path}`;
+  let s = ui.paths.get(k);
+  if (!s) { s = { key: k, type: 'all', failing: false, open: new Set(hashPth), data: null, sig: null, busy: false, err: null }; ui.paths.set(k, s); }
+  return s;
+};
+async function apiPaths(fw, path) {
+  if (MOCK) { const d = await jget('mock/paths.json'); return d[path] || d.default; }
+  return jget(`/api/paths?fw=${q(fw.id)}&path=${q(path)}`);
+}
+function ensurePaths(fw, path, sig) {
+  const s = pstOf(fw, path);
+  if (s.busy || s.sig === sig) return s;
+  s.busy = true;
+  apiPaths(fw, path).then((d) => { s.data = d; s.err = null; s.sig = sig; })
+    .catch((e) => { s.err = String(e.message || e); s.sig = sig; })
+    .finally(() => { s.busy = false; render(); });
+  return s;
+}
+function splitBar(p) {
+  if (p.logic_pct == null) return '<span class="nil">—</span>';
+  return `<span class="splitwrap" title="logic ${p.logic_delay.toFixed(3)} ns (${p.logic_pct.toFixed(0)}%) · route ${p.route_delay.toFixed(3)} ns (${p.route_pct.toFixed(0)}%)"><span class="splitbar"><i style="width:${Math.max(2, p.logic_pct).toFixed(1)}%"></i></span><small class="num">${p.logic_pct.toFixed(0)}/${p.route_pct.toFixed(0)}</small></span>`;
+}
+const clkPair = (p) => {
+  const a = p.from_clock || p.source_clock, b = p.to_clock || p.dest_clock;
+  if (!a && !b) return '<span class="nil">—</span>';
+  return a === b || !b ? `<span class="mono" title="${esc(a || b)}">${esc(a || b)}</span>`
+    : `<span class="mono" title="${esc(a)} → ${esc(b)}">${esc(a)}<i class="arr">→</i>${esc(b)}</span>`;
+};
+function pathDetail(p) {
+  const kv = (k, v) => `<div class="pd-kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const ns = (v) => (v == null ? '—' : `${v.toFixed(3)} ns`);
+  const cells = Object.entries(p.cells || {}).map(([c, n]) => `${esc(c)}×${n}`).join(' ');
+  return `<div class="pd">
+    <div class="pd-names"><div><span class="k">Source</span><code>${esc(p.source || '—')}</code><small>${esc(p.source_clock || '')}</small></div>
+    <div><span class="k">Destination</span><code>${esc(p.destination || '—')}</code><small>${esc(p.dest_clock || '')}</small></div></div>
+    <div class="pd-grid">
+      ${kv('Slack', `<b class="num ${slackCls(p.slack)}">${fmtSlack(p.slack)} ns</b> (${esc(p.status)})`)}
+      ${kv('Type', `${esc(p.path_type || p.type)}${p.corner ? ` <small>(${esc(p.corner)})</small>` : ''}`)}
+      ${kv('Path group', esc(p.group || '—'))}
+      ${kv('Requirement', ns(p.requirement))}
+      ${kv('Data path delay', ns(p.data_delay))}
+      ${kv('Logic / route', p.logic_delay == null ? '—' : `${ns(p.logic_delay)} (${p.logic_pct.toFixed(1)}%) / ${ns(p.route_delay)} (${p.route_pct.toFixed(1)}%)`)}
+      ${kv('Logic levels', `${p.levels ?? '—'}${cells ? ` <small>${cells}</small>` : ''}`)}
+      ${kv('Clock path skew', ns(p.skew))}
+      ${kv('Clock uncertainty', ns(p.uncertainty))}
+      ${kv('From → to clock', `${esc(p.from_clock || '—')} → ${esc(p.to_clock || '—')}`)}
+    </div></div>`;
+}
+function pathsHTML(fw, path, sig, anchor = '') {
+  const s = ensurePaths(fw, path, sig);
+  const rep = reportOf(fw, path);
+  const head = `<div class="paths-h" id="paths-${esc(anchor)}"><b>Worst paths</b>`;
+  if (!s.data) return `${head}</div><div class="none">${s.err ? `Could not load paths: ${esc(s.err)}` : 'Loading paths…'}</div>`;
+  const c = s.data.counts || {};
+  const all = s.data.paths || [];
+  const shown = all.filter((p) => (s.type === 'all' || p.type === s.type) && (!s.failing || p.status === 'VIOLATED'));
+  const chip = (act, val, label, on, extra = '') => `<button class="rchip pf${on ? ' on' : ''}${extra}" data-act="${act}" data-key="${esc(s.key)}" data-v="${val}">${label}</button>`;
+  const info = `${c.shown ?? all.length} of ${fmtInt(c.total)} paths${c.capped ? ' (worst kept)' : ''}${c.failing ? ` · <span class="neg">${fmtInt(c.failing)} failing</span> (${c.setup_failing || 0} setup, ${c.hold_failing || 0} hold) in ${c.failing_clocks} clock${c.failing_clocks === 1 ? '' : 's'}` : ' · none failing'}`;
+  const rows = shown.map((p) => {
+    const open = s.open.has(p.id);
+    return `<tr class="prow${p.status === 'VIOLATED' ? ' viol' : ''}${open ? ' open' : ''}" data-act="pth-row" data-key="${esc(s.key)}" data-i="${p.id}" title="Click for all fields">
+      <td class="num sl ${slackCls(p.slack)}">${fmtSlack(p.slack)}</td><td><span class="ptype ${p.type}">${p.type}</span></td>
+      <td class="clk">${clkPair(p)}</td>
+      <td class="pn"><span class="mono" title="${esc(p.source || '')}">${esc(shortPath(p.source))}</span><i class="arr">→</i><span class="mono" title="${esc(p.destination || '')}">${esc(shortPath(p.destination))}</span></td>
+      <td class="num lv" title="${esc(Object.entries(p.cells || {}).map(([k, n]) => `${k}×${n}`).join(' '))}">${p.levels ?? '—'}</td>
+      <td>${splitBar(p)}</td><td class="num sk">${p.skew == null ? '—' : p.skew.toFixed(3)}</td></tr>${open ? `<tr class="pdrow"><td colspan="7">${pathDetail(p)}</td></tr>` : ''}`;
+  }).join('');
+  return `${head}<span class="paths-info">${info}</span></div>
+    <div class="pfilters">${chip('pth-type', 'all', 'All', s.type === 'all')}${chip('pth-type', 'setup', 'Setup', s.type === 'setup')}${chip('pth-type', 'hold', 'Hold', s.type === 'hold')}${chip('pth-fail', '1', 'Failing only', s.failing, c.failing ? ' bad' : '')}</div>
+    ${shown.length ? `<div class="ptable-wrap"><table class="hist paths"><thead><tr><th>Slack</th><th>Type</th><th>Clocks</th><th>Source → destination</th><th title="Logic levels">Lv</th><th title="Logic vs route delay (%)">Logic / route</th><th title="Clock path skew (ns)">Skew</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      : `<div class="none">${s.failing ? 'No failing paths in this report.' : 'No paths match.'}</div>`}
+    ${rep ? '' : ''}`;
+}
+
+// ---- Timing view (firmware level): clocks, stages, worst paths
+function clockTrend(vals, labels) {
+  const pts = vals.filter((v) => v != null);
+  if (!pts.length) return '<span class="nil">—</span>';
+  const tip = vals.map((v, i) => `${labels[i]}: ${v == null ? '—' : fmtSlack(v)}`).join('\n');
+  return `<span title="${esc(tip)}">${spark(vals, 92, 24, { dots: false })}</span>`;
+}
+function deltaCell(cur, prev, bad) {
+  if (cur == null || prev == null) return '<td class="num nil">—</td>';
+  const d = cur - prev;
+  if (Math.abs(d) < 0.0005) return '<td class="num nil">=</td>';
+  const worse = d < 0;
+  const cls = worse ? (bad ? 'dneg' : 'dwarn') : 'dpos';
+  return `<td class="num ${cls}">${worse ? '▼' : '▲'} ${Math.abs(d).toFixed(3)}</td>`;
+}
+function clocksHTML(fw) {
+  const ch = fw.clock_history;
+  if (!ch || !ch.clocks.length) return '<div class="none">Per-clock numbers appear once a timing summary report exists.</div>';
+  const builds = ch.builds || [];
+  const cur = builds.length ? builds[builds.length - 1] : null;
+  const prev = builds.length > 1 ? builds[builds.length - 2] : null;
+  const latestStage = (ch.stages || []).slice(-1)[0];
+  const now = (cur && cur.per_clock) || (latestStage && latestStage.per_clock) || {};
+  const periods = {};
+  for (const c of (fw.timing && fw.timing.clocks) || []) periods[c.name] = c.period;
+  const labels = builds.map((b) => b.label + (b.current ? ' (in progress)' : ''));
+  const worse = ch.clocks.filter((n) => prev && now[n] && prev.per_clock[n] && now[n].wns < prev.per_clock[n].wns - 0.0005);
+  const rows = ch.clocks.map((n) => {
+    const a = now[n]; const b = prev && prev.per_clock[n];
+    const isWorse = !!(a && b && a.wns < b.wns - 0.0005);
+    const bad = !!(a && (a.wns < 0 || (a.whs != null && a.whs < 0)));
+    const cls = isWorse ? (bad ? ' worse bad' : ' worse') : '';
+    return `<tr class="${cls.trim()}"><td class="mono cn" title="${esc(n)}">${esc(n)}${isWorse ? '<i class="wtag">worse</i>' : ''}${a && !b && prev ? '<i class="ntag">new</i>' : ''}</td>
+      <td class="num">${periods[n] != null ? fmtNs(periods[n]) : '—'}</td>
+      <td class="num ${a ? cellClass('wns', a.wns) : 'nil'}">${a ? fmtSlack(a.wns) : '—'}</td><td class="num ${a ? cellClass('whs', a.whs) : 'nil'}">${a ? fmtSlack(a.whs) : '—'}</td>
+      <td>${clockTrend(builds.map((x) => x.per_clock[n] && x.per_clock[n].wns), labels)}</td>
+      ${deltaCell(a && a.wns, b && b.wns, bad)}${deltaCell(a && a.whs, b && b.whs, bad)}
+      <td class="num ${a && a.failing ? 'neg' : 'nil'}">${a ? fmtInt(a.failing) : '—'}</td></tr>`;
+  }).join('');
+  const note = prev ? `Compared with the previous build (${esc(prev.label)}). ${worse.length ? `<b class="neg">${worse.length} clock${worse.length === 1 ? '' : 's'} got worse.</b>` : '<span class="pos">No clock got worse.</span>'}`
+    : 'No previous build recorded yet; deltas appear after the next finished build.';
+  const cur_note = cur && cur.current ? ` Latest values are from the ${esc(cur.stage || 'latest report')} of this build (in progress).` : '';
+  let stages = '';
+  if ((ch.stages || []).length >= 2) {
+    const names = ch.clocks;
+    stages = `<h3>Per stage <small>WNS in this build, by timing report</small></h3><div class="ptable-wrap"><table class="hist stagetbl"><thead><tr><th>Clock</th>${ch.stages.map((s) => `<th title="${esc(s.step)}">${esc(s.label)}</th>`).join('')}</tr></thead><tbody>${names.map((n) => `<tr><td class="mono cn" title="${esc(n)}">${esc(n)}</td>${ch.stages.map((s) => { const v = s.per_clock[n]; return `<td class="num ${v ? cellClass('wns', v.wns) : 'nil'}" title="${v ? `WHS ${fmtSlack(v.whs)} · failing ${v.failing}` : ''}">${v ? fmtSlack(v.wns) : '—'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  return `<div class="clk-note">${note}${cur_note}</div>
+    <div class="ptable-wrap"><table class="hist clocks"><thead><tr><th>Clock</th><th>Period</th><th>WNS</th><th>WHS</th><th>WNS trend · ${builds.length} build${builds.length === 1 ? '' : 's'}</th><th>Δ WNS</th><th>Δ WHS</th><th title="Failing endpoints (setup + hold)">Fail</th></tr></thead><tbody>${rows}</tbody></table></div>${stages}`;
+}
+function timingViewHTML(fw) {
+  const t = fw.timing;
+  const rep = t && t.report ? reportOf(fw, t.report) : null;
+  const paths = rep ? pathsHTML(fw, t.report, rep.mtime, 'tv') : '<div class="none">No timing summary report with paths yet.</div>';
+  return `<section class="tv-sec"><h3>Clocks <small>from timing summary reports</small></h3>${clocksHTML(fw)}</section>
+    <section class="tv-sec">${rep ? '' : '<h3>Worst paths</h3>'}${paths}</section>`;
+}
+function renderTimingView(fw) {
+  const v = mainEl._r;
+  setHTML(v.tv, timingViewHTML(fw));
+}
+const hasTimingView = (fw) => !!(fw.clock_history || (fw.timing && fw.timing.report));
+
+// ---- router convergence
+const trendInfo = {
+  converging: ['CONVERGING', 'ok', 'Overlaps are dropping (or already reached 0).'],
+  stalled: ['STALLED', 'warn', 'Final overlaps barely decreased over the last iterations. If the router keeps this up, stopping the run early may save time.'],
+  diverging: ['DIVERGING', 'err', 'Final overlaps increase from iteration to iteration. This run is unlikely to converge.'],
+};
+function convOf(n) {
+  if (n.convergence && n.convergence.iterations.length) return { conv: n.convergence, from: null };
+  const att = [...(n.attempts || [])].reverse().find((a) => a.convergence && a.convergence.iterations && a.convergence.iterations.length);
+  return att ? { conv: att.convergence, from: att } : null;
+}
+const iterShort = (it, i) => { const m = /Global Iteration (\d+)/.exec(it.label || ''); return m ? `#${m[1]}` : /Initial/.test(it.label || '') ? 'init' : String(i); };
+function overlapSpark(conv, w = 84, hh = 22) {
+  const vals = (conv.iterations || []).flatMap((it) => it.overlaps || []);
+  if (vals.length < 2) return '';
+  const lg = (v) => Math.log10(Math.max(v, 0.5));
+  const lo = lg(0.5), hi = Math.max(lg(Math.max(...vals)), lo + 1);
+  const X = (i) => 2 + (i * (w - 4)) / (vals.length - 1);
+  const Y = (v) => 2 + (1 - (lg(v) - lo) / (hi - lo)) * (hh - 4);
+  const col = conv.trend === 'stalled' ? 'var(--warn)' : conv.trend === 'diverging' ? 'var(--err)' : 'var(--accent)';
+  const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  return `<svg class="cvspark" viewBox="0 0 ${w} ${hh}" width="${w}" height="${hh}"><polyline points="${pts}" style="fill:none;stroke:${col};stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round"/><circle cx="${X(vals.length - 1).toFixed(1)}" cy="${Y(vals[vals.length - 1]).toFixed(1)}" r="2.3" style="fill:${col}"/></svg>`;
+}
+function convChartSVG(conv, running) {
+  const its = conv.iterations;
+  const N = its.length;
+  const W = 880, H = 310, L = 58, R = 60, T = 14, B = 44;
+  const pw = W - L - R, ph = H - T - B, band = pw / N;
+  const X = (i) => L + band * (i + 0.5);
+  const all = its.flatMap((it) => (it.overlaps && it.overlaps.length ? it.overlaps : [it.final_overlaps || 0]));
+  const top = Math.max(1, Math.ceil(Math.log10(Math.max(10, ...all))));
+  const floor = -0.55;                                       // log10 position of "0 overlaps"
+  const lg = (v) => (v <= 0 ? floor : Math.log10(Math.max(v, 1)));
+  const Y = (v) => T + ph * (1 - (lg(v) - floor) / (top - floor));
+  let svg = `<svg class="cvsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Router overlaps per iteration">`;
+  for (let d = 0; d <= top; d++) {
+    const y = Y(10 ** d).toFixed(1);
+    const lbl = d >= 3 ? `${10 ** (d - 3)}k` : String(10 ** d);
+    svg += `<line class="gl" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text class="al" x="${L - 7}" y="${(+y + 4).toFixed(1)}" text-anchor="end">${lbl}</text>`;
+  }
+  svg += `<line class="gl base" x1="${L}" x2="${W - R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/><text class="al" x="${L - 7}" y="${(Y(0) + 4).toFixed(1)}" text-anchor="end">0</text>`;
+  svg += `<text class="at" transform="translate(12 ${T + ph / 2}) rotate(-90)" text-anchor="middle">nodes with overlaps (log)</text>`;
+  // timing axis (right)
+  const tv = its.flatMap((it) => [it.wns, it.whs]).filter((v) => v != null);
+  let yt = null;
+  if (tv.length) {
+    let lo = Math.min(0, ...tv), hi = Math.max(0, ...tv);
+    const pad = (hi - lo || 0.1) * 0.12; lo -= pad; hi += pad;
+    yt = (v) => T + ph * (1 - (v - lo) / (hi - lo));
+    const step = (() => { const raw = (hi - lo) / 4; const p = 10 ** Math.floor(Math.log10(raw)); return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw) || raw; })();
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+      if (Math.abs(v) < 1e-9) continue;
+      svg += `<text class="al r" x="${W - R + 7}" y="${(yt(v) + 4).toFixed(1)}">${v.toFixed(Math.abs(step) < 0.1 ? 2 : 1)}</text>`;
+    }
+    svg += `<line class="zl" x1="${L}" x2="${W - R}" y1="${yt(0).toFixed(1)}" y2="${yt(0).toFixed(1)}"/><text class="al r z" x="${W - R + 7}" y="${(yt(0) + 4).toFixed(1)}">0 ns</text>`;
+    svg += `<text class="at" transform="translate(${W - 8} ${T + ph / 2}) rotate(90)" text-anchor="middle">slack (ns)</text>`;
+  }
+  // bars + dots
+  const bw = Math.min(46, band * 0.62);
+  its.forEach((it, i) => {
+    const live = running && i === N - 1;
+    svg += `<rect class="cv-hit" data-i="${i}" x="${(L + band * i).toFixed(1)}" y="${T}" width="${band.toFixed(1)}" height="${ph}"/>`;
+    const v = it.final_overlaps;
+    if (v != null) {
+      if (v === 0) svg += `<rect class="bar zero" x="${(X(i) - bw / 2).toFixed(1)}" y="${(Y(0) - 3).toFixed(1)}" width="${bw.toFixed(1)}" height="3" rx="1.5"/>`;
+      else svg += `<rect class="bar${live ? ' live' : ''}" x="${(X(i) - bw / 2).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(Y(0) - Y(v)).toFixed(1)}" rx="2"/>`;
+    }
+    const vals = it.overlaps || [];
+    vals.forEach((o, k) => {
+      const x = vals.length === 1 ? X(i) : X(i) - bw / 2 + 3 + ((bw - 6) * k) / (vals.length - 1);
+      svg += `<circle class="dot" cx="${x.toFixed(1)}" cy="${Y(o).toFixed(1)}" r="2.1"/>`;
+    });
+  });
+  // timing lines
+  if (yt) {
+    for (const [key, cls] of [['whs', 'whsl'], ['wns', 'wnsl']]) {
+      const pts = its.map((it, i) => (it[key] == null ? null : [X(i), yt(it[key])])).filter(Boolean);
+      if (pts.length > 1) svg += `<polyline class="tl ${cls}" points="${pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')}"/>`;
+      for (const p of pts) svg += `<circle class="tp ${cls}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2"/>`;
+    }
+  }
+  // x labels
+  const every = Math.max(1, Math.ceil(N / 16));
+  its.forEach((it, i) => { if (i % every === 0 || i === N - 1) svg += `<text class="ax" x="${X(i).toFixed(1)}" y="${H - B + 16}" text-anchor="middle">${esc(iterShort(it, i))}</text>`; });
+  svg += `<text class="at" x="${L + pw / 2}" y="${H - 6}" text-anchor="middle">router iteration${running ? ' (running)' : ''}</text></svg>`;
+  return svg;
+}
+function renderConvergence(pane, n) {
+  const hit = convOf(n);
+  if (!pane._cv) {
+    pane.innerHTML = '<div class="cv-head"></div><div class="cv-box"><div class="cv-svg"></div><div class="cv-tip" hidden></div></div><div class="cv-legend"></div>';
+    const cv = pane._cv = { head: $('.cv-head', pane), svg: $('.cv-svg', pane), tip: $('.cv-tip', pane), legend: $('.cv-legend', pane), box: $('.cv-box', pane) };
+    cv.box.addEventListener('mousemove', (ev) => {
+      const r = ev.target.closest('.cv-hit');
+      const conv = pane._conv;
+      if (!r || !conv) { cv.tip.hidden = true; return; }
+      const it = conv.iterations[+r.dataset.i];
+      const f = (v) => (v == null ? '—' : fmtSlack(v));
+      const ov = it.overlaps || [];
+      const list = ov.length > 8 ? `${ov.slice(0, 4).map(fmtInt).join(' → ')} → … → ${ov.slice(-2).map(fmtInt).join(' → ')}` : ov.map(fmtInt).join(' → ');
+      cv.tip.innerHTML = `<b>${esc(it.label)}</b><div>overlaps ${list || '—'} <small>(${ov.length} pass${ov.length === 1 ? '' : 'es'})</small></div><div>WNS <span class="${slackCls(it.wns)}">${f(it.wns)}</span> · TNS ${f(it.tns)}</div><div>WHS <span class="${slackCls(it.whs)}">${f(it.whs)}</span> · THS ${f(it.ths)}</div>`;
+      cv.tip.hidden = false;
+      const b = cv.box.getBoundingClientRect();
+      const x = ev.clientX - b.left, y = ev.clientY - b.top;
+      cv.tip.style.left = `${Math.min(Math.max(8, x + 14), b.width - cv.tip.offsetWidth - 8)}px`;
+      cv.tip.style.top = `${Math.max(4, y - cv.tip.offsetHeight - 10)}px`;
+    });
+    cv.box.addEventListener('mouseleave', () => { cv.tip.hidden = true; });
+  }
+  const cv = pane._cv;
+  if (!hit) { setHTML(cv.head, '<div class="none">No router iterations seen yet.</div>'); setHTML(cv.svg, ''); setHTML(cv.legend, ''); pane._conv = null; return; }
+  const { conv, from } = hit;
+  pane._conv = conv;
+  const running = n.status === 'running' && !from;
+  const [tl, tc, advice] = trendInfo[conv.trend] || ['COLLECTING', 'nil', 'A trend needs a few completed iterations.'];
+  const last = conv.iterations[conv.iterations.length - 1];
+  const finals = conv.iterations.map((it) => it.final_overlaps).filter((v) => v != null);
+  const wnsIt = [...conv.iterations].reverse().find((it) => it.wns != null);
+  setHTML(cv.head, `<div class="cv-top"><span class="trend ${tc}" title="${esc(advice)}">${tl}</span>
+      <span class="cv-stat"><b class="num">${conv.iterations.length}</b> iteration${conv.iterations.length === 1 ? '' : 's'}</span>
+      <span class="cv-stat">last overlaps <b class="num">${fmtInt(last.final_overlaps)}</b></span>
+      ${finals.length > 1 ? `<span class="cv-stat">first <b class="num">${fmtInt(finals[0])}</b></span>` : ''}
+      ${wnsIt ? `<span class="cv-stat">WNS <b class="num ${slackCls(wnsIt.wns)}">${fmtSlack(wnsIt.wns)}</b></span>` : ''}
+      ${running ? '<span class="cv-live"><i></i>live</span>' : ''}</div>
+      <div class="cv-advice ${tc}">${esc(advice)}</div>
+      ${from ? `<div class="cv-from">From attempt ${from.n} (${esc(from.summary || from.status)}); the log of the current attempt is not available.</div>` : ''}`);
+  setHTML(cv.svg, convChartSVG(conv, running));
+  setHTML(cv.legend, '<span><i class="lg bar"></i>final overlaps per iteration (log scale)</span><span><i class="lg dot"></i>overlap passes inside the iteration, in order</span><span><i class="lg wns"></i>WNS</span><span><i class="lg whs"></i>WHS</span>');
 }
 
 /* ------------------------------------------------------------------ boot */

@@ -132,6 +132,20 @@ class ArtifactConfig:
         return None
 
 
+class ConvergenceConfig:
+    def __init__(self, spec):
+        self.phase_re = re.compile(spec.get("phase_re", r"Global Iteration|Initial Net Routing|Initial Routing"))
+        self.max_iterations = spec.get("max_iterations", 500)
+        self.max_values = spec.get("max_values", 64)
+        self.window = max(1, spec.get("window", 3))
+        self.min_improvement_pct = spec.get("min_improvement_pct", 20)
+        self.alert = spec.get("alert", True)
+        self.alert_min_iterations = spec.get("alert_min_iterations", 4)
+
+    def is_iteration(self, phase_name):
+        return self.phase_re.search(phase_name) is not None
+
+
 class Config:
     def __init__(self, data):
         self.data = data
@@ -167,6 +181,7 @@ class Config:
         self.failure = FailureConfig(data.get("failure", {}))
         self.resume = ResumeConfig(data.get("resume", {}))
         self.artifacts = ArtifactConfig(data.get("artifacts", {}))
+        self.convergence = ConvergenceConfig(data.get("convergence", {}))
         self._rules_by_char = {}
 
     def rules_for(self, first_char):

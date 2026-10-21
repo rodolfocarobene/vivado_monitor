@@ -39,7 +39,7 @@ class ParseNode:
     __slots__ = ("key", "label", "kind", "cmd", "number", "depth", "status", "line_start",
                  "line_end", "own", "children", "elapsed_s", "peak_mem", "started_at",
                  "ended_at", "history", "summary", "key_counts", "completed_line", "cum_start",
-                 "saved_cum")
+                 "saved_cum", "iters", "iter_ok", "iter_entry")
 
     def __init__(self, kind, label, key):
         self.kind = kind
@@ -63,6 +63,9 @@ class ParseNode:
         self.completed_line = None
         self.cum_start = 0.0
         self.saved_cum = 0.0
+        self.iters = []            # steps: router iterations (see LogParser._on_overlaps)
+        self.iter_ok = False       # phases: this phase counts as a convergence iteration
+        self.iter_entry = None
 
     def rolled_counts(self):
         total = list(self.own)
@@ -284,6 +287,8 @@ class LogParser:
             target = self.cur_step or self.root
             if len(target.history) < 2000:
                 target.history.append(entry)
+            if pattern.label == "Intermediate":
+                self._iteration_timing(entry)
             return
 
     def _on_phase(self, match, line):
@@ -304,8 +309,49 @@ class LogParser:
             self._close(self.stack.pop(), self.line_no - 1)
         node = self._new_node("phase", name, "p" + number)
         node.number, node.depth = number, depth
+        node.iter_ok = self.cur_step is not None and self.cfg.convergence.is_iteration(name)
         node.cum_start = self.last_cum
         self.stack.append(node)
+
+    # ---- router convergence: overlaps per iteration + the timing summary printed after them
+    def _open_iteration(self):
+        """Iteration entry of the innermost open iteration phase (created on first use), or None."""
+        step = self.cur_step
+        if step is None:
+            return None
+        for index in range(len(self.stack) - 1, 0, -1):
+            node = self.stack[index]
+            if node.kind == "phase" and node.iter_ok:
+                if node.iter_entry is None:
+                    number = node.number if node.number and node.number[0].isdigit() else ""
+                    node.iter_entry = {"label": ("%s %s" % (number, node.label)).strip(), "overlaps": [],
+                                       "final_overlaps": None, "wns": None, "tns": None, "whs": None,
+                                       "ths": None, "t": self._now(), "line": self.line_no}
+                    if len(step.iters) < self.cfg.convergence.max_iterations:
+                        step.iters.append(node.iter_entry)
+                return node.iter_entry
+        return None
+
+    def _on_overlaps(self, match, line):
+        entry = self._open_iteration()
+        if entry is None:
+            return
+        value = int(match.group(1))
+        values = entry["overlaps"]
+        if len(values) < self.cfg.convergence.max_values:
+            values.append(value)
+        else:
+            values[-1] = value
+        entry["final_overlaps"] = value
+        entry["t"] = self._now()
+
+    def _iteration_timing(self, timing):
+        entry = self._open_iteration()
+        if entry is None:
+            return
+        for name in ("wns", "tns", "whs", "ths"):
+            entry[name] = timing[name]
+        entry["t"] = self._now()
 
     def _on_task_open(self, match, line):
         name = match.group(1)
