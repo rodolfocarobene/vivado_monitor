@@ -13,6 +13,8 @@ from . import remote as remote_mod
 from . import rules_io
 from . import summary as summary_mod
 
+DRAIN_CAP_BYTES = 16 * 1024 * 1024   # oversized request bodies up to this size are read and discarded before a 413
+
 STATIC_DIR = Path(__file__).parent / "static"
 HEARTBEAT_S = 15
 MAX_REPORT_BYTES = 8_000_000
@@ -134,8 +136,16 @@ def make_server(monitor, host, port):
 
         def do_POST(self):
             route = urlparse(self.path).path
-            if route == "/api/msgrules/import" and int(self.headers.get("Content-Length") or 0) > rules_io.MAX_BODY_BYTES:
-                self.close_connection = True            # the oversized body is never read
+            length = int(self.headers.get("Content-Length") or 0)
+            if route == "/api/msgrules/import" and length > rules_io.MAX_BODY_BYTES:
+                # Drain (not parse) a moderately oversized body first: replying while the client is still
+                # uploading makes it see a broken pipe instead of the 413. Beyond the cap, just hang up.
+                while 0 < length <= DRAIN_CAP_BYTES:
+                    chunk = self.rfile.read(min(65536, length))
+                    if not chunk:
+                        break
+                    length -= len(chunk)
+                self.close_connection = True
                 return self._error(413, "rules file too large (at most %d bytes)" % rules_io.MAX_BODY_BYTES)
             body = self._body()
             if route == "/api/notify/test":
