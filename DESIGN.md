@@ -271,7 +271,8 @@ The flow node is a two-column grid: a 36px rail gutter and the card. The rail's 
 through every icon center.
 
 Density is high but evenly spaced: gaps of 5–6px inside chip rows, 10–14px between cards, 18–22px between major
-blocks. Below 1000px the layout stacks into one column (header, banner, stage list, detail). Top-bar breakpoints at
+blocks. Below 1000px the layout stacks into one column (header, banner, then the stage list as a single tree: the selected
+stage's detail opens directly under its own card, and the list is hidden in the Messages and Timing views). Top-bar breakpoints at
 1520, 1360, 1180 and 1100px progressively hide secondary items rather than shrinking type.
 
 ## Elevation & Depth

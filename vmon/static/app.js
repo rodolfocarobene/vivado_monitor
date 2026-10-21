@@ -934,6 +934,15 @@ function autoStage(stages) {
     || [...stages].reverse().find((s) => s.status === 'done') || stages[0];
 }
 
+// Narrow windows have no room for rail + detail side by side: the stage list becomes the tree, with the selected
+// stage's detail (steps, tabs, messages) hosted directly under its own card.
+const narrowMQ = window.matchMedia('(max-width: 1000px)');
+function placeDetail(v) {
+  const host = narrowMQ.matches ? v.stages.querySelector(':scope > .stg.sel > .main') : v.split;
+  if (host && v.detail.parentElement !== host) host.appendChild(v.detail);
+}
+narrowMQ.addEventListener('change', () => { if (mainEl._r) render(); });
+
 function renderStageList(fw, flow) {
   const v = mainEl._r;
   const stages = flow.stages;
@@ -964,6 +973,7 @@ function renderFlowView(fw, flow) {
   }
   if (sel.follow && fw.status === 'running' && selStage.status === 'running') followExpand(fw, selStage, v);
   renderDetail(v.detEl, selStage, fw);
+  placeDetail(v);
   if (v.scrollTo) { const id = v.scrollTo; v.scrollTo = null; setTimeout(() => scrollRunningIntoView(id), 420); }
 }
 
@@ -1495,6 +1505,8 @@ function render() {
 
   const view = curView(fw);
   v.split.hidden = view !== 'flow'; v.mv.hidden = view !== 'messages'; v.tv.hidden = view !== 'timing';
+  v.detail.hidden = view !== 'flow'; // may live inside the stage list on narrow windows
+  mainEl.dataset.view = view;
   // flow selector (only when several flows)
   const flow = fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
   if (fw.flows.length > 1) {

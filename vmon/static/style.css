@@ -1050,10 +1050,11 @@ main.railed .stagedetail > .main > .card .meta > :not(.mem) { display: none; }
 /* the summary bar's stage dots duplicate the rail */
 @media (min-width: 1001px) { .sm-strip { display: none; } }
 @media (max-width: 1000px) {
-  main.railed { display: flex; flex-direction: column; }
+  main.railed { display: flex; flex-direction: column; align-items: stretch; }
   main.railed > .stagecol { order: 1; position: static; max-height: none; overflow: visible; margin-top: 18px; padding: 0; }
   main.railed > .split, main.railed > .msgview, main.railed > .tview { order: 2; }
   main.railed .stagecol .sl-head { position: static; }
+  main.railed:not([data-view="flow"]) > .stagecol { display: none; } /* the tree belongs to the Flow view here */
 }
 
 /* compact recap: smaller message counts, collapsed top issues, cards beside the "now" block next to the rail */
@@ -1077,3 +1078,13 @@ main.railed .fwinfo { padding-top: 8px; }
 .now-run .el { white-space: nowrap; }
 .now-run .started-wrap[hidden] { display: none; }
 main.railed .now-run .eta-wrap .sub2 { white-space: normal; max-width: 190px; }
+
+/* narrow: one tree. The selected stage's detail sits under its own card; its heading row would repeat the card. */
+.detail[hidden] { display: none; }
+@media (max-width: 1000px) {
+  main.railed > .split:not(:has(.detail)) { display: none; }
+  .stg > .main > .detail { margin-top: 8px; }
+  .stg > .main > .detail .stagedetail > .main > .card > .crow { display: none; }
+  .stg > .main > .detail .stagedetail > .main > .card { padding: 0 0 4px; }
+  .stg > .main > .detail .stagedetail > .main > .card .desc { margin-top: 0; }
+}
