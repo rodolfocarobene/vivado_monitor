@@ -487,3 +487,60 @@ def test_congestion_on_project_node(tmp_path, cfg, report_cache, catalogs):
     assert data["level"] == "warn" and data["max_level"] == 5 and data["placer"]["north"]["long"] == 4
     assert stage_map(fw)["impl_1/opt_design"].congestion is None
     assert any(a["code"] == "congestion" for a in fw.alerts)
+
+
+# ---------------------------------------------------------------- path tables (blocks view)
+TABLES = FIXTURES / "paths" / "timing_paths_tables.rpt"
+
+
+def table_path(slack, kind):
+    paths = timing_paths.parse_file(str(TABLES))["paths"]
+    return next(p for p in paths if p["slack"] == slack and p["type"] == kind)
+
+
+def test_path_table_setup_steps_launch_and_capture():
+    path = table_path(42.694, "setup")
+    launch_reg, net1, lut, net2, endpoint = path["steps"]
+    assert (launch_reg["kind"], launch_reg["cell"], launch_reg["arc"], launch_reg["incr"], launch_reg["at"]) == \
+        ("cell", "SRL16E", "Prop_H6LUT_SLICEM_CLK_Q", 0.392, 2.912)
+    assert (launch_reg["from_pin"], launch_reg["to_pin"], launch_reg["site"], launch_reg["edge"]) == ("CLK", "Q", "SLICE_X72Y152", "r")
+    assert launch_reg["name"].endswith("EXT_LPF/POR_SRL_I/Q")
+    assert (net1["kind"], net1["fanout"], net1["routing"], net1["incr"], net1["at"]) == ("net", 1, "routed", 0.154, 3.066)
+    assert (lut["cell"], lut["from_pin"], lut["to_pin"], lut["incr"]) == ("LUT3", "I2", "O", 0.073)   # numbers wrapped to the next line
+    assert (net2["kind"], net2["incr"]) == ("net", 0.018)
+    assert (endpoint["kind"], endpoint["cell"], endpoint["pin"], endpoint["site"]) == ("endpoint", "FDRE", "D", "SLICE_X73Y152")
+    launch, capture = path["launch"], path["capture"]
+    assert (launch["clock"], launch["edge"], launch["at"]) == ("RFADC0_CLK", "rise", 2.52)
+    assert [e["cell"] for e in launch["path"] if e["kind"] == "cell"] == ["RFADC", "RFADC", "BUFG_GT"]
+    assert launch["path"][-1]["fanout"] == 35                       # net row whose location is "X3Y1 (CLOCK_ROOT)"
+    assert (capture["clock"], capture["edge"], capture["at"]) == ("RFADC0_CLK", "rise", 45.531)
+    assert (capture["pessimism"], capture["uncertainty"]) == (0.33, -0.035)
+    assert capture["setup_or_hold"] == {"arc": "Setup_BFF2_SLICEL_C_D", "cell": "FDRE", "incr": 0.025}
+    assert (capture["required"], capture["arrival"], capture["slack"]) == (45.851, -3.157, 42.694)
+    assert path["truncated"] is False
+
+
+def test_path_table_hold_estimated_dsp_and_datapath_only():
+    hold = table_path(0.02, "hold")
+    assert hold["capture"]["setup_or_hold"]["arc"].startswith("Hold_") and hold["capture"]["pessimism"] == -0.282
+    assert (hold["capture"]["required"], hold["capture"]["arrival"]) == (-2.274, 2.295)
+    assert hold["steps"][-1]["kind"] == "endpoint" and hold["launch"]["at"] == 2.14
+    est = table_path(0.139, "setup")
+    assert {s["routing"] for s in est["steps"] if s["kind"] == "net"} == {"estimated"}
+    assert est["steps"][-1]["cell"] == "RAMB36E2"
+    dsp = table_path(0.067, "setup")
+    assert [s["cell"] for s in dsp["steps"] if s["kind"] == "cell"] == ["DSP_M_DATA", "DSP_ALU", "DSP_OUTPUT"]
+    assert dsp["steps"][-1]["kind"] == "endpoint" and dsp["steps"][-1]["cell"] == "FDRE"
+    only = table_path(7.598, "setup")                               # set_max_delay -datapath_only: no clock paths
+    assert only["launch"]["clock"] is None and only["capture"]["clock"] is None
+    assert only["capture"]["constraint"] == {"kind": "max delay", "value": 8.138}
+    assert only["capture"]["setup_or_hold"]["incr"] == 0.025 and len(only["steps"]) == 3
+
+
+def test_path_table_step_cap_and_compact_drops_tables(monkeypatch):
+    from vmon import path_table
+    monkeypatch.setattr(path_table, "MAX_STEPS", 3)
+    path = table_path(0.139, "setup")
+    assert len(path["steps"]) == 3 and path["truncated"]
+    short = timing_paths.compact(path)
+    assert not {"steps", "launch", "capture"} & set(short)

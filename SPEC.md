@@ -397,7 +397,19 @@ GET /api/paths?fw=&path=<report>&type=setup|hold&only_failing=0|1
   -> {"path": str, "paths": [Path], "counts": PathCounts}   (403 unknown report, 400 bad type)
 Path = {"id","type":"setup"|"hold","slack","status":"MET"|"VIOLATED","source","source_clock","destination","dest_clock",
         "from_clock","to_clock","group","path_type","corner","requirement","data_delay","logic_delay","logic_pct",
-        "route_delay","route_pct","levels","cells":{cell:count},"skew","uncertainty"}      # worst first
+        "route_delay","route_pct","levels","cells":{cell:count},"skew","uncertainty",
+        "launch","steps","capture","truncated"}      # worst first; the last four only in /api/paths (not in compact Path)
+  launch  = {"clock","edge":"rise"|"fall","at": source clock arrival at the launch pin (ns),
+             "path":[{"kind":"cell","site","cell","incr","at"} | {"kind":"net","fanout","routing","incr","at"}]} | null
+  steps   = DATA PATH in order (max 200; `truncated` true when cut):
+            {"kind":"cell","site","cell":"LUT3","arc":"Prop_B5LUT_SLICEL_I2_O","from_pin":"I2","to_pin":"O","incr","at","edge":"r"|"f","name"}
+            {"kind":"net","fanout","routing":"routed"|"estimated"|"unplaced"|null,"incr","at","name"}
+            {"kind":"endpoint","site","cell":"FDRE","pin":"D","edge","incr":null,"at":null,"name"}   # always last
+  capture = {"clock","edge","at": destination clock arrival,"path":[like launch.path],"pessimism","uncertainty" (as printed,
+             signed),"setup_or_hold":{"arc","cell","incr"}|null,"constraint":{"kind":"max delay"|"min delay","value"}|null,
+             "required","arrival" (as printed: hold shows required negative, setup arrival negative),"slack"}
+  launch/capture.clock and .at are null for set_max_delay -datapath_only paths; launch/capture/steps are null/[] when the
+  table could not be parsed. The table is parsed in the same single pass (vmon/path_table.py), only for paths that survive the cap.
 PathCounts = {"total","setup","hold","setup_failing","hold_failing","failing","failing_clocks","clocks":[str],
               "shown","capped","worst_setup","worst_hold"}
 Report.summary (timing_summary) += {"paths": [compact Path: id,type,slack,status,source,destination,source_clock,
@@ -418,6 +430,9 @@ attempt summaries also carry "convergence". Alert code "route_not_converging" (w
   strictly dropping, else null. Alert needs `alert_min_iterations`.
 - Parser: iterations are phases matching `[convergence] phase_re` (Global Iteration, Initial (Net) Routing); overlap lines
   outside such phases are ignored. Feeding is incremental (chunk-equivalent). Limits: 500 iterations, 64 values each.
+- Path detail UI: header (slack, type/corner, requirement, data delay, logic/route, levels, skew, uncertainty), proportional
+  cells-vs-nets bar, wrapping block chain (cell, pins, site, delay; nets as labelled connectors; common hierarchy prefix shown
+  once), collapsible "Clock & required" table. `#pth=0,1&pclk=1` opens rows and their clock table (debug).
 - UI: Timing view (clocks, stages, worst paths), worst-paths table in Reports/Timing tabs, header "N failing paths in K
   clocks", Convergence tab with inline SVG chart, overlap sparkline on the running route card.
 

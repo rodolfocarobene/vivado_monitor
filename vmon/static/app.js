@@ -130,6 +130,7 @@ let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
 let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
+let hashPclk = false; // #pclk=1: also open the "Clock & required" table of those rows
 let hashPth = []; // #pth=0,3: pre-expand those worst-path rows (screenshots/debug)
 
 function parseHash() {
@@ -143,6 +144,7 @@ function parseHash() {
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
+  hashPclk = p.get('pclk') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
   if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
@@ -1688,6 +1690,10 @@ document.addEventListener('click', async (ev) => {
   } else if (act === 'raw' && nodeEl) {
     const rp = nodeEl._node.reports[+t.dataset.i];
     try { showModal(rp.name + ' — ' + rp.path, await apiReportRaw(nodeEl._fw, rp.path)); } catch (e) { toast('Could not load report: ' + e.message); }
+  } else if (act === 'pth-clk') {
+    const st = ui.paths.get(t.dataset.key); if (!st) return;
+    const i = +t.dataset.i; st.clk.has(i) ? st.clk.delete(i) : st.clk.add(i);
+    render();
   } else if (act === 'pth-row' || act === 'pth-type' || act === 'pth-fail') {
     const st = ui.paths.get(t.dataset.key); if (!st) return;
     if (act === 'pth-row') { const i = +t.dataset.i; st.open.has(i) ? st.open.delete(i) : st.open.add(i); }
@@ -1761,6 +1767,7 @@ function mvAction(act, t) {
   }
 }
 
+for (const [type, on] of [['mouseover', true], ['mouseout', false], ['focusin', true], ['focusout', false]]) document.addEventListener(type, (ev) => pathHover(ev, on));
 document.addEventListener('input', (ev) => {
   if (!ev.target.classList.contains('mv-q')) return;
   const fw = curFw(); if (!fw) return;
@@ -2341,7 +2348,7 @@ function reportOf(fw, path) {
 const pstOf = (fw, path) => {
   const k = `${fw.id}|${path}`;
   let s = ui.paths.get(k);
-  if (!s) { s = { key: k, type: 'all', failing: false, open: new Set(hashPth), data: null, sig: null, busy: false, err: null }; ui.paths.set(k, s); }
+  if (!s) { s = { key: k, type: 'all', failing: false, open: new Set(hashPth), clk: new Set(hashPclk ? hashPth : []), data: null, sig: null, busy: false, err: null }; ui.paths.set(k, s); }
   return s;
 };
 async function apiPaths(fw, path) {
@@ -2367,25 +2374,83 @@ const clkPair = (p) => {
   return a === b || !b ? `<span class="mono" title="${esc(a || b)}">${esc(a || b)}</span>`
     : `<span class="mono" title="${esc(a)} → ${esc(b)}">${esc(a)}<i class="arr">→</i>${esc(b)}</span>`;
 };
-function pathDetail(p) {
-  const kv = (k, v) => `<div class="pd-kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
-  const ns = (v) => (v == null ? '—' : `${v.toFixed(3)} ns`);
+// ---- expanded path: header, time bar, block chain, clock table
+const nsOf = (v, d = 3) => (v == null ? '—' : `${v.toFixed(d)} ns`);
+const instOf = (s) => (s.kind === 'net' ? '' : String(s.name || '').split('/').slice(0, -1).join('/'));
+function commonPrefix(insts) {
+  const lists = insts.filter(Boolean).map((i) => i.split('/'));
+  if (!lists.length) return [];
+  const max = Math.min(...lists.map((l) => l.length)) - 1; // always leave the leaf
+  let n = 0;
+  while (n < max && lists.every((l) => l[n] === lists[0][n])) n++;
+  return lists[0].slice(0, n);
+}
+function leafName(inst, skip) {
+  const rest = inst.split('/').slice(skip);
+  return (rest.length > 2 ? '…/' : '') + rest.slice(-2).join('/');
+}
+function pathHead(p) {
+  const stat = (k, v) => `<div class="pd-stat"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   const cells = Object.entries(p.cells || {}).map(([c, n]) => `${esc(c)}×${n}`).join(' ');
-  return `<div class="pd">
-    <div class="pd-names"><div><span class="k">Source</span><code>${esc(p.source || '—')}</code><small>${esc(p.source_clock || '')}</small></div>
-    <div><span class="k">Destination</span><code>${esc(p.destination || '—')}</code><small>${esc(p.dest_clock || '')}</small></div></div>
-    <div class="pd-grid">
-      ${kv('Slack', `<b class="num ${slackCls(p.slack)}">${fmtSlack(p.slack)} ns</b> (${esc(p.status)})`)}
-      ${kv('Type', `${esc(p.path_type || p.type)}${p.corner ? ` <small>(${esc(p.corner)})</small>` : ''}`)}
-      ${kv('Path group', esc(p.group || '—'))}
-      ${kv('Requirement', ns(p.requirement))}
-      ${kv('Data path delay', ns(p.data_delay))}
-      ${kv('Logic / route', p.logic_delay == null ? '—' : `${ns(p.logic_delay)} (${p.logic_pct.toFixed(1)}%) / ${ns(p.route_delay)} (${p.route_pct.toFixed(1)}%)`)}
-      ${kv('Logic levels', `${p.levels ?? '—'}${cells ? ` <small>${cells}</small>` : ''}`)}
-      ${kv('Clock path skew', ns(p.skew))}
-      ${kv('Clock uncertainty', ns(p.uncertainty))}
-      ${kv('From → to clock', `${esc(p.from_clock || '—')} → ${esc(p.to_clock || '—')}`)}
-    </div></div>`;
+  const split = p.logic_delay == null ? '—' : `<b>${p.logic_delay.toFixed(3)}</b> logic (${p.logic_pct.toFixed(0)}%) · <b>${p.route_delay.toFixed(3)}</b> route (${p.route_pct.toFixed(0)}%)`;
+  return `<div class="pd-top"><b class="num pd-sl ${slackCls(p.slack)}">${fmtSlack(p.slack)} ns</b><span class="pd-ok">${esc(p.status)}</span>
+      <span class="ptype ${p.type}">${p.type}</span>${p.corner ? `<small>${esc(p.corner)}</small>` : ''}
+      <span class="pd-clk mono" title="Path group ${esc(p.group || '—')}">${esc(p.from_clock || '—')}<i class="arr">→</i>${esc(p.to_clock || '—')}</span></div>
+    <div class="pd-stats">${stat('Requirement', nsOf(p.requirement))}${stat('Data path', nsOf(p.data_delay))}${stat('Logic / route', split)}
+      ${stat('Levels', `${p.levels ?? '—'}${cells ? ` <small>${cells}</small>` : ''}`)}${stat('Clock skew', nsOf(p.skew))}${stat('Uncertainty', nsOf(p.uncertainty))}</div>`;
+}
+function pathBar(steps, total) {
+  const segs = steps.map((s, i) => (s.incr == null || s.incr <= 0 ? '' : `<i class="seg ${s.kind === 'net' ? 'net' : 'cell'}" style="flex:${Math.round(s.incr * 1000)} 1 0" data-s="${i}" tabindex="0" title="${esc(s.kind === 'net' ? `net · fo ${s.fanout}` : s.cell)} · ${s.incr.toFixed(3)} ns (${(100 * s.incr / total).toFixed(1)}%)"></i>`)).join('');
+  return `<div class="pbar" role="group" aria-label="Where the data path delay goes"><div class="pbar-t">${segs}</div>
+    <div class="pbar-l"><span><i class="sw cell"></i>cells</span><span><i class="sw net"></i>nets</span><span class="num">${total.toFixed(3)} ns</span></div></div>`;
+}
+function pathChain(p) {
+  const st = p.steps, big = st.reduce((m, s, i) => ((s.incr || 0) > (st[m].incr || 0) ? i : m), 0);
+  const pre = commonPrefix(st.map(instOf)), skip = pre.length;
+  const last = st.length - 1, cap = p.capture || {}, hold = p.type === 'hold';
+  const clk = (c, at, what) => (c ? `<span class="pb-cap" title="${esc(c)}">${esc(what)} ${esc(c)} ${at == null ? '' : `@ ${at.toFixed(3)}`}</span>` : '');
+  const block = (s, i) => {
+    const inst = instOf(s), end = s.kind === 'endpoint';
+    const pins = end ? `→ ${esc(s.pin)}` : s.from_pin ? `${esc(s.from_pin)}→${esc(s.to_pin)}` : '';
+    const delay = end ? (cap.setup_or_hold ? `${hold ? 'hold' : 'setup'} ${cap.setup_or_hold.incr.toFixed(3)} ns` : '') : `${s.incr.toFixed(3)} ns`;
+    const cp = i === 0 ? clk((p.launch || {}).clock, (p.launch || {}).at, 'launch') : end ? clk(cap.clock, cap.required, 'capture') : '';
+    return `<div class="pb${end ? ' end' : ''}${i === big ? ' max' : ''}" data-s="${i}" title="${esc(`${s.name || ''}\n${s.arc || ''}${i === big ? '\nlargest delay on this path' : ''}`.trim())}">
+      ${cp}<b class="pb-t">${esc(s.cell)}</b><span class="pb-p mono">${pins}</span><span class="pb-n mono">${esc(leafName(inst, skip))}</span>
+      <span class="pb-s mono">${esc(s.site || '')}</span><span class="pb-d num">${delay}</span></div>`;
+  };
+  const link = (s, i) => `<div class="pl${i === big ? ' max' : ''}" data-s="${i}" title="${esc(`${s.name || ''}\n${s.routing || ''}${i === big ? '\nlargest delay on this path' : ''}`.trim())}">
+      <span class="pl-d num">${s.incr.toFixed(3)} ns</span><span class="pl-a" aria-hidden="true"></span>
+      <span class="pl-f${s.fanout >= 32 ? ' hi' : ''}">fo ${s.fanout}${s.routing && s.routing !== 'routed' ? ` · ${esc(s.routing)}` : ''}</span></div>`;
+  let html = '';
+  for (let i = 0; i < st.length; i++) {
+    if (st[i].kind === 'net') html += `<div class="pu">${link(st[i], i)}${st[i + 1] ? block(st[i + 1], i + 1) : ''}</div>`;
+    else if (i === 0 || st[i - 1].kind !== 'net') html += `<div class="pu">${block(st[i], i)}</div>`;
+  }
+  return `<div class="pchain-w">${pre.length ? `<div class="pchain-p">in <code>${esc(pre.join('/'))}/</code></div>` : ''}<div class="pchain">${html}</div>${p.truncated ? `<div class="pchain-p">Path truncated after ${st.length} elements.</div>` : ''}</div>`;
+}
+function clockTable(p, s) {
+  const c = p.capture, l = p.launch;
+  if (!c) return '';
+  const open = s.clk.has(p.id), hold = p.type === 'hold';
+  const row = (k, v, extra = '') => (v == null ? '' : `<tr><th>${k}</th><td class="num">${v}</td><td class="mono">${extra}</td></tr>`);
+  const n = (v) => (v == null ? null : v.toFixed(3));
+  const edge = (x) => (x && x.clock ? `${esc(x.clock)} ${x.edge === 'fall' ? 'fall' : 'rise'}` : '');
+  const check = c.setup_or_hold, cons = c.constraint;
+  return `<div class="pclk"><button class="rchip pf${open ? ' on' : ''}" data-act="pth-clk" data-key="${esc(s.key)}" data-i="${p.id}" aria-expanded="${open}">Clock &amp; required</button>
+    ${open ? `<table class="hist pclk-t"><tbody>${row('Source clock arrival', n(l && l.at), edge(l))}${row('Destination clock arrival', n(c.at), edge(c))}
+      ${cons ? row(esc(cons.kind), n(cons.value), 'datapath only') : ''}${row('Clock pessimism', n(c.pessimism))}${row('Clock uncertainty', n(c.uncertainty))}
+      ${check ? row(`${hold ? 'Hold' : 'Setup'} time`, n(check.incr), `${esc(check.cell)} ${esc(check.arc || '')}`) : ''}
+      ${row('Required time', n(c.required == null ? null : Math.abs(c.required)))}${row('Arrival time', n(c.arrival == null ? null : Math.abs(c.arrival)))}${row('Slack', n(c.slack))}</tbody></table>` : ''}</div>`;
+}
+function pathDetail(p, s) {
+  if (!p.steps || !p.steps.length) return `<div class="pd">${pathHead(p)}<div class="none">Path elements are not available for this report.</div></div>`;
+  const total = p.steps.reduce((a, x) => a + (x.incr > 0 ? x.incr : 0), 0) || 1;
+  return `<div class="pd">${pathHead(p)}${pathBar(p.steps, total)}${pathChain(p)}${clockTable(p, s)}</div>`;
+}
+// highlight the matching bar segment / block while one of them is hovered or focused
+function pathHover(ev, on) {
+  const t = ev.target.closest && ev.target.closest('.pd [data-s]');
+  if (t) for (const e of t.closest('.pd').querySelectorAll(`[data-s="${t.dataset.s}"]`)) e.classList.toggle('hl', on);
 }
 function pathsHTML(fw, path, sig, anchor = '') {
   const s = ensurePaths(fw, path, sig);
@@ -2404,7 +2469,7 @@ function pathsHTML(fw, path, sig, anchor = '') {
       <td class="clk">${clkPair(p)}</td>
       <td class="pn"><span class="mono" title="${esc(p.source || '')}">${esc(shortPath(p.source))}</span><i class="arr">→</i><span class="mono" title="${esc(p.destination || '')}">${esc(shortPath(p.destination))}</span></td>
       <td class="num lv" title="${esc(Object.entries(p.cells || {}).map(([k, n]) => `${k}×${n}`).join(' '))}">${p.levels ?? '—'}</td>
-      <td>${splitBar(p)}</td><td class="num sk">${p.skew == null ? '—' : p.skew.toFixed(3)}</td></tr>${open ? `<tr class="pdrow"><td colspan="7">${pathDetail(p)}</td></tr>` : ''}`;
+      <td>${splitBar(p)}</td><td class="num sk">${p.skew == null ? '—' : p.skew.toFixed(3)}</td></tr>${open ? `<tr class="pdrow"><td colspan="7">${pathDetail(p, s)}</td></tr>` : ''}`;
   }).join('');
   return `${head}<span class="paths-info">${info}</span></div>
     <div class="pfilters">${chip('pth-type', 'all', 'All', s.type === 'all')}${chip('pth-type', 'setup', 'Setup', s.type === 'setup')}${chip('pth-type', 'hold', 'Hold', s.type === 'hold')}${chip('pth-fail', '1', 'Failing only', s.failing, c.failing ? ' bad' : '')}</div>
