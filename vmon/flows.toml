@@ -40,6 +40,22 @@ contains = " failed"
 re = '^(\w+) failed\b'
 stop = false
 
+[rules.congestion_placer]
+order = 28
+action = "congestion_placer"
+prefix = ["INFO: "]
+contains = "Estimated Congestion"
+re = '^INFO: \[\w+ [\d-]+\] Post-Placement Estimated Congestion'
+stop = false
+
+[rules.congestion_router]
+order = 29
+action = "congestion_router"
+prefix = ["INFO: "]
+contains = "Estimated Congestion"
+re = '^INFO: \[\w+ [\d-]+\] Initial Estimated Congestion'
+stop = false
+
 [rules.message]
 order = 30
 action = "message"
@@ -112,6 +128,31 @@ order = 62
 action = "named_time"
 contains = ": Time (s)"
 re = '^([\w.]+): Time \(s\)'
+
+[rules.congestion_row]
+order = 70
+action = "congestion_row"
+prefix = ["|"]
+re = '(?i)^\|\s*(North|South|East|West)\s*\|(.*)$'
+
+[rules.congestion_final]
+order = 71
+action = "congestion_final"
+prefix = ["North Dir ", "South Dir ", "East Dir ", "West Dir "]
+contains = " Max Cong = "
+re = '^(North|South|East|West) Dir (\d+x\d+) Area, Max Cong = ([\d.]+)%, (No Congested Regions)?'
+
+[rules.congestion_direction]
+order = 72
+action = "congestion_direction"
+prefix = ["Direction: "]
+re = '^Direction: (North|South|East|West)\s*$'
+
+[rules.congestion_effective]
+order = 73
+action = "congestion_effective"
+prefix = ["Effective congestion level: "]
+re = '^Effective congestion level: (\d+)'
 
 [parse]
 time_re = 'Time \(s\): cpu = (\S+) ; elapsed = (\S+) \. Memory \(MB\): peak = ([\d.]+)'
@@ -440,6 +481,17 @@ alert = true                  # warning "route_not_converging" for live attempts
 alert_min_iterations = 4      # ...once at least this many iterations were seen
 max_iterations = 500
 max_values = 64               # overlap values kept per iteration
+
+# ---------------------------------------------------------------- congestion (place_design, route_design)
+# Region sizes in the estimated-congestion tables map to a level = log2(size): 1x1 -> 0, 8x8 -> 3, 32x32 -> 5.
+# Vivado: level >= 5 may impact timing closure. The step is "warn" from warn_level, "crit" from crit_level
+# (both only colour the UI and raise the amber "congestion" alert, never an error).
+[congestion]
+warn_level = 5
+crit_level = 7
+alert = true                  # warning "congestion" when the worst level reaches warn_level
+size_re = '^(\d+)x(\d+)$'
+pct_re = '^\d+(?:\.\d+)?$'
 
 # ---------------------------------------------------------------- failures, crashes and resumes
 # Patterns are scanned in the tail of the run's runme.log / main log (and of a resume log). The first

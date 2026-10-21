@@ -75,6 +75,7 @@ class Node:
     attempts: list = field(default_factory=list)
     log_missing: bool = False
     convergence: dict | None = None
+    congestion: dict | None = None
 
     def to_dict(self):
         return {
@@ -88,7 +89,7 @@ class Node:
             "estimate": self.estimate, "reports": self.reports, "alerts": self.alerts,
             "doc_url": self.doc_url, "number": self.number, "number_predicted": self.number_predicted,
             "failure": self.failure, "attempts": self.attempts, "log_missing": self.log_missing,
-            "convergence": self.convergence,
+            "convergence": self.convergence, "congestion": self.congestion,
             "children": [c.to_dict() for c in self.children],
         }
 

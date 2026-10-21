@@ -39,7 +39,7 @@ class ParseNode:
     __slots__ = ("key", "label", "kind", "cmd", "number", "depth", "status", "line_start",
                  "line_end", "own", "children", "elapsed_s", "peak_mem", "started_at",
                  "ended_at", "history", "summary", "key_counts", "completed_line", "cum_start",
-                 "saved_cum", "iters", "iter_ok", "iter_entry")
+                 "saved_cum", "iters", "iter_ok", "iter_entry", "congestion")
 
     def __init__(self, kind, label, key):
         self.kind = kind
@@ -66,6 +66,7 @@ class ParseNode:
         self.iters = []            # steps: router iterations (see LogParser._on_overlaps)
         self.iter_ok = False       # phases: this phase counts as a convergence iteration
         self.iter_entry = None
+        self.congestion = {}       # steps: raw congestion tables (see LogParser._on_congestion_row)
 
     def rolled_counts(self):
         total = list(self.own)
@@ -96,6 +97,8 @@ class LogParser:
         self.pending_time = None
         self._prev_pending = None
         self.exited = False
+        self._cong_open = None         # (kind, step) while an estimated-congestion table is being read
+        self._cong_dir = None          # direction of the last "Direction: X" line (final report)
 
     # ------------------------------------------------------------------ feeding
     def feed(self, lines):
@@ -216,6 +219,7 @@ class LogParser:
                 self.root.own = [0, 0, 0, 0]
             self.cur_step = node
             self.last_cum = 0.0
+            self._cong_open = self._cong_dir = None
         else:
             parent = self.cur_step or self.root
             self._truncate(self.stack.index(parent) + 1, self.line_no - 1)
@@ -436,3 +440,56 @@ class LogParser:
         index = self._find(("step", "command"), lambda n: True)
         if index is not None:
             self.stack[index].summary = [int(g) for g in match.groups()]
+
+    # ---- congestion: estimated tables (placer, router initial) and the final router report
+    def _open_congestion(self, kind):
+        if self.cur_step is not None:
+            self.cur_step.congestion[kind] = {}
+            self._cong_open = (kind, self.cur_step)
+
+    def _on_congestion_placer(self, match, line):
+        self._open_congestion("placer")
+
+    def _on_congestion_router(self, match, line):
+        self._open_congestion("router_initial")
+
+    def _on_congestion_row(self, match, line):
+        """Table row: the cells are (size[, % tiles]) for global, long, short; placer tables have sizes only."""
+        if self._cong_open is None:
+            return
+        kind, step = self._cong_open
+        settings = self.cfg.congestion
+        row = {}
+        slots = iter(("global", "long", "short"))
+        slot = None
+        for cell in (c.strip() for c in match.group(2).split("|")):
+            level = settings.level_of_size(cell)
+            if level is not None:
+                slot = next(slots, None)
+                if slot:
+                    row[slot] = level
+            elif slot and settings.pct_re.match(cell):
+                row[slot + "_pct"] = float(cell)
+        direction = match.group(1).lower()
+        step.congestion[kind][direction] = row
+        if len(step.congestion[kind]) >= 4:
+            self._cong_open = None
+
+    def _on_congestion_final(self, match, line):
+        step = self.cur_step
+        if step is None:
+            return
+        direction = match.group(1).lower()
+        level = self.cfg.congestion.level_of_size(match.group(2))
+        step.congestion.setdefault("router_final", {})[direction] = {
+            "max_pct": float(match.group(3)), "level": level or 0, "congested": match.group(4) is None}
+
+    def _on_congestion_direction(self, match, line):
+        self._cong_dir = match.group(1).lower()
+
+    def _on_congestion_effective(self, match, line):
+        step, direction = self.cur_step, self._cong_dir
+        self._cong_dir = None
+        entry = step.congestion.get("router_final", {}).get(direction) if step and direction else None
+        if entry is not None:
+            entry["level"] = int(match.group(1))

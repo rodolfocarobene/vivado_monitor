@@ -146,6 +146,20 @@ class ConvergenceConfig:
         return self.phase_re.search(phase_name) is not None
 
 
+class CongestionConfig:
+    def __init__(self, spec):
+        self.warn_level = spec.get("warn_level", 5)
+        self.crit_level = max(self.warn_level, spec.get("crit_level", 7))
+        self.alert = spec.get("alert", True)
+        self.size_re = re.compile(spec.get("size_re", r"^(\d+)x(\d+)$"))
+        self.pct_re = re.compile(spec.get("pct_re", r"^\d+(?:\.\d+)?$"))
+
+    def level_of_size(self, text):
+        """log2 of the region size ("16x16" -> 4), or None when the text is not a size."""
+        match = self.size_re.match(text)
+        return max(int(match.group(1)), int(match.group(2)), 1).bit_length() - 1 if match else None
+
+
 class Config:
     def __init__(self, data):
         self.data = data
@@ -182,6 +196,7 @@ class Config:
         self.resume = ResumeConfig(data.get("resume", {}))
         self.artifacts = ArtifactConfig(data.get("artifacts", {}))
         self.convergence = ConvergenceConfig(data.get("convergence", {}))
+        self.congestion = CongestionConfig(data.get("congestion", {}))
         self._rules_by_char = {}
 
     def rules_for(self, first_char):

@@ -30,6 +30,7 @@ Other files:
 | `[resume]`, `[resume.checkpoints]` | Recognising non-project sessions that resume a run from a checkpoint |
 | `[timing_paths]` | Worst paths kept per timing report (`max_paths`) and how many go in the state JSON (`summary_paths`) |
 | `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
+| `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -140,6 +141,17 @@ tolerance_s = 1
 '^{top}\.bit$' = "write_bitstream"
 '^{top}_routed\.dcp$' = "route_design"
 ```
+
+## Congestion
+
+```toml
+[congestion]
+warn_level = 5     # worst level at or above this: amber "congestion" alert and CONG chip (Vivado: may impact timing)
+crit_level = 7     # at or above this: the chip and bars turn orange (still only a warning alert)
+alert = true       # warning "congestion"
+```
+
+The table rows and the final report are matched by `[rules.congestion_*]`; a region size `NxN` maps to level log2(N) (1x1 = 0, 8x8 = 3, 32x32 = 5). Estimates are never shown red.
 
 ## Router convergence
 

@@ -415,3 +415,21 @@ attempt summaries also carry "convergence". Alert code "route_not_converging" (w
   outside such phases are ignored. Feeding is incremental (chunk-equivalent). Limits: 500 iterations, 64 values each.
 - UI: Timing view (clocks, stages, worst paths), worst-paths table in Reports/Timing tabs, header "N failing paths in K
   clocks", Convergence tab with inline SVG chart, overlap sparkline on the running route card.
+
+## Congestion (place_design, route_design)
+```
+Node.congestion = {                       # null when the step log has no congestion table; keys appear as the log is read
+  "placer":         {dir: {"global": L, "long": L, "short": L}},
+  "router_initial": {dir: {"global": L, "long": L, "short": L,
+                           "global_pct"?: float, "long_pct"?: float, "short_pct"?: float}},   # % of tiles: newer Vivado only
+  "router_final":   {dir: {"max_pct": float, "level": L, "congested": bool}},
+  "max_level": int, "level": "ok"|"warn"|"crit", "warn_level": int, "crit_level": int }
+dir = "north"|"south"|"east"|"west";  L = log2 of the region size (1x1 -> 0, 16x16 -> 4, 32x32 -> 5)
+```
+- router_final.level is Vivado's "Effective congestion level" (falls back to the area size level); `congested` is false
+  for "No Congested Regions". max_level is the worst L over all tables; level = crit from `[congestion] crit_level`
+  (default 7), warn from `warn_level` (default 5), else ok.
+- Alert code "congestion" (always warning, never error): "Congestion level N during <placement|initial routing|final
+  routing> (<dir> <slot>, threshold T)". Shown by the UI as a Congestion tab and a "CONG Ln" chip (only when level != ok).
+- Parser: rules `congestion_placer|router|row|final|direction|effective` in flows.toml; incremental (a table cut by a
+  chunk boundary is completed by the next feed); a new step resets the table state.

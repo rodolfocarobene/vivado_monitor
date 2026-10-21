@@ -406,14 +406,14 @@ const BASE_TITLE = document.title;
 const PAGE_T = MOCK ? nowS() - 7200 : nowS();   // mock: pretend we loaded 2 h ago so seeded events show up
 const EVENT_KINDS = [['step_done', 'Step finished'], ['step_failed', 'Step failed'], ['run_done', 'Run finished'], ['run_failed', 'Run failed']];
 const ALERT_CODES = [['timing_fail', 'Timing not met'], ['critical_warning', 'Critical warnings'], ['error', 'Errors'], ['drc', 'DRC issues'],
-  ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['route_not_converging', 'Router not converging'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
+  ['unrouted', 'Unrouted nets'], ['util_high', 'High utilization'], ['stalled', 'Stalled build'], ['route_not_converging', 'Router not converging'], ['congestion', 'Congestion'], ['process_gone', 'Vivado process gone'], ['other', 'Other alerts']];
 const CODE_ALIAS = { utilization: 'util_high', step_failed: 'step_failed' };
 const ALERT_NAME = { timing_fail: 'Timing', critical_warning: 'Critical warnings', error: 'Errors', drc: 'DRC', unrouted: 'Unrouted nets',
-  util_high: 'Utilization', utilization: 'Utilization', stalled: 'Stalled', route_not_converging: 'Router', process_gone: 'Process gone', step_failed: 'Step failed' };
+  util_high: 'Utilization', utilization: 'Utilization', stalled: 'Stalled', route_not_converging: 'Router', congestion: 'Congestion', process_gone: 'Process gone', step_failed: 'Step failed' };
 const alertName = (a) => ALERT_NAME[a.code] || (a.code ? a.code.replace(/_/g, ' ') : a.level);
 const NOTIF_DEFAULTS = {
   kinds: { step_done: false, step_failed: true, run_done: true, run_failed: true },
-  codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, process_gone: true, other: true },
+  codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, congestion: true, process_gone: true, other: true },
 };
 const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false };
 try {
@@ -826,7 +826,7 @@ function updateNode(el, n, fw, depth) {
   r.rchips.hidden = !(n.reports || []).length;
   setAttr(el, 'data-alert', lvl); setAttr(el, 'data-expected', n.expected ? '1' : '0'); setAttr(el, 'data-optional', n.optional ? '1' : '0');
   setHTML(r.badges, badgesHTML(n.counts));
-  setHTML(r.chip, chipHTML(n.timing));
+  setHTML(r.chip, chipHTML(n.timing) + congChip(n.congestion));
   setHTML(r.doc, docBtn(n.doc_url, `${n.label} documentation`));
   const running = n.status === 'running' && n.started_at;
   const el_s = running ? nowS() - n.started_at : n.elapsed_s;
@@ -873,7 +873,7 @@ function updateStage(el, n, fw, isSel) {
   r.fstrip.hidden = !fl;
   setHTML(r.fstrip, fl ? `<b>${failKind(n.failure)}:</b> ${esc(n.failure.reason || 'Error')} in ${esc(failWhere(n))}` : '');
   setHTML(r.badges, badgesHTML(n.counts));
-  setHTML(r.chip, chipHTML(n.timing));
+  setHTML(r.chip, chipHTML(n.timing) + congChip(n.congestion));
   const cvs = n.status === 'running' && n.convergence ? overlapSpark(n.convergence) : '';
   setHTML(r.cv, cvs ? `<span class="cvchip" title="Router overlaps (log scale) · ${esc((n.convergence.trend || 'collecting').toUpperCase())}">${cvs}</span>` : '');
   setHTML(r.doc, docBtn(n.doc_url, `${n.label} documentation`));
@@ -1020,6 +1020,7 @@ function availableTabs(n) {
   if (!NO_FETCH.has(n.status)) { tabs.push(['messages', 'Messages']); tabs.push(['log', 'Log']); }
   if (n.reports && n.reports.length) tabs.push(['reports', `Reports<small>${n.reports.length}</small>`]);
   if (n.timing && ((n.timing.history && n.timing.history.length) || n.timing.report)) tabs.push(['timing', `Timing<small>${(n.timing.history || []).length || ''}</small>`]);
+  if (n.congestion) tabs.push(['congestion', `Congestion<small>L${n.congestion.max_level}</small>`]);
   const cv = convOf(n);
   if (cv) tabs.push(['convergence', `Convergence<small>${cv.conv.iterations.length}</small>`]);
   return tabs;
@@ -1042,10 +1043,10 @@ function syncBody(el, n, fw, depth) {
   if (open) {
     clearTimeout(el._clearT); el._clearT = null;
     if (!r.panel) {
-      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div><div class="pane pane-convergence"></div>');
+      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div><div class="pane pane-congestion"></div><div class="pane pane-convergence"></div>');
       r.bodyin.appendChild(r.panel);
       r.tabs = $('.dtabs', r.panel);
-      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel), convergence: $('.pane-convergence', r.panel) };
+      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel), congestion: $('.pane-congestion', r.panel), convergence: $('.pane-convergence', r.panel) };
     }
     const tabs = availableTabs(n);
     const act = activeTab(fw, n, tabs);
@@ -1063,6 +1064,7 @@ function syncBody(el, n, fw, depth) {
     else if (act === 'log') ensureLog(el, n, fw);
     else if (act === 'reports') renderReports(r.panes.reports, n, keyOf(fw, n), fw);
     else if (act === 'timing') renderTiming(r.panes.timing, n, fw);
+    else if (act === 'congestion') renderCongestion(r.panes.congestion, n);
     else if (act === 'convergence') renderConvergence(r.panes.convergence, n);
   } else if (r.panel && !el._clearT) {
     el._clearT = setTimeout(() => {
@@ -2558,6 +2560,44 @@ function renderConvergence(pane, n) {
       ${from ? `<div class="cv-from">From attempt ${from.n} (${esc(from.summary || from.status)}); the log of the current attempt is not available.</div>` : ''}`);
   setHTML(cv.svg, convChartSVG(conv, running));
   setHTML(cv.legend, '<span><i class="lg bar"></i>final overlaps per iteration (log scale)</span><span><i class="lg dot"></i>overlap passes inside the iteration, in order</span><span><i class="lg wns"></i>WNS</span><span><i class="lg whs"></i>WHS</span>');
+}
+
+// ---- congestion (place_design / route_design)
+const CG_DIRS = ['north', 'south', 'east', 'west'];
+const CG_SCALE = 8;                                             // bar full at level 8 (256x256 regions)
+const cgCls = (v, cg) => (v >= cg.crit_level ? 'crit' : v >= cg.warn_level ? 'warn' : '');
+function congChip(cg) {
+  if (!cg || cg.level === 'ok') return '';
+  return `<span class="chip ${cg.level === 'crit' ? 'cgcrit' : 'softbad'}" title="Congestion level ${cg.max_level} (warn from ${cg.warn_level}, high from ${cg.crit_level}). Levels of 5 and greater may impact timing closure.">CONG L${cg.max_level}</span>`;
+}
+function cgBar(v, cg, pct) {
+  if (v == null) return '<span class="cg-cell nil">—</span>';
+  return `<span class="cg-cell"><span class="cg-bar ${cgCls(v, cg)}"><i style="width:${Math.min(100, (v / CG_SCALE) * 100)}%"></i></span><span class="cg-txt"><b class="num">${v}</b>${pct != null ? `<small class="num">${pct}%</small>` : ''}</span></span>`;
+}
+function cgTable(title, note, rows, cg, withPct) {
+  const heads = ['Global', 'Long', 'Short'].map((t) => `<span class="cg-h">${t}</span>`).join('');
+  const body = CG_DIRS.filter((d) => rows[d]).map((d) => `<span class="cg-d">${d[0].toUpperCase() + d.slice(1)}</span>${['global', 'long', 'short'].map((k) => cgBar(rows[d][k], cg, withPct ? rows[d][k + '_pct'] : null)).join('')}`).join('');
+  return `<div class="cg-sec"><div class="cg-title">${title}<small>${note}</small></div><div class="cg-grid"><span></span>${heads}${body}</div></div>`;
+}
+function cgFinal(rows, cg) {
+  const body = CG_DIRS.filter((d) => rows[d]).map((d) => {
+    const r = rows[d];
+    return `<span class="cg-d">${d[0].toUpperCase() + d.slice(1)}</span><b class="num cg-pct">${r.max_pct.toFixed(1)}%</b>${cgBar(r.level, cg)}<small class="cg-reg">${r.congested ? 'regions' : 'none'}</small>`;
+  }).join('');
+  return `<div class="cg-sec"><div class="cg-title">Final routing<small>max congestion, effective level, congested regions</small></div><div class="cg-grid fin">${body}</div></div>`;
+}
+function renderCongestion(pane, n) {
+  const cg = n.congestion;
+  if (!cg) { setHTML(pane, '<div class="none">No congestion table seen yet.</div>'); return; }
+  const lv = cg.level === 'ok' ? '' : cg.level;
+  const advice = lv ? `Level ${cg.warn_level} or more may impact timing closure: look at the placement and the congested regions if timing fails.` : 'Below the level where Vivado warns about timing closure.';
+  const hit = convOf(n);
+  const spark = hit ? overlapSpark(hit.conv, 160, 34) : '';
+  setHTML(pane, `<div class="cg-top"><span class="cg-lvl ${lv}">LEVEL ${cg.max_level}</span><span class="cg-note">${advice}</span></div>
+    ${cg.placer ? cgTable('Placement estimate', 'region size as level (2^level tiles)', cg.placer, cg, false) : ''}
+    ${cg.router_initial ? cgTable('Router initial estimate', 'level and % of tiles', cg.router_initial, cg, true) : ''}
+    ${cg.router_final ? cgFinal(cg.router_final, cg) : ''}
+    ${spark ? `<div class="cg-sec"><div class="cg-title">Router overlaps<small>per pass, log scale (see Convergence)</small></div><span class="cvchip">${spark}</span></div>` : ''}`);
 }
 
 /* ------------------------------------------------------------------ boot */
