@@ -10,6 +10,7 @@ from pathlib import Path
 from . import clocks as clocks_mod
 from . import history as history_mod
 from .docs import DocLinks
+from .notify import Notifier
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
 from .expected import CatalogSet
 from .discovery import Discovery
@@ -68,6 +69,7 @@ class Monitor:
         self.history = history_mod.HistoryStore(self.recent_file.parent / "history", self.history_cfg["max_builds"])
         self._history_seen = {}        # (fw_id, build) -> (status, updated_at) already stored
         self.docs = DocLinks(config.data)
+        self.notifier = Notifier(config.data.get("notify"))
         self.sampler = Sampler()
         self._recorded = set()         # (fw_id, build) already stored as a baseline this session
         self._top_cache = {}
@@ -261,6 +263,7 @@ class Monitor:
             for kind, level, code, node_id, title, message in found:
                 log.append({"t": now, "kind": kind, "level": level, "code": code, "node_id": node_id,
                             "title": "%s: %s" % (fw.name, title), "message": message or title})
+                self.notifier.submit(fw, log[-1])      # only live transitions reach here (see the first-observation return)
             del log[:-EVENTS_MAX]
 
     # ------------------------------------------------------------------ triage
@@ -394,6 +397,7 @@ class Monitor:
 
     def stop(self):
         self._stop.set()
+        self.notifier.stop()
         self._wake.set()
         with self.cond:
             self.cond.notify_all()

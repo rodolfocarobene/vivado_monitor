@@ -418,7 +418,7 @@ const NOTIF_DEFAULTS = {
   kinds: { step_done: false, step_failed: true, run_done: true, run_failed: true },
   codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, congestion: true, process_gone: true, other: true },
 };
-const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false };
+const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false, out: null, outErr: false, testing: false };
 try {
   const sv = JSON.parse(lsGet('vmon.notif') || 'null');
   if (sv) notif.cfg = { kinds: { ...NOTIF_DEFAULTS.kinds, ...sv.kinds }, codes: { ...NOTIF_DEFAULTS.codes, ...sv.codes } };
@@ -1764,6 +1764,8 @@ document.addEventListener('click', async (ev) => {
     syncBell(); renderPop();
   } else if (act === 'ntest') {
     try { new Notification('vmon · test — Notifications work', { body: 'route_design: WNS -0.123 ns (post-route)' }); } catch { /* ignore */ }
+  } else if (act === 'outtest') {
+    sendOutTest();
   } else if (act === 'nlog') {
     const e = notif.log[+t.dataset.i]; if (e) openEntry(e);
   } else if (act === 'nclear') {
@@ -2168,7 +2170,41 @@ function syncBell() {
   notifyBtn.title = unread ? `${unread} unread notification${unread === 1 ? '' : 's'}` : 'Notifications';
   notifyBtn.setAttribute('aria-label', notifyBtn.title);
 }
-function openPop() { notif.open = true; popEl.hidden = false; renderPop(); }
+function openPop() { notif.open = true; popEl.hidden = false; renderPop(); loadOut(); }
+// Server-side channels (read-only here; configured in ~/.config/vmon/flows.toml).
+async function loadOut() {
+  try { notif.out = await jget(MOCK ? 'mock/notify.json' : '/api/notify'); notif.outErr = false; } catch { notif.outErr = true; }
+  renderPop();
+}
+function outState(c) {
+  if (c.error) return ['err', `failed: ${c.error}`];
+  if (!c.enabled) return ['off', 'off'];
+  return c.configured ? ['ok', 'on'] : ['warn', 'not configured'];
+}
+function outHTML() {
+  const o = notif.out;
+  const rows = o ? o.channels.map((c) => { const [st, txt] = outState(c); return `<div class="no-row" data-st="${st}"><span class="no-dot"></span><b>${esc(c.label)}</b><code>${esc(c.target)}</code><span class="no-st">${esc(txt)}</span></div>`; }).join('')
+    : `<div class="none">${notif.outErr ? 'Could not read the server-side settings.' : 'Loading…'}</div>`;
+  const usable = o && o.enabled && o.channels.some((c) => c.enabled);
+  const sum = o ? `<div class="no-sum">${o.enabled ? `Sends: ${esc(o.kinds.map((k) => k.replace(/_/g, ' ')).join(', ') || 'no step or run events')}; alerts ${esc(o.codes.join(', ') || 'none')} from ${esc(o.min_level)}.` : 'Master switch is off (<code>enabled = false</code>).'}</div>` : '';
+  return `<div class="np-outhead"><b>Outside the browser</b><button class="rawbtn" data-act="outtest"${usable && !notif.testing ? '' : ' disabled'}>${notif.testing ? 'sending…' : 'send test'}</button></div>
+    <div class="no-list">${rows}</div>${sum}
+    <div class="no-hint">Set up in <code>~/.config/vmon/flows.toml</code> under <code>[notify]</code> (see docs/configuration.md).</div>`;
+}
+async function sendOutTest() {
+  notif.testing = true; renderPop();
+  try {
+    let results;
+    if (MOCK) results = notif.out.channels.filter((c) => c.enabled).map((c) => (c.configured ? { name: c.name, ok: true } : { name: c.name, ok: false, error: 'not configured' }));
+    else {
+      const r = await fetch('/api/notify/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!r.ok) throw new Error(r.status);
+      results = (await r.json()).results;
+    }
+    toast(results.length ? results.map((r) => `${r.name}: ${r.ok ? 'sent' : `failed (${r.error})`}`).join(' · ') : 'No channel is enabled');
+  } catch (e) { toast(`Could not send the test: ${e.message}`); }
+  notif.testing = false; await loadOut();
+}
 function closePop() {
   if (!notif.open) return;
   notif.open = false; popEl.hidden = true;
@@ -2192,6 +2228,7 @@ function renderPop() {
   const html = `<div class="np-head"><b>Notifications</b></div>${permRow}
     <div class="np-cols"><div><div class="np-h">Notify me when a…</div>${EVENT_KINDS.map(([k, l]) => box('kinds', k, l)).join('')}</div>
     <div><div class="np-h">…or an alert of type</div>${ALERT_CODES.map(([k, l]) => box('codes', k, l)).join('')}</div></div>
+    ${outHTML()}
     <div class="np-loghead"><b>Recent</b>${notif.log.length ? '<button class="rawbtn" data-act="nclear">clear</button>' : ''}</div><div class="np-log">${log}</div>`;
   if (popEl._h !== html) setHTML(popEl, html);
 }

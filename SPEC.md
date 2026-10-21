@@ -515,3 +515,25 @@ GET /api/history/artifact?fw=&build=&path=  -> application/octet-stream, Content
 - Summary UI: each history row has "Summary: MD (download) HTML (new tab) Copy (Markdown to the clipboard)"; a finished firmware
   shows "Export summary" (Markdown of its latest recorded build) and "HTML" next to the view switch. Mock: static/mock/summary_<fw>_<build>.md|html.
 - UI: top-bar History button / `h` / `#page=history`; table of builds with firmware filter (default: current firmware).
+
+## Notifications outside the browser
+
+Config `[notify]` (see docs/configuration.md); all channels disabled by default. Only live events are sent (never those present at startup).
+```
+GET /api/notify -> {"enabled": bool,                      # master switch
+                    "channels": [{"name": "desktop"|"ntfy"|"slack"|"matrix"|"webhook", "label": str,
+                                  "enabled": bool,        # master and channel switch
+                                  "configured": bool,     # URL/token/command present
+                                  "target": str,          # scheme://host[:port] or program name; never path/query/token
+                                  "error": str|null}],    # last delivery error, redacted
+                    "kinds": [str], "codes": [str], "min_level": "info"|"warning"|"error",
+                    "last_error": {"channel", "error", "t"} | null}
+POST /api/notify/test -> {"results": [{"name", "ok": bool, "error"?: str}]}    # [] when nothing is enabled
+```
+Generic webhook body (`POST`, `application/json`):
+```
+{"firmware": str, "fw_id": str, "kind": "step_failed"|"run_failed"|"run_done"|"step_done"|"alert"|"test"|"summary",
+ "code": str|null, "level": "info"|"warning"|"error", "title": "<firmware>: <event title>",
+ "body": "<step>: <message>", "t": epoch, "project": "<runs dir>"}
+```
+`kind` is `test` for the test button and `summary` for the "N more events" rate-limit message.

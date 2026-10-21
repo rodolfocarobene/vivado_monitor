@@ -64,6 +64,8 @@ def make_server(monitor, host, port):
                     return self._json(browse_mod.browse(query.get("path", [""])[0], str(Path.home()), live, recent))
                 except browse_mod.BrowseError as exc:
                     return self._error(exc.status, str(exc))
+            if route == "/api/notify":
+                return self._json(monitor.notifier.status())
             if route in ("/api/history", "/api/history/report", "/api/history/artifact",
                          "/api/history/build", "/api/history/compare", "/api/history/summary"):
                 return self._history(route, query)
@@ -125,6 +127,8 @@ def make_server(monitor, host, port):
         def do_POST(self):
             route = urlparse(self.path).path
             body = self._body()
+            if route == "/api/notify/test":
+                return self._json({"results": monitor.notifier.test()})
             if route not in ("/api/watch", "/api/msgrule", "/api/settings"):
                 return self._error(404, "not found")
             if body is None:
