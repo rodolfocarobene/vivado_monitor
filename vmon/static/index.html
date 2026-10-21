@@ -34,8 +34,9 @@
 </header>
 <nav id="tabs" class="tabs" role="tablist"></nav>
 <div id="sumbar" class="sumbar" aria-label="Build summary"></div>
-<main id="main"></main>
-<div id="toast" class="toast" hidden></div>
+<main id="main"><div class="empty loading"><h2>Connecting to the vmon backend…</h2><p>Build status appears here as soon as the first update arrives.</p></div></main>
+<div id="toast" class="toast" hidden role="status"></div>
+<div id="sr-live" class="sr-only" aria-live="polite"></div>
 <script>window.addEventListener("error",function(e){var d=document.createElement("pre");d.style.cssText="position:fixed;bottom:0;left:0;right:0;background:#600;color:#fff;padding:8px;margin:0;z-index:99;font-size:12px";d.textContent="JS error: "+e.message+" ("+(e.filename||"").split("/").pop()+":"+e.lineno+")";document.body.appendChild(d);});</script>
 <script type="module" src="app.js"></script>
 </body>
