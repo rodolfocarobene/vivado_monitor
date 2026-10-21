@@ -39,7 +39,8 @@ def node_alerts(node, step_id, cfg, stall_age=None, alive=True):
     nid = node.id
     errors, critical = node.counts[3], node.counts[2]
     if node.status == "failed":
-        out.append(_alert("error", "step_failed", "%s failed" % node.label, nid))
+        reason = ": %s" % node.failure["reason"] if node.failure else ""
+        out.append(_alert("error", "step_failed", "%s failed%s" % (node.label, reason), nid))
     if node.status == "stopped":
         out.append(_alert("error", "process_gone", "Vivado process gone during %s" % node.label, nid))
     if errors:

@@ -122,6 +122,7 @@ let hashOpen = new Set();
 let hashTab = new Map();
 let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
+let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
 
 function parseHash() {
@@ -132,7 +133,7 @@ function parseHash() {
     const i = t.lastIndexOf(':');
     if (i > 0) hashTab.set(t.slice(0, i), t.slice(i + 1));
   }
-  hashFw = p.get('fw');
+  hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
   if (p.get('theme')) applyTheme(p.get('theme'));
@@ -272,6 +273,19 @@ function mockTriage(fw, { q: text = '', muted = false, sev = 'error,critical,war
 }
 const mockTop = (fw) => mockTriage(fw).groups.filter((g) => ['error', 'critical', 'warning'].includes(g.severity)).slice(0, 5);
 function mockLogAround(fw, log, line) {
+  let fail = null;
+  for (const f of fw.flows || []) walk(f.stages, (n) => {
+    if (n.failure && n.failure.line === line) fail = n.failure;
+    (n.attempts || []).forEach((a) => { if (a.failure && a.failure.line === line) fail = a.failure; });
+  });
+  if (fail) {
+    const noise = ['Phase 4.1 Global Iteration 0', 'Time (s): cpu = 00:04:12 ; elapsed = 00:02:31 . Memory (MB): peak = 7245.3 ; gain = 12.0', 'Router Utilization Summary', '  Global Vertical Routing Utilization    = 31.2 %', 'Phase 4.2 Global Iteration 1', 'Number of Nodes with overlaps = 18294', 'Phase 4.2.1 Update Timing', 'Phase 4.2.2 Resolve XTalk'];
+    const pre = Array.from({ length: 24 }, (_, i) => noise[i % noise.length]);
+    const post = ['Vivado exited abnormally.', '', '# Wrote log to runme.log'];
+    const lines = [...pre, ...(fail.details || []), ...post];
+    const start = line - pre.length;
+    return { path: log || fail.log, start_line: start, end_line: start + lines.length - 1, lines };
+  }
   const d = mockFileSync(`messages_${fw.name}`, 'messages_default');
   const hit = d.items.find((m) => m.line === line);
   const pool = ['Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device', 'INFO: [Timing 38-35] Done setting XDC timing constraints.', 'Time (s): cpu = 00:00:12 ; elapsed = 00:00:09 . Memory (MB): peak = 3050.2 ; gain = 0.0',
@@ -295,6 +309,58 @@ function fwAlerts(fw) {
 }
 const topLevel = (alerts) => (alerts.some((a) => a.level === 'error') ? 'error' : alerts.length ? 'warning' : '');
 const nodeLevel = (n) => topLevel(n.alerts || []);
+
+/* ------------------------------------------------------------------ failures and attempts (SPEC v5) */
+const CRASH_RE = /signal|segmentation|license|memory|killed|abnormal|crash/i;
+const failKind = (f) => (f && (f.hs_err || CRASH_RE.test(f.reason || '')) ? 'Crashed' : 'Failed');
+function deepestFailed(n) {
+  let cur = n, last = null;
+  for (;;) { const c = (cur.children || []).find((x) => x.status === 'failed'); if (!c) return last; last = cur = c; }
+}
+const failWhere = (n) => { const d = deepestFailed(n); return (d || n).label.replace(/^Phase\s+/, ''); };
+const attemptsOf = (n) => (n.attempts && n.attempts.length >= 2 ? n.attempts : []);
+const latestAttempt = (n) => { const a = attemptsOf(n); return a.length ? a[a.length - 1] : null; };
+function attTags(n) {
+  const la = latestAttempt(n);
+  if (!la) return '';
+  return `<small class="att" title="${attemptsOf(n).length} attempts; counts and children are from the latest">attempt ${la.n}</small>${la.mode === 'resume' ? '<small class="att res" title="Resumed from a checkpoint in a separate Vivado session">resumed</small>' : ''}`;
+}
+const ATT_ICON = {
+  done: ICON.done, running: ICON.running, failed: ICON.failed, stopped: ICON.stopped,
+};
+const fx = new Map(); // `${fw}|${node}|${attempt}` -> {line, data, fresh}: opened "log around failure" excerpts
+const fxKey = (fw, n, tag) => `${fw.id}|${n.id}|${tag}`;
+function copyBtn(text, what) { return `<button class="copybtn" data-act="copy" data-copy="${esc(text)}" title="Copy ${esc(what)}">copy</button>`; }
+function failureHTML(f, fw, n, tag, where) {
+  const key = fxKey(fw, n, tag);
+  const ex = fx.get(key);
+  const lines = (f.details || []).map((d) => `<div>${esc(d)}</div>`).join('');
+  const acts = [];
+  if (f.line != null) acts.push(`<button class="fbtn${ex ? ' on' : ''}" data-act="fail-log" data-key="${esc(key)}" data-log="${esc(f.log || '')}" data-line="${f.line}">${ex ? 'Hide log' : 'View log'} around line ${f.line}</button>`);
+  if (f.log && f.line == null) acts.push(`<span class="fpath mono" title="Log file">${esc(f.log)}</span>`);
+  const hs = f.hs_err ? `<div class="fhs"><span class="k">hs_err</span><span class="mono fpath" title="${esc(f.hs_err)}">${esc(f.hs_err)}</span>${copyBtn(f.hs_err, 'hs_err path')}</div>` : '';
+  return `<div class="fbox"><div class="fb-h">${ICON.failed}<b>${failKind(f)}</b><span class="fb-reason">${esc(f.reason || 'Error')}</span>${where ? `<span class="fb-where">in ${esc(where)}</span>` : ''}</div>${lines ? `<div class="fb-lines mono">${lines}</div>` : ''}${acts.length ? `<div class="fb-act">${acts.join('')}</div>` : ''}${hs}${ex ? `<div class="fb-exc">${excerptHTML(ex, { id: key })}</div>` : ''}</div>`;
+}
+function attemptsHTML(n, fw) {
+  const as = attemptsOf(n);
+  if (!as.length) return '';
+  const cur = as[as.length - 1];
+  const rows = as.map((a) => {
+    const isCur = a === cur;
+    const f = a.failure;
+    const when = `${a.started_at ? fmtClock(a.started_at) : '—'} → ${a.ended_at ? fmtClock(a.ended_at) : a.status === 'running' ? 'now' : '—'}`;
+    const live = a.status === 'running' && a.started_at && !a.ended_at;
+    const dur = live ? `<span data-start="${a.started_at}">${fmtDur(nowS() - a.started_at)}</span>` : a.started_at && a.ended_at ? fmtDur(a.ended_at - a.started_at) : '';
+    const open = f && fx.has(`open|${fw.id}|${n.id}|${a.n}`);
+    return `<div class="arow${isCur ? ' cur' : ' old'}" data-status="${esc(a.status)}"><div class="a-ic">${(ATT_ICON[a.status] || ICON.pending)}</div>
+      <div class="a-main"><div class="a-h"><b>Attempt ${a.n}</b><span class="a-mode">${a.mode === 'resume' ? 'resumed' : 'project run'}</span>${isCur ? '<span class="a-now">latest</span>' : ''}<span class="a-time num">${when}${dur ? ` · ${dur}` : ''}</span></div>
+      ${a.summary ? `<div class="a-sum">${esc(a.summary)}</div>` : ''}
+      ${a.checkpoint ? `<div class="a-cp mono" title="${esc(a.checkpoint)}">from ${esc(a.checkpoint.split('/').pop())}</div>` : ''}
+      ${f ? `<div class="a-fail"><b>${failKind(f)}:</b> ${esc(f.reason || 'Error')}${(f.details || f.hs_err) ? ` <button class="fbtn sm" data-act="att-toggle" data-key="open|${esc(fw.id)}|${esc(n.id)}|${a.n}">${open ? 'hide details' : 'details'}</button>` : ''}</div>${open ? failureHTML(f, fw, n, `a${a.n}`, '') : ''}` : ''}
+      </div></div>`;
+  }).join('');
+  return `<div class="attempts"><div class="att-h">Attempts<small>${as.length}</small></div>${rows}</div>`;
+}
 
 function findPath(fw, id) {
   for (const f of fw.flows || []) {
@@ -418,6 +484,7 @@ function updateTab(el, fw) {
     const cur = fw.current ? esc(fw.current.label) : 'running';
     sub = `${cur} · <span data-start="${fw.started_at ?? ''}">${fmtDur(fw.started_at ? nowS() - fw.started_at : fw.elapsed_s)}</span>${fw.resources ? ` · <span class="t-res" title="Vivado CPU / RSS">${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</span>` : ''}`;
   } else sub = `${statusInfo(fw.status).label} · ${fmtDur(fw.elapsed_s)}`;
+  if (fw.attempt && fw.attempt.n > 1) sub = `<span class="t-att">attempt ${fw.attempt.n}</span> · ${sub}`;
   setHTML(r.sub, sub);
   const al = fwAlerts(fw); const lvl = topLevel(al);
   r.ab.hidden = !al.length; setText(r.ab, String(al.length)); setAttr(r.ab, 'data-level', lvl || 'warning');
@@ -521,6 +588,7 @@ function buildView() {
         <div class="seg viewseg" role="tablist"><button data-act="view" data-view="flow">Flow</button><button data-act="view" data-view="messages">Messages</button></div></div>
       <div class="eprog" hidden><i></i></div>
       <div class="fw-path mono"></div>
+      <div class="fw-attempt" hidden></div>
       <div class="fw-meta">
         <div class="kv"><div class="k">Elapsed</div><div class="v num el"></div></div>
         <div class="kv started-wrap"><div class="k">Started</div><div class="v sm num st"></div></div>
@@ -533,7 +601,7 @@ function buildView() {
     </div>
     <div class="cards"><div class="timing-card"></div><div class="util-card"></div></div>
     <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
-  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head) };
+  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head) };
   const banner = h('div', 'banner');
   const segWrap = h('div', 'segwrap');
   const split = h('div', 'split', `
@@ -592,12 +660,22 @@ function infoHTML(fw) {
   return out.join('');
 }
 
+function attemptLineHTML(a) {
+  const parts = [`<b>Attempt ${a.n}</b>`];
+  if (a.mode === 'resume') parts.push(`resumed${a.resumed_from ? ` from ${esc(String(a.resumed_from).replace(/_design$/, ''))} checkpoint` : ''}`);
+  else parts.push('restarted');
+  if (a.previous_failure) parts.push(`<span class="prev">previous attempt ${CRASH_RE.test(a.previous_failure) ? 'crashed' : 'failed'}: ${esc(a.previous_failure)}</span>`);
+  return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span>${parts.join(' · ')}</span>`;
+}
 function renderHeader(fw) {
   const r = head._r;
   setText(r.name, fw.name);
   setAttr(r.pill, 'data-status', fw.status);
   setText(r.pill, fw.status + (fw.kind === 'log' ? ' · log' : ''));
   setText(r.path, fw.path || '');
+  const at = fw.attempt && fw.attempt.n > 1 ? fw.attempt : null;
+  r.att.hidden = !at;
+  setHTML(r.att, at ? attemptLineHTML(at) : '');
   const running = fw.status === 'running' && fw.started_at;
   r.el.dataset.start = running ? fw.started_at : '';
   if (!running) delete r.el.dataset.start;
@@ -677,7 +755,7 @@ function updateNode(el, n, fw, depth) {
   setAttr(el, 'data-kind', n.kind);
   if (r.icon._s !== n.status) { r.icon._s = n.status; r.icon.innerHTML = statusInfo(n.status).icon; r.icon.title = statusInfo(n.status).label; }
   const kindTag = el._detail ? `<small class="st">${statusInfo(n.status).label}</small>` : ['group', 'run', 'task', 'command'].includes(n.kind) ? `<small>${n.kind}</small>` : '';
-  setHTML(r.label, `${lvl ? alertIcon(lvl) : ''}${labelHTML(n)}${kindTag}${n.optional ? '<small class="opt">optional</small>' : ''}`);
+  setHTML(r.label, `${lvl ? alertIcon(lvl) : ''}${labelHTML(n)}${kindTag}${n.optional ? '<small class="opt">optional</small>' : ''}${attTags(n)}`);
   r.label.title = n.description ? `${n.label} — ${n.description}` : n.label;
   const showDesc = n.description && n.status !== 'done' && (n.status === 'pending' || n.status === 'queued' || n.status === 'running');
   r.desc.hidden = !showDesc; setText(r.desc, showDesc ? n.description : '');
@@ -705,11 +783,12 @@ function createStage() {
     <div class="main">
       <div class="card" data-act="select" role="button" tabindex="0">
         <div class="crow"><div class="label"></div><span class="docwrap"></span><div class="meta"></div></div>
-        <div class="srow"><div class="badges"></div><span class="chipwrap"></span></div>
+        <div class="srow"><div class="badges"></div><span class="chipwrap"></span><span class="attwrap"></span></div>
+        <div class="fstrip" hidden></div>
         <div class="prog"><i></i></div>
       </div>
     </div>`);
-  el._r = { card: $('.card', el), icon: $('.nicon', el), label: $('.label', el), badges: $('.badges', el), chip: $('.chipwrap', el), doc: $('.docwrap', el), meta: $('.meta', el), prog: $('.prog', el), bar: $('.prog i', el), srow: $('.srow', el) };
+  el._r = { card: $('.card', el), icon: $('.nicon', el), label: $('.label', el), badges: $('.badges', el), chip: $('.chipwrap', el), doc: $('.docwrap', el), meta: $('.meta', el), prog: $('.prog', el), bar: $('.prog i', el), srow: $('.srow', el), att: $('.attwrap', el), fstrip: $('.fstrip', el) };
   return el;
 }
 
@@ -726,10 +805,14 @@ function updateStage(el, n, fw, isSel) {
   if (r.icon._s !== n.status) { r.icon._s = n.status; r.icon.innerHTML = statusInfo(n.status).icon; r.icon.title = statusInfo(n.status).label; }
   setHTML(r.label, `${lvl ? alertIcon(lvl) : ''}${labelHTML(n)}${n.optional ? '<small class="opt">optional</small>' : ''}`);
   r.label.title = n.description ? `${n.label} — ${n.description}` : n.label;
+  setHTML(r.att, attTags(n));
+  const fl = n.status === 'failed' && n.failure;
+  r.fstrip.hidden = !fl;
+  setHTML(r.fstrip, fl ? `<b>${failKind(n.failure)}:</b> ${esc(n.failure.reason || 'Error')} in ${esc(failWhere(n))}` : '');
   setHTML(r.badges, badgesHTML(n.counts));
   setHTML(r.chip, chipHTML(n.timing));
   setHTML(r.doc, docBtn(n.doc_url, `${n.label} documentation`));
-  r.srow.hidden = !r.badges.innerHTML && !r.chip.innerHTML;
+  r.srow.hidden = !r.badges.innerHTML && !r.chip.innerHTML && !r.att.innerHTML;
   const running = n.status === 'running' && n.started_at;
   const el_s = running ? nowS() - n.started_at : n.elapsed_s;
   setHTML(r.meta, el_s != null ? `<span ${running ? `data-start="${n.started_at}"` : ''}>${fmtDur(el_s)}</span>` : '');
@@ -744,9 +827,11 @@ function createDetail() {
   el._force = true; el._detail = true;
   const card = $('.card', el);
   for (const a of ['data-act', 'tabindex', 'role']) card.removeAttribute(a);
+  const fb = h('div', 'dfail');
+  const at = h('div', 'dattempts');
   const al = h('div', 'dalerts');
-  $('.main', el).insertBefore(al, $('.body', el));
-  el._r.alerts = al;
+  for (const x of [fb, at, al]) $('.main', el).insertBefore(x, $('.body', el));
+  el._r.alerts = al; el._r.dfail = fb; el._r.dattempts = at;
   return el;
 }
 
@@ -756,11 +841,34 @@ function renderDetail(el, n, fw) {
   const add = (a, nid) => { const k = `${a.code}|${a.message}`; if (!seen.has(k)) { seen.add(k); rows.push({ ...a, node_id: a.node_id || nid }); } };
   walk([n], (x) => (x.alerts || []).forEach((a) => add(a, x.id)));
   rows.sort((a, b) => (b.level === 'error') - (a.level === 'error'));
+  if (hashFx) {
+    const fl = [['cur', n.failure]]; attemptsOf(n).forEach((a) => fl.push([`a${a.n}`, a.failure]));
+    for (const [tag, f] of fl) {
+      if (!f || !hashFx.has(tag)) continue;
+      hashFx.delete(tag);
+      if (tag !== 'cur') fx.set(`open|${fw.id}|${n.id}|${tag.slice(1)}`, true);
+      const ex = { line: f.line, data: null, fresh: true }; fx.set(fxKey(fw, n, tag), ex);
+      apiLogAround(fw, f.log, f.line).then((d) => { ex.data = d; }).catch(() => {}).finally(() => render());
+    }
+    if (!hashFx.size) hashFx = null;
+  }
+  const failing = n.status === 'failed' && n.failure;
+  const fbox = failing ? failureHTML(n.failure, fw, n, 'cur', failWhere(n)) : '';
+  if (el._r.dfail._h !== fbox) { setHTML(el._r.dfail, fbox); scrollExcerpts(el._r.dfail); }
+  const atl = attemptsHTML(n, fw);
+  if (el._r.dattempts._h !== atl) { setHTML(el._r.dattempts, atl); scrollExcerpts(el._r.dattempts); }
   setHTML(el._r.alerts, rows.map((a) => {
     const pn = a.node_id && findPath(fw, a.node_id);
     const where = pn && pn.chain.length > 1 ? pn.chain.slice(1).map((x) => x.label).slice(-2).join(' / ') : '';
     return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<code class="acode">${esc(a.code || a.level)}</code><span class="amsg">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
   }).join(''));
+}
+
+function scrollExcerpts(root) {
+  for (const e of root.querySelectorAll('.logbox.exc')) {
+    const ex = fx.get(e.dataset.k); const t = e.querySelector('.target');
+    if (ex && ex.fresh && t) { e.scrollTop = t.offsetTop - e.clientHeight / 2 + t.offsetHeight / 2; ex.fresh = false; }
+  }
 }
 
 // Running stage, else first failed, else stopped, else last done, else first.
@@ -1206,10 +1314,10 @@ function renderMsgView(fw) {
 const sumEl = $('#sumbar');
 const topbarEl = $('.topbar');
 sumEl.innerHTML = `<div class="sum-in">
-  <div class="sm-id"><i class="sdot"></i><b class="sm-name"></b><span class="pill sm-pill"></span></div>
+  <div class="sm-id"><i class="sdot"></i><b class="sm-name"></b><span class="pill sm-pill"></span><span class="sm-att" hidden></span></div>
   <div class="sm-cur"></div><div class="sm-time"></div><div class="sm-counts"></div><div class="sm-tim"></div><div class="sm-util"></div><div class="sm-al" data-act="sumtop"></div>
   <div class="sm-strip"></div></div>`;
-const sr = { dot: $('.sdot', sumEl), name: $('.sm-name', sumEl), pill: $('.sm-pill', sumEl), cur: $('.sm-cur', sumEl), time: $('.sm-time', sumEl), counts: $('.sm-counts', sumEl), tim: $('.sm-tim', sumEl), util: $('.sm-util', sumEl), al: $('.sm-al', sumEl), strip: $('.sm-strip', sumEl) };
+const sr = { dot: $('.sdot', sumEl), name: $('.sm-name', sumEl), pill: $('.sm-pill', sumEl), att: $('.sm-att', sumEl), cur: $('.sm-cur', sumEl), time: $('.sm-time', sumEl), counts: $('.sm-counts', sumEl), tim: $('.sm-tim', sumEl), util: $('.sm-util', sumEl), al: $('.sm-al', sumEl), strip: $('.sm-strip', sumEl) };
 let sumShown = false, headIO = null;
 
 function stickTop() { return topbarEl.offsetHeight + (sumShown ? sumEl.offsetHeight : 0) + 12; }
@@ -1237,6 +1345,9 @@ function renderSummary(fw, flow) {
   setAttr(sr.dot, 'data-status', fw.status);
   setText(sr.name, fw.name);
   setAttr(sr.pill, 'data-status', fw.status); setText(sr.pill, fw.status);
+  const sat = fw.attempt && fw.attempt.n > 1 ? fw.attempt : null;
+  sr.att.hidden = !sat; setText(sr.att, sat ? `att. ${sat.n}` : '');
+  sr.att.title = sat ? `Attempt ${sat.n}${sat.mode === 'resume' ? ' (resumed from a checkpoint)' : ''}` : '';
   setText(sr.cur, fw.current ? fw.current.label : fw.status === 'done' ? 'finished' : fw.status === 'failed' ? 'failed' : fw.status);
   sr.cur.title = fw.current ? `Current: ${fw.current.label}` : '';
   const running = fw.status === 'running' && fw.started_at;
@@ -1387,6 +1498,23 @@ document.addEventListener('click', async (ev) => {
     const gid = t.dataset.gid;
     d.openG.has(gid) ? d.openG.delete(gid) : d.openG.add(gid);
     renderMessages(nodeEl._r.panes.messages, d, nodeEl);
+  } else if (act === 'fail-log') {
+    const k = t.dataset.key; const fw = curFw();
+    if (fx.has(k)) { fx.delete(k); render(); return; }
+    const ex = { line: +t.dataset.line, data: null, fresh: true };
+    fx.set(k, ex); render();
+    apiLogAround(fw, t.dataset.log, ex.line).then((d) => { ex.data = d; }).catch((e) => { ex.data = { lines: [], error: String(e.message || e) }; }).finally(() => render());
+  } else if (act === 'att-toggle') {
+    const k = t.dataset.key;
+    fx.has(k) ? fx.delete(k) : fx.set(k, true);
+    render();
+  } else if (act === 'copy') {
+    const txt = t.dataset.copy;
+    try { await navigator.clipboard.writeText(txt); toast('Copied'); } catch {
+      const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Copied'); } catch { toast('Copy failed'); }
+      ta.remove();
+    }
   } else if (act === 'goto') {
     gotoNode(curFw(), t.dataset.node);
   } else if (act === 'rchip' && nodeEl) {

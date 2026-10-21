@@ -2634,7 +2634,7 @@
      "severity": "critical",
      "count": 2,
      "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
-     "score": 8.91,
+     "score": 8.92,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -2643,7 +2643,7 @@
       "rare (2x)"
      ],
      "new": false,
-     "delta": -1,
+     "delta": 2,
      "doc_url": "https://docs.amd.com/search?q=Vivado%2012-4739",
      "nodes": [
       {
@@ -2651,8 +2651,8 @@
        "label": "init_design"
       }
      ],
-     "first_line": 33500,
-     "last_line": 33605,
+     "first_line": 35811,
+     "last_line": 36262,
      "log": "/path/to/impl_1/runme.log"
     },
     {
@@ -2660,7 +2660,7 @@
      "severity": "critical",
      "count": 2,
      "text": "set_input_delay: no valid object found for -clock",
-     "score": 8.8,
+     "score": 8.74,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -2676,16 +2676,16 @@
        "label": "init_design"
       }
      ],
-     "first_line": 33605,
-     "last_line": 34094,
+     "first_line": 36262,
+     "last_line": 36499,
      "log": "/path/to/impl_1/runme.log"
     },
     {
      "id": "Timing 38-316",
      "severity": "warning",
-     "count": 25,
+     "count": 24,
      "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
-     "score": 5.91,
+     "score": 5.9,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -2705,16 +2705,16 @@
        "label": "place_design"
       }
      ],
-     "first_line": 22095,
-     "last_line": 27495,
+     "first_line": 23649,
+     "last_line": 29061,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3917",
      "severity": "warning",
-     "count": 90,
+     "count": 78,
      "text": "design <module> has port reg_N_q driven by constant 0",
-     "score": 5.51,
+     "score": 5.74,
      "priority": null,
      "user_priority": "high",
      "reasons": [
@@ -2730,16 +2730,16 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 11500,
-     "last_line": 17201,
+     "first_line": 11569,
+     "last_line": 17142,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3332",
      "severity": "warning",
-     "count": 62,
+     "count": 90,
      "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
-     "score": 4.42,
+     "score": 4.55,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -2755,8 +2755,8 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 5920,
-     "last_line": 11500,
+     "first_line": 5687,
+     "last_line": 11569,
      "log": "/path/to/synth_1/runme.log"
     }
    ],
@@ -4802,7 +4802,7 @@
      "severity": "critical",
      "count": 2,
      "text": "set_input_delay: no valid object found for -clock",
-     "score": 8.57,
+     "score": 8.74,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -4818,8 +4818,8 @@
        "label": "init_design"
       }
      ],
-     "first_line": 37282,
-     "last_line": 37628,
+     "first_line": 36547,
+     "last_line": 36992,
      "log": "/path/to/impl_1/runme.log"
     },
     {
@@ -4827,7 +4827,7 @@
      "severity": "critical",
      "count": 2,
      "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
-     "score": 8.49,
+     "score": 8.44,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -4844,16 +4844,16 @@
        "label": "init_design"
       }
      ],
-     "first_line": 36645,
-     "last_line": 37282,
+     "first_line": 36345,
+     "last_line": 36547,
      "log": "/path/to/impl_1/runme.log"
     },
     {
      "id": "Timing 38-316",
      "severity": "warning",
-     "count": 82,
+     "count": 28,
      "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
-     "score": 4.53,
+     "score": 4.54,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -4873,14 +4873,14 @@
        "label": "place_design"
       }
      ],
-     "first_line": 25160,
-     "last_line": 31785,
+     "first_line": 25026,
+     "last_line": 31237,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3917",
      "severity": "warning",
-     "count": 49,
+     "count": 36,
      "text": "design <module> has port reg_N_q driven by constant 0",
      "score": 4.49,
      "priority": null,
@@ -4898,16 +4898,16 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 13807,
-     "last_line": 20157,
+     "first_line": 13473,
+     "last_line": 19167,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3332",
      "severity": "warning",
-     "count": 62,
+     "count": 78,
      "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
-     "score": 4.41,
+     "score": 4.31,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -4923,8 +4923,8 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 6190,
-     "last_line": 13807,
+     "first_line": 6500,
+     "last_line": 13473,
      "log": "/path/to/synth_1/runme.log"
     }
    ],
@@ -4952,77 +4952,64 @@
    "name": "adc_capture",
    "kind": "project",
    "path": "/home/user/projects/adc_capture/adc_capture.runs",
-   "status": "failed",
-   "live": false,
-   "pids": [],
-   "launcher": null,
-   "started_at": 1759975340.0,
-   "updated_at": 1759996400.0,
-   "elapsed_s": 3060,
-   "current": null,
-   "health": "error",
-   "progress_estimate": 0.78,
-   "alerts": [
-    {
-     "level": "error",
-     "code": "step_failed",
-     "message": "route_design failed: ERROR [Route 35-368] 143 nets unrouted",
-     "node_id": "impl_1/route_design"
-    },
-    {
-     "level": "error",
-     "code": "timing_fail",
-     "message": "Final timing not met: WNS -1.203 ns after route_design",
-     "node_id": "impl_1/route_design"
-    }
+   "status": "running",
+   "live": true,
+   "pids": [
+    51234
    ],
+   "launcher": {
+    "pid": 51190,
+    "log": "/home/user/projects/adc_capture/adc_capture.runs/impl_1/resume_route.log",
+    "script": "resume_route.tcl"
+   },
+   "started_at": 1759975340.0,
+   "updated_at": 1760000000.0,
+   "elapsed_s": 24660.0,
+   "current": {
+    "node_id": "impl_1/route_design/p3",
+    "label": "route_design / Phase 3 Initial Routing"
+   },
+   "health": "ok",
+   "progress_estimate": 0.8,
+   "alerts": [],
    "counts": {
-    "error": 1,
+    "error": 0,
     "critical": 0,
     "warning": 520,
     "info": 610
    },
    "timing": {
-    "wns": -1.203,
-    "tns": -544.2,
-    "whs": null,
-    "ths": null,
+    "wns": -0.427,
+    "tns": -61.3,
+    "whs": 0.011,
+    "ths": 0.0,
     "tns_fail": null,
     "ths_fail": null,
     "met": false,
-    "source": "report",
-    "label": "timing_summary_routed.rpt",
+    "source": "log",
+    "label": "Intermediate Timing Summary",
     "history": [
      {
-      "t": 1759978120.0,
-      "line": 1000,
+      "t": 1759999280.0,
+      "line": 240,
       "label": "Intermediate Timing Summary",
-      "wns": -2.1,
-      "tns": -980.0,
+      "wns": -0.9,
+      "tns": -180.0,
       "whs": null,
       "ths": null
      },
      {
-      "t": 1759978160.0,
-      "line": 1311,
+      "t": 1759999320.0,
+      "line": 551,
       "label": "Intermediate Timing Summary",
-      "wns": -1.6,
-      "tns": -702.0,
-      "whs": null,
-      "ths": null
-     },
-     {
-      "t": 1759978200.0,
-      "line": 1622,
-      "label": "Intermediate Timing Summary",
-      "wns": -1.203,
-      "tns": -544.2,
+      "wns": -0.427,
+      "tns": -61.3,
       "whs": null,
       "ths": null
      }
     ],
-    "final": true,
-    "stage": "Route \u00b7 final report",
+    "final": false,
+    "stage": "Route - estimate",
     "carried": {}
    },
    "flows": [
@@ -6384,112 +6371,72 @@
        "id": "impl_1/route_design",
        "label": "route_design",
        "kind": "step",
-       "status": "failed",
-       "started_at": 1759978020.0,
-       "ended_at": 1759978660.0,
-       "elapsed_s": 640,
-       "peak_mem_mb": 7100,
+       "status": "running",
+       "started_at": 1759999220.0,
+       "ended_at": null,
+       "elapsed_s": null,
+       "peak_mem_mb": 5300,
        "counts": {
-        "error": 1,
+        "error": 0,
         "critical": 0,
-        "warning": 4,
-        "info": 22
+        "warning": 3,
+        "info": 24
        },
        "timing": {
-        "wns": -1.203,
-        "tns": -544.2,
-        "whs": null,
-        "ths": null,
+        "wns": -0.427,
+        "tns": -61.3,
+        "whs": 0.011,
+        "ths": 0.0,
         "tns_fail": null,
         "ths_fail": null,
         "met": false,
-        "source": "report",
-        "label": "timing_summary_routed.rpt",
+        "source": "log",
+        "label": "Intermediate Timing Summary",
         "history": [
          {
-          "t": 1759978120.0,
-          "line": 1000,
+          "t": 1759999280.0,
+          "line": 240,
           "label": "Intermediate Timing Summary",
-          "wns": -2.1,
-          "tns": -980.0,
+          "wns": -0.9,
+          "tns": -180.0,
           "whs": null,
           "ths": null
          },
          {
-          "t": 1759978160.0,
-          "line": 1311,
+          "t": 1759999320.0,
+          "line": 551,
           "label": "Intermediate Timing Summary",
-          "wns": -1.6,
-          "tns": -702.0,
-          "whs": null,
-          "ths": null
-         },
-         {
-          "t": 1759978200.0,
-          "line": 1622,
-          "label": "Intermediate Timing Summary",
-          "wns": -1.203,
-          "tns": -544.2,
+          "wns": -0.427,
+          "tns": -61.3,
           "whs": null,
           "ths": null
          }
         ],
-        "final": true,
-        "stage": "Route \u00b7 final report",
+        "final": false,
+        "stage": "Route - estimate",
         "carried": {}
        },
        "run": "impl_1",
        "log": null,
        "line_start": null,
        "line_end": null,
-       "progress": null,
+       "progress": {
+        "done": 2,
+        "total": 6
+       },
        "expected": false,
        "optional": false,
        "description": null,
-       "reports": [
-        {
-         "name": "Route status",
-         "kind": "route_status",
-         "path": "impl_1/adc_capture_route_status.rpt",
-         "mtime": 1759996300.0,
-         "stale": false,
-         "summary": {
-          "routable_nets": 98213,
-          "fully_routed": 98070,
-          "unrouted": 143,
-          "with_errors": 143
-         },
-         "alerts": [
-          {
-           "level": "error",
-           "message": "143 unrouted nets"
-          }
-         ],
-         "doc_url": "https://docs.amd.com/r/en-US/ug906-vivado-design-analysis/report_route_status"
-        }
-       ],
-       "alerts": [
-        {
-         "level": "error",
-         "code": "step_failed",
-         "message": "route_design failed: ERROR [Route 35-368] 143 nets unrouted",
-         "node_id": "impl_1/route_design"
-        },
-        {
-         "level": "error",
-         "code": "timing_fail",
-         "message": "Final timing not met: WNS -1.203 ns after route_design",
-         "node_id": "impl_1/route_design"
-        }
-       ],
+       "reports": [],
+       "alerts": [],
        "children": [
         {
          "id": "impl_1/route_design/p1",
          "label": "Phase 1 Build RT Design",
          "kind": "phase",
          "status": "done",
-         "started_at": 1759978020.0,
-         "ended_at": 1759978070.0,
+         "started_at": 1759999220.0,
+         "ended_at": 1759999270.0,
          "elapsed_s": 50,
          "peak_mem_mb": 1220,
          "counts": {
@@ -6519,8 +6466,8 @@
          "label": "Phase 2 Router Initialization",
          "kind": "phase",
          "status": "done",
-         "started_at": 1759978070.0,
-         "ended_at": 1759978130.0,
+         "started_at": 1759999270.0,
+         "ended_at": 1759999330.0,
          "elapsed_s": 60,
          "peak_mem_mb": 1240,
          "counts": {
@@ -6549,16 +6496,16 @@
          "id": "impl_1/route_design/p3",
          "label": "Phase 3 Initial Routing",
          "kind": "phase",
-         "status": "done",
-         "started_at": 1759978130.0,
-         "ended_at": 1759978250.0,
-         "elapsed_s": 120,
-         "peak_mem_mb": 1260,
+         "status": "running",
+         "started_at": 1759999330.0,
+         "ended_at": null,
+         "elapsed_s": null,
+         "peak_mem_mb": 5300,
          "counts": {
           "error": 0,
           "critical": 0,
-          "warning": 0,
-          "info": 0
+          "warning": 2,
+          "info": 9
          },
          "timing": null,
          "run": null,
@@ -6580,16 +6527,16 @@
          "id": "impl_1/route_design/p4",
          "label": "Phase 4 Rip-up And Reroute",
          "kind": "phase",
-         "status": "failed",
-         "started_at": 1759978250.0,
-         "ended_at": 1759978660.0,
-         "elapsed_s": 410,
-         "peak_mem_mb": 7100,
+         "status": "pending",
+         "started_at": null,
+         "ended_at": null,
+         "elapsed_s": null,
+         "peak_mem_mb": null,
          "counts": {
-          "error": 1,
+          "error": 0,
           "critical": 0,
-          "warning": 4,
-          "info": 22
+          "warning": 0,
+          "info": 0
          },
          "timing": null,
          "run": null,
@@ -6597,22 +6544,15 @@
          "line_start": null,
          "line_end": null,
          "progress": null,
-         "expected": false,
+         "expected": true,
          "optional": false,
          "description": null,
          "reports": [],
-         "alerts": [
-          {
-           "level": "error",
-           "code": "unrouted",
-           "message": "143 nets remain unrouted",
-           "node_id": "impl_1/route_design/p4"
-          }
-         ],
+         "alerts": [],
          "children": [],
          "doc_url": null,
          "number": "4",
-         "number_predicted": false
+         "number_predicted": true
         },
         {
          "id": "impl_1/route_design/p5",
@@ -6678,6 +6618,42 @@
         }
        ],
        "doc_url": "https://docs.amd.com/search?q=route_design",
+       "failure": null,
+       "attempts": [
+        {
+         "n": 1,
+         "status": "failed",
+         "started_at": 1759978020.0,
+         "ended_at": 1759978660.0,
+         "log": "/home/user/projects/adc_capture/adc_capture.runs/impl_1/runme.log",
+         "mode": "project",
+         "checkpoint": null,
+         "failure": {
+          "reason": "Segmentation fault (signal 11)",
+          "line": 18240,
+          "log": "/home/user/projects/adc_capture/adc_capture.runs/impl_1/runme.log",
+          "hs_err": "/home/user/projects/adc_capture/adc_capture.runs/impl_1/hs_err_pid48211.log",
+          "details": [
+           "ERROR: [Common 17-1445] Lost license, cannot re-connect to the license server (FlexNet error -96)",
+           "Abnormal program termination (11)",
+           "Please check '/home/user/projects/adc_capture/adc_capture.runs/impl_1/hs_err_pid48211.log' for details",
+           "segfault in 'XTalkAnalyzer::resolve': 10 Resolve XTalk"
+          ]
+         },
+         "summary": "Crashed after 10m 40s in 10 Resolve XTalk (4 warnings, 22 info)"
+        },
+        {
+         "n": 2,
+         "status": "running",
+         "started_at": 1759999220.0,
+         "ended_at": null,
+         "log": "/home/user/projects/adc_capture/adc_capture.runs/impl_1/resume_route.log",
+         "mode": "resume",
+         "checkpoint": "/home/user/projects/adc_capture/adc_capture.runs/impl_1/adc_capture_physopt.dcp",
+         "failure": null,
+         "summary": "route_design from phys_opt checkpoint, in progress"
+        }
+       ],
        "number": null,
        "number_predicted": false
       },
@@ -6685,7 +6661,7 @@
        "id": "impl_1/write_bitstream",
        "label": "write_bitstream",
        "kind": "step",
-       "status": "skipped",
+       "status": "pending",
        "started_at": null,
        "ended_at": null,
        "elapsed_s": null,
@@ -6697,14 +6673,14 @@
         "info": 0
        },
        "timing": null,
-       "run": "impl_1",
+       "run": null,
        "log": null,
        "line_start": null,
        "line_end": null,
        "progress": null,
-       "expected": false,
+       "expected": true,
        "optional": false,
-       "description": null,
+       "description": "Generates the programming bitstream",
        "reports": [],
        "alerts": [],
        "children": [],
@@ -6715,6 +6691,12 @@
      ]
     }
    ],
+   "attempt": {
+    "n": 2,
+    "mode": "resume",
+    "resumed_from": "phys_opt_design",
+    "previous_failure": "Segmentation fault in route_design"
+   },
    "utilization": {
     "step": "impl_1/place_design",
     "label": "placed utilization",
@@ -6767,58 +6749,32 @@
    },
    "events": [
     {
-     "t": 1759996300.0,
+     "t": 1759978700.0,
      "kind": "step_failed",
      "level": "error",
      "code": null,
      "node_id": "impl_1/route_design",
-     "title": "route_design failed",
-     "message": "ERROR [Route 35-368] 143 nets unrouted"
+     "title": "route_design crashed",
+     "message": "Segmentation fault (signal 11) in 10 Resolve XTalk"
     },
     {
-     "t": 1759996310.0,
-     "kind": "run_failed",
-     "level": "error",
+     "t": 1759999220.0,
+     "kind": "step_started",
+     "level": "info",
      "code": null,
-     "node_id": null,
-     "title": "Run failed",
-     "message": "adc_capture: implementation failed in route_design"
+     "node_id": "impl_1/route_design",
+     "title": "route_design resumed",
+     "message": "attempt 2 resumed from the phys_opt checkpoint"
     }
    ],
    "resources": null,
    "top_messages": [
     {
-     "id": "Route 35-368",
-     "severity": "error",
-     "count": 1,
-     "text": "Router was unable to route all nets; 143 nets remain unrouted.",
-     "score": 12.25,
-     "priority": null,
-     "user_priority": null,
-     "reasons": [
-      "rule: router failure",
-      "keyword: unrouted",
-      "rare (1x)"
-     ],
-     "new": true,
-     "delta": null,
-     "doc_url": null,
-     "nodes": [
-      {
-       "node_id": "impl_1/route_design",
-       "label": "route_design"
-      }
-     ],
-     "first_line": 18110,
-     "last_line": 18110,
-     "log": "/path/to/impl_1/runme.log"
-    },
-    {
      "id": "Vivado 12-5201",
      "severity": "critical",
      "count": 2,
      "text": "set_input_delay: no valid object found for -clock",
-     "score": 8.61,
+     "score": 8.77,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -6826,7 +6782,7 @@
       "rare (2x)"
      ],
      "new": false,
-     "delta": 0,
+     "delta": -1,
      "doc_url": "https://docs.amd.com/search?q=Vivado%2012-5201",
      "nodes": [
       {
@@ -6834,8 +6790,8 @@
        "label": "init_design"
       }
      ],
-     "first_line": 33888,
-     "last_line": 34301,
+     "first_line": 32524,
+     "last_line": 32905,
      "log": "/path/to/impl_1/runme.log"
     },
     {
@@ -6843,7 +6799,7 @@
      "severity": "critical",
      "count": 2,
      "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
-     "score": 8.49,
+     "score": 8.61,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -6852,7 +6808,7 @@
       "rare (2x)"
      ],
      "new": false,
-     "delta": 2,
+     "delta": 0,
      "doc_url": "https://docs.amd.com/search?q=Vivado%2012-4739",
      "nodes": [
       {
@@ -6860,16 +6816,16 @@
        "label": "init_design"
       }
      ],
-     "first_line": 33523,
-     "last_line": 33888,
+     "first_line": 32181,
+     "last_line": 32524,
      "log": "/path/to/impl_1/runme.log"
     },
     {
      "id": "Timing 38-316",
      "severity": "warning",
-     "count": 43,
+     "count": 74,
      "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
-     "score": 5.98,
+     "score": 5.66,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -6889,16 +6845,16 @@
        "label": "place_design"
       }
      ],
-     "first_line": 22577,
-     "last_line": 28187,
+     "first_line": 21636,
+     "last_line": 26573,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3917",
      "severity": "warning",
-     "count": 36,
+     "count": 55,
      "text": "design <module> has port reg_N_q driven by constant 0",
-     "score": 5.81,
+     "score": 5.64,
      "priority": null,
      "user_priority": "high",
      "reasons": [
@@ -6914,8 +6870,33 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 10106,
-     "last_line": 17234,
+     "first_line": 9689,
+     "last_line": 16703,
+     "log": "/path/to/synth_1/runme.log"
+    },
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "count": 19,
+     "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
+     "score": 4.09,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: unused register removed",
+      "keyword: removed"
+     ],
+     "new": false,
+     "delta": 12,
+     "doc_url": "https://docs.amd.com/search?q=Synth%208-3332",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      }
+     ],
+     "first_line": 6234,
+     "last_line": 9689,
      "log": "/path/to/synth_1/runme.log"
     }
    ],
@@ -8366,7 +8347,7 @@
      "severity": "critical",
      "count": 2,
      "text": "set_input_delay: no valid object found for -clock",
-     "score": 8.57,
+     "score": 8.74,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -8382,8 +8363,8 @@
        "label": "init_design"
       }
      ],
-     "first_line": 37282,
-     "last_line": 37628,
+     "first_line": 36547,
+     "last_line": 36992,
      "log": "/path/to/impl_1/runme.log"
     },
     {
@@ -8391,7 +8372,7 @@
      "severity": "critical",
      "count": 2,
      "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
-     "score": 8.49,
+     "score": 8.44,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -8408,16 +8389,16 @@
        "label": "init_design"
       }
      ],
-     "first_line": 36645,
-     "last_line": 37282,
+     "first_line": 36345,
+     "last_line": 36547,
      "log": "/path/to/impl_1/runme.log"
     },
     {
      "id": "Timing 38-316",
      "severity": "warning",
-     "count": 82,
+     "count": 28,
      "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
-     "score": 4.53,
+     "score": 4.54,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -8437,14 +8418,14 @@
        "label": "place_design"
       }
      ],
-     "first_line": 25160,
-     "last_line": 31785,
+     "first_line": 25026,
+     "last_line": 31237,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3917",
      "severity": "warning",
-     "count": 49,
+     "count": 36,
      "text": "design <module> has port reg_N_q driven by constant 0",
      "score": 4.49,
      "priority": null,
@@ -8462,16 +8443,16 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 13807,
-     "last_line": 20157,
+     "first_line": 13473,
+     "last_line": 19167,
      "log": "/path/to/synth_1/runme.log"
     },
     {
      "id": "Synth 8-3332",
      "severity": "warning",
-     "count": 62,
+     "count": 78,
      "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
-     "score": 4.41,
+     "score": 4.31,
      "priority": null,
      "user_priority": null,
      "reasons": [
@@ -8487,8 +8468,8 @@
        "label": "Synthesis"
       }
      ],
-     "first_line": 6190,
-     "last_line": 13807,
+     "first_line": 6500,
+     "last_line": 13473,
      "log": "/path/to/synth_1/runme.log"
     }
    ],
@@ -8506,6 +8487,2033 @@
     },
     "jobs": 8,
     "project": "/home/user/projects/pcie_dma/pcie_dma.xpr"
+   }
+  },
+  {
+   "id": "df05",
+   "name": "dsp_filter",
+   "kind": "project",
+   "path": "/home/user/projects/dsp_filter/dsp_filter.runs",
+   "status": "failed",
+   "live": false,
+   "pids": [],
+   "launcher": null,
+   "started_at": 1759975340.0,
+   "updated_at": 1759994600.0,
+   "elapsed_s": 3060,
+   "current": null,
+   "health": "error",
+   "progress_estimate": 0.78,
+   "alerts": [
+    {
+     "level": "error",
+     "code": "step_failed",
+     "message": "route_design crashed: Out of memory in 4.2 Global Iteration 1",
+     "node_id": "impl_1/route_design"
+    }
+   ],
+   "counts": {
+    "error": 1,
+    "critical": 0,
+    "warning": 520,
+    "info": 610
+   },
+   "timing": {
+    "wns": -0.38,
+    "tns": -122.0,
+    "whs": null,
+    "ths": null,
+    "tns_fail": null,
+    "ths_fail": null,
+    "met": false,
+    "source": "log",
+    "label": "Intermediate Timing Summary",
+    "history": [
+     {
+      "t": 1759978120.0,
+      "line": 17000,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.9,
+      "tns": -300.0,
+      "whs": null,
+      "ths": null
+     },
+     {
+      "t": 1759978160.0,
+      "line": 17311,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.38,
+      "tns": -122.0,
+      "whs": null,
+      "ths": null
+     }
+    ],
+    "final": false,
+    "stage": "Route - estimate",
+    "carried": {}
+   },
+   "flows": [
+    {
+     "id": "impl_1",
+     "label": "impl_1",
+     "stages": [
+      {
+       "id": "synth",
+       "label": "Synthesis",
+       "kind": "group",
+       "status": "done",
+       "started_at": 1759975340.0,
+       "ended_at": 1759976780.0,
+       "elapsed_s": 1440,
+       "peak_mem_mb": 9800,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 592,
+        "info": 390
+       },
+       "timing": null,
+       "run": null,
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": {
+        "done": 13,
+        "total": 13
+       },
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [
+        {
+         "id": "synth/ooc",
+         "label": "IP out-of-context (12)",
+         "kind": "group",
+         "status": "done",
+         "started_at": 1759975340.0,
+         "ended_at": 1759975760.0,
+         "elapsed_s": 420,
+         "peak_mem_mb": 2650,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 190,
+          "info": 160
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": {
+          "done": 12,
+          "total": 12
+         },
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "synth/ooc/axis_clk_gen_synth_1",
+           "label": "axis_clk_gen_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975340.0,
+           "ended_at": 1759975470.0,
+           "elapsed_s": 130,
+           "peak_mem_mb": 1400,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 7,
+            "info": 12
+           },
+           "timing": null,
+           "run": "axis_clk_gen_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=axis_clk_gen_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/ddr4_mig_synth_1",
+           "label": "ddr4_mig_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975360.0,
+           "ended_at": 1759975499.0,
+           "elapsed_s": 139,
+           "peak_mem_mb": 1455,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 11,
+            "info": 4
+           },
+           "timing": null,
+           "run": "ddr4_mig_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=ddr4_mig_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/axi_dma_0_synth_1",
+           "label": "axi_dma_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975380.0,
+           "ended_at": 1759975528.0,
+           "elapsed_s": 148,
+           "peak_mem_mb": 1510,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 6,
+            "info": 17
+           },
+           "timing": null,
+           "run": "axi_dma_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=axi_dma_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/dds_compiler_0_synth_1",
+           "label": "dds_compiler_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975400.0,
+           "ended_at": 1759975557.0,
+           "elapsed_s": 157,
+           "peak_mem_mb": 1565,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 19,
+            "info": 15
+           },
+           "timing": null,
+           "run": "dds_compiler_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=dds_compiler_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/fifo_gen_adc_synth_1",
+           "label": "fifo_gen_adc_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975420.0,
+           "ended_at": 1759975586.0,
+           "elapsed_s": 166,
+           "peak_mem_mb": 1620,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 21,
+            "info": 14
+           },
+           "timing": null,
+           "run": "fifo_gen_adc_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=fifo_gen_adc_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/fifo_gen_dac_synth_1",
+           "label": "fifo_gen_dac_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975440.0,
+           "ended_at": 1759975615.0,
+           "elapsed_s": 175,
+           "peak_mem_mb": 1675,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 6,
+            "info": 20
+           },
+           "timing": null,
+           "run": "fifo_gen_dac_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=fifo_gen_dac_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/ila_dbg_synth_1",
+           "label": "ila_dbg_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975460.0,
+           "ended_at": 1759975644.0,
+           "elapsed_s": 184,
+           "peak_mem_mb": 1730,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 21,
+            "info": 5
+           },
+           "timing": null,
+           "run": "ila_dbg_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=ila_dbg_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/vio_ctrl_synth_1",
+           "label": "vio_ctrl_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975480.0,
+           "ended_at": 1759975673.0,
+           "elapsed_s": 193,
+           "peak_mem_mb": 1785,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 16,
+            "info": 16
+           },
+           "timing": null,
+           "run": "vio_ctrl_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=vio_ctrl_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/clk_wiz_0_synth_1",
+           "label": "clk_wiz_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975500.0,
+           "ended_at": 1759975702.0,
+           "elapsed_s": 202,
+           "peak_mem_mb": 1840,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 14,
+            "info": 16
+           },
+           "timing": null,
+           "run": "clk_wiz_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=clk_wiz_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/axis_dwidth_0_synth_1",
+           "label": "axis_dwidth_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975520.0,
+           "ended_at": 1759975731.0,
+           "elapsed_s": 211,
+           "peak_mem_mb": 1895,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 14,
+            "info": 7
+           },
+           "timing": null,
+           "run": "axis_dwidth_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=axis_dwidth_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/xlnx_tproc_synth_1",
+           "label": "xlnx_tproc_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975540.0,
+           "ended_at": 1759975760.0,
+           "elapsed_s": 220,
+           "peak_mem_mb": 1950,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 17,
+            "info": 16
+           },
+           "timing": null,
+           "run": "xlnx_tproc_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=xlnx_tproc_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/rfdc_ip_synth_1",
+           "label": "rfdc_ip_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759975560.0,
+           "ended_at": 1759975789.0,
+           "elapsed_s": 229,
+           "peak_mem_mb": 2005,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 3,
+            "info": 10
+           },
+           "timing": null,
+           "run": "rfdc_ip_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=rfdc_ip_synth_1",
+           "number": null,
+           "number_predicted": false
+          }
+         ],
+         "doc_url": "https://docs.amd.com/search?q=IP",
+         "number": null,
+         "number_predicted": false
+        },
+        {
+         "id": "synth/synth_1",
+         "label": "synth_1",
+         "kind": "run",
+         "status": "done",
+         "started_at": 1759975770.0,
+         "ended_at": 1759976780.0,
+         "elapsed_s": 1010,
+         "peak_mem_mb": 9800,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 402,
+          "info": 230
+         },
+         "timing": null,
+         "run": "synth_1",
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "synth/synth_1/t0",
+           "label": "Loading Part and Timing Information",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975770.0,
+           "ended_at": 1759975790.0,
+           "elapsed_s": 20,
+           "peak_mem_mb": 800,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 1,
+            "info": 1
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t1",
+           "label": "Start Handling Custom Attributes",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975800.0,
+           "ended_at": 1759975827.0,
+           "elapsed_s": 27,
+           "peak_mem_mb": 840,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 7,
+            "info": 1
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t2",
+           "label": "Start RTL Component Statistics",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975830.0,
+           "ended_at": 1759975864.0,
+           "elapsed_s": 34,
+           "peak_mem_mb": 880,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 1,
+            "info": 2
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t3",
+           "label": "Start Part Resource Summary",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975860.0,
+           "ended_at": 1759975901.0,
+           "elapsed_s": 41,
+           "peak_mem_mb": 920,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 9,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t4",
+           "label": "Start Cross Boundary and Area Optimization",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975890.0,
+           "ended_at": 1759975938.0,
+           "elapsed_s": 48,
+           "peak_mem_mb": 960,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 1,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t5",
+           "label": "Start Timing Optimization",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975920.0,
+           "ended_at": 1759975975.0,
+           "elapsed_s": 55,
+           "peak_mem_mb": 1000,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 9,
+            "info": 1
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t6",
+           "label": "Start Technology Mapping",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975950.0,
+           "ended_at": 1759976012.0,
+           "elapsed_s": 62,
+           "peak_mem_mb": 1040,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 8,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t7",
+           "label": "Start IO Insertion",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759975980.0,
+           "ended_at": 1759976049.0,
+           "elapsed_s": 69,
+           "peak_mem_mb": 1080,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 5,
+            "info": 4
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t8",
+           "label": "Start Renaming Generated Instances",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759976010.0,
+           "ended_at": 1759976086.0,
+           "elapsed_s": 76,
+           "peak_mem_mb": 1120,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t9",
+           "label": "Start Writing Synthesis Report",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759976040.0,
+           "ended_at": 1759976123.0,
+           "elapsed_s": 83,
+           "peak_mem_mb": 1160,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 13,
+            "info": 1
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          }
+         ],
+         "doc_url": "https://docs.amd.com/search?q=synth_1",
+         "number": null,
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=Synthesis",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/init_design",
+       "label": "init_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759976800.0,
+       "ended_at": 1759976892.0,
+       "elapsed_s": 92,
+       "peak_mem_mb": 3300,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 88,
+        "info": 120
+       },
+       "timing": null,
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [],
+       "doc_url": "https://docs.amd.com/search?q=init_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/opt_design",
+       "label": "opt_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759976895.0,
+       "ended_at": 1759977105.0,
+       "elapsed_s": 210,
+       "peak_mem_mb": 4200,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 102,
+        "info": 140
+       },
+       "timing": null,
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [
+        {
+         "id": "impl_1/opt_design/p1",
+         "label": "Phase 1 Initialization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976895.0,
+         "ended_at": 1759976915.0,
+         "elapsed_s": 20,
+         "peak_mem_mb": 1220,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "impl_1/opt_design/p1/p1.1",
+           "label": "Phase 1.1 Core Generation And Design Setup",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759976895.0,
+           "ended_at": 1759976898.3333333,
+           "elapsed_s": 3.3333333333333335,
+           "peak_mem_mb": 900,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/opt_design/p1/p1.2",
+           "label": "Phase 1.2 Setup Constraints And Sort Netlist",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759976896.0,
+           "ended_at": 1759976899.3333333,
+           "elapsed_s": 3.3333333333333335,
+           "peak_mem_mb": 901,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.2",
+           "number_predicted": false
+          }
+         ],
+         "doc_url": null,
+         "number": "1",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/opt_design/p2",
+         "label": "Phase 2 Retarget",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976915.0,
+         "ended_at": 1759976955.0,
+         "elapsed_s": 40,
+         "peak_mem_mb": 1240,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "2",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/opt_design/p3",
+         "label": "Phase 3 Sweep",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976955.0,
+         "ended_at": 1759977025.0,
+         "elapsed_s": 70,
+         "peak_mem_mb": 1260,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "3",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/opt_design/p4",
+         "label": "Phase 4 Finalization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977025.0,
+         "ended_at": 1759977065.0,
+         "elapsed_s": 40,
+         "peak_mem_mb": 1280,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "4",
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=opt_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/place_design",
+       "label": "place_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759977110.0,
+       "ended_at": 1759977750.0,
+       "elapsed_s": 640,
+       "peak_mem_mb": 6900,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 77,
+        "info": 120
+       },
+       "timing": {
+        "wns": -0.118,
+        "tns": -9.4,
+        "whs": 0.011,
+        "ths": 0.0,
+        "tns_fail": null,
+        "ths_fail": null,
+        "met": false,
+        "source": "log",
+        "label": "Post Placement Timing Summary",
+        "history": [
+         {
+          "t": 1759977410.0,
+          "line": 7200,
+          "label": "Post Placement Timing Summary",
+          "wns": -0.251,
+          "tns": -41.0,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759977450.0,
+          "line": 7511,
+          "label": "Post Placement Timing Summary",
+          "wns": -0.118,
+          "tns": -9.4,
+          "whs": null,
+          "ths": null
+         }
+        ],
+        "final": false,
+        "stage": "Place \u00b7 estimate",
+        "carried": {}
+       },
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [
+        {
+         "id": "impl_1/place_design/p1",
+         "label": "Phase 1 Placer Initialization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977110.0,
+         "ended_at": 1759977170.0,
+         "elapsed_s": 60,
+         "peak_mem_mb": 1220,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "impl_1/place_design/p1/p1.1",
+           "label": "Phase 1.1 Placer Initialization Netlist Sorting",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759977110.0,
+           "ended_at": 1759977120.0,
+           "elapsed_s": 10.0,
+           "peak_mem_mb": 900,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/place_design/p1/p1.2",
+           "label": "Phase 1.2 Build Placer Device",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759977111.0,
+           "ended_at": 1759977121.0,
+           "elapsed_s": 10.0,
+           "peak_mem_mb": 901,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.2",
+           "number_predicted": false
+          }
+         ],
+         "doc_url": null,
+         "number": "1",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/place_design/p2",
+         "label": "Phase 2 Global Placement",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977170.0,
+         "ended_at": 1759977470.0,
+         "elapsed_s": 300,
+         "peak_mem_mb": 1240,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "2",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/place_design/p3",
+         "label": "Phase 3 Detail Placement",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977470.0,
+         "ended_at": 1759977690.0,
+         "elapsed_s": 220,
+         "peak_mem_mb": 1260,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "3",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/place_design/p4",
+         "label": "Phase 4 Post Placement Optimization and Clean-Up",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977690.0,
+         "ended_at": 1759977750.0,
+         "elapsed_s": 60,
+         "peak_mem_mb": 1280,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "4",
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=place_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/phys_opt_design",
+       "label": "phys_opt_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759977755.0,
+       "ended_at": 1759978015.0,
+       "elapsed_s": 260,
+       "peak_mem_mb": 5200,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 2,
+        "info": 30
+       },
+       "timing": {
+        "wns": -0.062,
+        "tns": -2.1,
+        "whs": null,
+        "ths": null,
+        "tns_fail": null,
+        "ths_fail": null,
+        "met": false,
+        "source": "log",
+        "label": "Post Physical Optimization Timing Summary",
+        "history": [
+         {
+          "t": 1759977855.0,
+          "line": 9000,
+          "label": "Post Physical Optimization Timing Summary",
+          "wns": -0.118,
+          "tns": -9.4,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759977895.0,
+          "line": 9311,
+          "label": "Post Physical Optimization Timing Summary",
+          "wns": -0.062,
+          "tns": -2.1,
+          "whs": null,
+          "ths": null
+         }
+        ],
+        "final": false,
+        "stage": "Phys_opt \u00b7 estimate",
+        "carried": {}
+       },
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [],
+       "doc_url": "https://docs.amd.com/search?q=phys_opt_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/route_design",
+       "label": "route_design",
+       "kind": "step",
+       "status": "failed",
+       "started_at": 1759978020.0,
+       "ended_at": 1759978660.0,
+       "elapsed_s": 640,
+       "peak_mem_mb": 7100,
+       "counts": {
+        "error": 1,
+        "critical": 0,
+        "warning": 4,
+        "info": 22
+       },
+       "timing": {
+        "wns": -0.38,
+        "tns": -122.0,
+        "whs": null,
+        "ths": null,
+        "tns_fail": null,
+        "ths_fail": null,
+        "met": false,
+        "source": "log",
+        "label": "Intermediate Timing Summary",
+        "history": [
+         {
+          "t": 1759978120.0,
+          "line": 17000,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.9,
+          "tns": -300.0,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759978160.0,
+          "line": 17311,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.38,
+          "tns": -122.0,
+          "whs": null,
+          "ths": null
+         }
+        ],
+        "final": false,
+        "stage": "Route - estimate",
+        "carried": {}
+       },
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [
+        {
+         "name": "Route status",
+         "kind": "route_status",
+         "path": "impl_1/adc_capture_route_status.rpt",
+         "mtime": 1759996300.0,
+         "stale": false,
+         "summary": {
+          "routable_nets": 98213,
+          "fully_routed": 98070,
+          "unrouted": 143,
+          "with_errors": 143
+         },
+         "alerts": [
+          {
+           "level": "error",
+           "message": "143 unrouted nets"
+          }
+         ],
+         "doc_url": "https://docs.amd.com/r/en-US/ug906-vivado-design-analysis/report_route_status"
+        }
+       ],
+       "alerts": [
+        {
+         "level": "error",
+         "code": "step_failed",
+         "message": "route_design crashed: Out of memory in 4.2 Global Iteration 1",
+         "node_id": "impl_1/route_design"
+        }
+       ],
+       "children": [
+        {
+         "id": "impl_1/route_design/p1",
+         "label": "Phase 1 Build RT Design",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759978020.0,
+         "ended_at": 1759978070.0,
+         "elapsed_s": 50,
+         "peak_mem_mb": 1220,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "1",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p2",
+         "label": "Phase 2 Router Initialization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759978070.0,
+         "ended_at": 1759978130.0,
+         "elapsed_s": 60,
+         "peak_mem_mb": 1240,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "2",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p3",
+         "label": "Phase 3 Initial Routing",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759978130.0,
+         "ended_at": 1759978250.0,
+         "elapsed_s": 120,
+         "peak_mem_mb": 1260,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "3",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p4",
+         "label": "Phase 4 Rip-up And Reroute",
+         "kind": "phase",
+         "status": "failed",
+         "started_at": 1759978250.0,
+         "ended_at": 1759978660.0,
+         "elapsed_s": 410,
+         "peak_mem_mb": 7100,
+         "counts": {
+          "error": 1,
+          "critical": 0,
+          "warning": 4,
+          "info": 22
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "impl_1/route_design/p4/p4.1",
+           "label": "Phase 4.1 Global Iteration 0",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759978250.0,
+           "ended_at": 1759978430.0,
+           "elapsed_s": 180,
+           "peak_mem_mb": 6800,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.2",
+           "label": "Phase 4.2 Global Iteration 1",
+           "kind": "phase",
+           "status": "failed",
+           "started_at": 1759978430.0,
+           "ended_at": 1759978660.0,
+           "elapsed_s": 230,
+           "peak_mem_mb": 7100,
+           "counts": {
+            "error": 1,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.2",
+           "number_predicted": false
+          }
+         ],
+         "doc_url": null,
+         "number": "4",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p5",
+         "label": "Phase 5 Delay CleanUp",
+         "kind": "phase",
+         "status": "pending",
+         "started_at": null,
+         "ended_at": null,
+         "elapsed_s": null,
+         "peak_mem_mb": null,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": true,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "5",
+         "number_predicted": true
+        },
+        {
+         "id": "impl_1/route_design/p6",
+         "label": "Phase 6 Post Hold Fix",
+         "kind": "phase",
+         "status": "pending",
+         "started_at": null,
+         "ended_at": null,
+         "elapsed_s": null,
+         "peak_mem_mb": null,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": true,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "6",
+         "number_predicted": true
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=route_design",
+       "failure": {
+        "reason": "Out of memory",
+        "line": 18102,
+        "log": "/home/user/projects/dsp_filter/dsp_filter.runs/impl_1/runme.log",
+        "hs_err": null,
+        "details": [
+         "ERROR: [Common 17-1651] Failed to allocate 2147483648 bytes of memory",
+         "Abnormal program termination (6)",
+         "Vivado exited with code 6; no hs_err file was written"
+        ]
+       },
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/write_bitstream",
+       "label": "write_bitstream",
+       "kind": "step",
+       "status": "skipped",
+       "started_at": null,
+       "ended_at": null,
+       "elapsed_s": null,
+       "peak_mem_mb": null,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 0,
+        "info": 0
+       },
+       "timing": null,
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [],
+       "doc_url": "https://docs.amd.com/search?q=write_bitstream",
+       "number": null,
+       "number_predicted": false
+      }
+     ]
+    }
+   ],
+   "utilization": {
+    "step": "impl_1/place_design",
+    "label": "placed utilization",
+    "report": "Utilization",
+    "path": "impl_1/adc_capture_utilization_placed.rpt",
+    "rows": [
+     {
+      "name": "LUT",
+      "used": 78336,
+      "available": 230400,
+      "pct": 34.0
+     },
+     {
+      "name": "FF",
+      "used": 96768,
+      "available": 460800,
+      "pct": 21.0
+     },
+     {
+      "name": "BRAM",
+      "used": 891,
+      "available": 1080,
+      "pct": 82.5
+     },
+     {
+      "name": "URAM",
+      "used": 0,
+      "available": 80,
+      "pct": 0.0
+     },
+     {
+      "name": "DSP",
+      "used": 1751,
+      "available": 4272,
+      "pct": 41.0
+     },
+     {
+      "name": "IO",
+      "used": 190,
+      "available": 347,
+      "pct": 55.0
+     },
+     {
+      "name": "BUFG",
+      "used": 17,
+      "available": 96,
+      "pct": 18.0
+     }
+    ]
+   },
+   "events": [
+    {
+     "t": 1759994500.0,
+     "kind": "step_failed",
+     "level": "error",
+     "code": null,
+     "node_id": "impl_1/route_design",
+     "title": "route_design crashed",
+     "message": "Out of memory in 4.2 Global Iteration 1"
+    },
+    {
+     "t": 1759994510.0,
+     "kind": "run_failed",
+     "level": "error",
+     "code": null,
+     "node_id": null,
+     "title": "Run failed",
+     "message": "dsp_filter: implementation failed in route_design"
+    }
+   ],
+   "resources": null,
+   "top_messages": [
+    {
+     "id": "Vivado 12-5201",
+     "severity": "critical",
+     "count": 2,
+     "text": "set_input_delay: no valid object found for -clock",
+     "score": 8.74,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: constraint not applied",
+      "rare (2x)"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Vivado%2012-5201",
+     "nodes": [
+      {
+       "node_id": "impl_1/init_design",
+       "label": "init_design"
+      }
+     ],
+     "first_line": 36547,
+     "last_line": 36992,
+     "log": "/path/to/impl_1/runme.log"
+    },
+    {
+     "id": "Vivado 12-4739",
+     "severity": "critical",
+     "count": 2,
+     "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
+     "score": 8.44,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: constraint not applied",
+      "affects timing",
+      "rare (2x)"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Vivado%2012-4739",
+     "nodes": [
+      {
+       "node_id": "impl_1/init_design",
+       "label": "init_design"
+      }
+     ],
+     "first_line": 36345,
+     "last_line": 36547,
+     "log": "/path/to/impl_1/runme.log"
+    },
+    {
+     "id": "Timing 38-316",
+     "severity": "warning",
+     "count": 28,
+     "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
+     "score": 4.54,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: clock mismatch",
+      "new since last build"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Timing%2038-316",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      },
+      {
+       "node_id": "impl_1/place_design",
+       "label": "place_design"
+      }
+     ],
+     "first_line": 25026,
+     "last_line": 31237,
+     "log": "/path/to/synth_1/runme.log"
+    },
+    {
+     "id": "Synth 8-3917",
+     "severity": "warning",
+     "count": 36,
+     "text": "design <module> has port reg_N_q driven by constant 0",
+     "score": 4.49,
+     "priority": null,
+     "user_priority": "high",
+     "reasons": [
+      "keyword: constant driver",
+      "rare (1x)"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Synth%208-3917",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      }
+     ],
+     "first_line": 13473,
+     "last_line": 19167,
+     "log": "/path/to/synth_1/runme.log"
+    },
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "count": 78,
+     "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
+     "score": 4.31,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: unused register removed",
+      "keyword: removed"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Synth%208-3332",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      }
+     ],
+     "first_line": 6500,
+     "last_line": 13473,
+     "log": "/path/to/synth_1/runme.log"
+    }
+   ],
+   "eta": null,
+   "info": {
+    "part": "xczu48dr-ffvg1517-2-e",
+    "board": "xilinx.com:zcu111:part0:1.4",
+    "top": "dsp_filter",
+    "vivado_version": "2022.2",
+    "host": "rfsoc-build01",
+    "strategy_synth": "Vivado Synthesis Defaults",
+    "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+    "directives": {
+     "opt_design": "Explore",
+     "place_design": "ExtraTimingOpt",
+     "phys_opt_design": "AggressiveExplore",
+     "route_design": "Explore"
+    },
+    "jobs": 8,
+    "project": "/home/user/projects/dsp_filter/dsp_filter.xpr"
    }
   }
  ]

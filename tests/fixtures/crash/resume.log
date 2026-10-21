@@ -1,0 +1,68 @@
+#-----------------------------------------------------------
+# Vivado v2023.2 (64-bit)
+# SW Build 4029153 on Fri Oct 13 20:13:54 MDT 2023
+# Start of session at: Tue Oct 20 19:30:48 2026
+# Process ID: 4242
+# Current directory: /home/user/lockin/lockin.runs/impl_1
+# Command line: vivado -mode batch -source /home/user/scratch/resume_route.tcl -log /home/user/scratch/resume.log
+# Log file: /home/user/scratch/resume.log
+# Running On: host.example, OS: Linux, CPU Frequency: 3536.864 MHz, CPU Physical cores: 4, Host memory: 16492 MB
+#-----------------------------------------------------------
+source /home/user/scratch/resume_route.tcl
+# set_param general.maxThreads 2
+# cd /home/user/lockin/lockin.runs/impl_1
+# open_checkpoint main_wrapper_physopt.dcp
+Command: open_checkpoint main_wrapper_physopt.dcp
+
+Starting open_checkpoint Task
+
+Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.02 . Memory (MB): peak = 1259.867 ; gain = 0.000 ; free physical = 5242 ; free virtual = 49910
+INFO: [Device 21-403] Loading part xczu48dr-ffvg1517-2-e
+INFO: [Project 1-479] Netlist was created with Vivado 2023.2
+INFO: [Timing 38-478] Restoring timing data from binary archive.
+# route_design
+Command: route_design
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors, 797 Warnings
+
+
+Starting Routing Task
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 2 CPUs
+
+Phase 1 Build RT Design
+Phase 1 Build RT Design | Checksum: 21a9a6fe3
+
+Time (s): cpu = 00:21:16 ; elapsed = 00:09:40 . Memory (MB): peak = 28288.281 ; gain = 0.000 ; free physical = 484 ; free virtual = 219
+
+Phase 2 Router Initialization
+Phase 2 Router Initialization | Checksum: 19405c866
+
+Time (s): cpu = 00:23:14 ; elapsed = 00:10:55 . Memory (MB): peak = 28288.281 ; gain = 0.000 ; free physical = 306 ; free virtual = 216
+
+Phase 3 Initial Routing
+Phase 3 Initial Routing | Checksum: 101307fba
+
+Time (s): cpu = 00:40:14 ; elapsed = 00:20:55 . Memory (MB): peak = 28288.281 ; gain = 0.000 ; free physical = 306 ; free virtual = 216
+
+Phase 10 Resolve XTalk
+Phase 10 Resolve XTalk | Checksum: 101307fba
+
+Time (s): cpu = 05:44:27 ; elapsed = 02:08:45 . Memory (MB): peak = 28288.281 ; gain = 0.000 ; free physical = 244 ; free virtual = 22803
+Ending Routing Task
+
+Time (s): cpu = 05:44:30 ; elapsed = 02:08:50 . Memory (MB): peak = 28288.281 ; gain = 0.000 ; free physical = 244 ; free virtual = 22803
+INFO: [Route 35-16] Router Completed Successfully
+route_design completed successfully
+route_design: Time (s): cpu = 05:44:50 ; elapsed = 02:09:00 . Memory (MB): peak = 28288.281 ; gain = 0.000 ; free physical = 244 ; free virtual = 22803
+# report_route_status -file main_wrapper_route_status.rpt
+Command: report_route_status -file main_wrapper_route_status.rpt
+INFO: [Vivado_Tcl 4-198] Route status written
+# write_checkpoint -force main_wrapper_routed.dcp
+Command: write_checkpoint -force main_wrapper_routed.dcp
+# write_bitstream -force main_wrapper.bit
+Command: write_bitstream -force main_wrapper.bit
+Writing bitstream ./main_wrapper.bit...
+write_bitstream completed successfully
+write_bitstream: Time (s): cpu = 00:01:10 ; elapsed = 00:00:50 . Memory (MB): peak = 3000.000 ; gain = 0.000 ; free physical = 244 ; free virtual = 22803
+# puts "RESUME DONE"
+RESUME DONE

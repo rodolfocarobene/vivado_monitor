@@ -67,6 +67,8 @@ class Node:
     doc_url: str | None = None
     number: str | None = None
     number_predicted: bool = False
+    failure: dict | None = None
+    attempts: list = field(default_factory=list)
 
     def to_dict(self):
         return {
@@ -79,6 +81,7 @@ class Node:
             "expected": self.expected, "optional": self.optional, "description": self.description,
             "estimate": self.estimate, "reports": self.reports, "alerts": self.alerts,
             "doc_url": self.doc_url, "number": self.number, "number_predicted": self.number_predicted,
+            "failure": self.failure, "attempts": self.attempts,
             "children": [c.to_dict() for c in self.children],
         }
 
@@ -120,6 +123,7 @@ class Firmware:
     events: list = field(default_factory=list)
     eta: dict | None = None
     info: dict | None = None
+    attempt: dict | None = None
 
     def to_dict(self):
         return {
@@ -132,5 +136,6 @@ class Firmware:
             "vivado_version": self.vivado_version, "resources": self.resources,
             "utilization": self.utilization, "top_messages": self.top_messages,
             "events": self.events, "eta": self.eta, "info": self.info,
+            "attempt": self.attempt,
             "flows": [f.to_dict() for f in self.flows],
         }

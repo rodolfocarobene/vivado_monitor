@@ -315,3 +315,61 @@ GET /api/browse?path=<dir>   (default: $HOME)  -> {"path": abs, "parent": abs|nu
   "skipped" and stay unnumbered); real numbers come from the log (`number_predicted=false`).
 - /api/browse: `live` also marks a live firmware's project dir, run dirs and `.xpr`; kind detection peeks one level
   (max 300 dirs x 200 entries per request); 404 if not a directory; `recent` = currently watched paths.
+
+## v5 additions — failures, crashes, restarts and resumes
+Real case: impl_1 route_design crashed (runme.log tail: "Lost license, cannot re-connect", "Abnormal program
+termination (11)", "Please check '.../hs_err_pid<PID>.log'", "segfault in ..."; marker `.vivado.error.rst`; begin
+marker of route_design without end). The user then resumed in NON-PROJECT batch mode: a new vivado process whose
+`-source` script does `cd <run dir>`, `open_checkpoint <top>_physopt.dcp`, `route_design`, report_*,
+`write_checkpoint`, `write_bitstream`, logging to its own `-log` file (not the run's .vdi). Also possible: project-mode
+relaunch (`reset_run` + `launch_runs`) which rewrites markers and truncates/replaces the .vdi.
+```
+Crash/failure detection (patterns in flows.toml [failure]): "Abnormal program termination \((\d+)\)", "segfault in",
+  "Lost license", "FlexNet Licensing error", "ERROR: \[Common 17-\d+\] .*(out of memory|Failed to allocate)",
+  "Killed", "\*\*\* Halting run", hs_err_pid*.log files in the run dir (newest; read only its first ~40 lines for a summary).
+  Node.failure = {"reason": str ("Segmentation fault (signal 11)", "License lost", "Out of memory", "Error", ...),
+                  "details": [str] (key lines), "line": int|null, "log": str, "hs_err": str|null (path)} | null
+  The step that had begin without end when the run errored → status "failed" (not "running"), and its deepest open
+  phase → "failed" too; no "stalled" alert for dead runs.
+Attempts: Node.attempts = [{"n": int, "status": str, "started_at", "ended_at", "log": str, "mode": "project"|"resume",
+  "checkpoint": str|null, "failure": Failure|null, "summary": str}]  (oldest first; empty/omitted when only one)
+  The step's displayed children/counts/timing come from the LATEST attempt; older attempts are kept as a summary.
+  - Project relaunch: when a run's begin marker becomes newer than the previously seen end/error, or the main log
+    is truncated/replaced → archive the previous attempt (per step: status, failure, counts, timing) in memory
+    (and persist a small summary in ~/.cache/vmon/attempts/<fw_id>.json so it survives restarts).
+  - Resume (non-project): a vivado process for the firmware (cwd inside the run dir OR its log contains
+    `open_checkpoint <path inside the run dir>`) whose log is not the run's main log → parse that log with the same
+    engine; map its Command sections to steps by the command map; the checkpoint name (`_opt`, `_placed`, `_physopt`,
+    `_routed`, `_postroute_physopt`) tells which step it resumes after (steps up to it keep their original status).
+    Steps it runs get a new attempt (mode "resume"); planned steps after them (e.g. write_bitstream if present in the
+    script/log or originally planned) stay pending until seen. Report files written by the resume count for those steps.
+  Firmware.status: "running" if any live attempt; "failed" only if the latest attempt of some step failed and nothing
+  is running. Firmware.attempt = {"n": int, "mode": str, "resumed_from": step|null, "previous_failure": str|null}.
+  Alerts: a failure whose step has a newer running/done attempt becomes level "info"-ish: keep it out of alerts but
+  in events/attempts; the live attempt's own problems alert normally.
+  Discovery: the resume process must NOT be treated as only a "launcher" — it is the worker; still show its log path.
+```
+
+### v5 implementation notes (deviations / precisions)
+- `Node.attempts` lists ALL attempts of the step incl. the latest (oldest first); `n` is the run-level attempt
+  number (1 + project relaunches + resume sessions), so a step not re-run in attempt 2 may show `[1, 3]`.
+  It is empty for a single attempt. Extra fields per attempt: `elapsed_s`, `counts`, `timing` {wns,tns,whs,ths,met}.
+  `Node.failure` is that of the latest attempt only; superseded failures live in `attempts[*].failure`.
+- Failure `details` also carry the hs_err title and `crash frame: ...`. The reason comes from the lowest-`order`
+  pattern hit (segfault before "License lost"); the license lines stay in `details`. When no pattern hits, a failed
+  step falls back to `{"reason": "Error", details: first ERROR messages}`. hs_err is taken from the "Please check
+  '...hs_err_pid*.log'" line, else the newest in the run dir not older than the step's begin marker.
+- A dead step with no error marker but crash patterns in runme.log/main log also becomes `failed`.
+- Discovery: `Group.resumes = [{pid, run, log, script, checkpoint, cwd}]`; such processes are in `Group.pids` but
+  not in `run_pids` (a run worker is a process whose `-log` is the run's .vdi/.vds/runme.log). A process outside
+  the run dir counts if its log has `open_checkpoint` inside a `*.runs` dir. Config: flows.toml `[failure]`, `[resume]`
+  (+ `[resume.checkpoints]` suffix -> step).
+- Persistence `~/.cache/vmon/attempts/<fw_id>.json`: per run `sig` (vivado.begin mtime, main log ino/size),
+  `launches`, `last` (current epoch attempts), `archive` (earlier epochs), `sessions` (resume logs, kept after the
+  process ends so a finished resume stays visible). A relaunch = vivado.begin newer, or same main log with new inode /
+  smaller size. Sessions are cleared on relaunch.
+- While a live resume has no step section yet (loading the checkpoint), the next planned step (first command of the
+  `-source` script, else the next step after the checkpoint's step) is shown `running`.
+- Run status once a resume exists: running > failed > stopped by the latest attempts; all-done or finished-clean -> done.
+- Events: new `attempt_started`; `step_failed` events carry the failure reason. LogSource (plain log by path) also
+  gets `failure` (crash patterns) and `attempt` {n:1,mode:"project"}.

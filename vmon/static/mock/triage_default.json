@@ -6,7 +6,7 @@
    "severity": "critical",
    "count": 2,
    "text": "set_input_delay: no valid object found for -clock",
-   "score": 8.57,
+   "score": 8.74,
    "priority": null,
    "user_priority": null,
    "reasons": [
@@ -22,8 +22,8 @@
      "label": "init_design"
     }
    ],
-   "first_line": 37282,
-   "last_line": 37628,
+   "first_line": 36547,
+   "last_line": 36992,
    "log": "/path/to/impl_1/runme.log"
   },
   {
@@ -31,7 +31,7 @@
    "severity": "critical",
    "count": 2,
    "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
-   "score": 8.49,
+   "score": 8.44,
    "priority": null,
    "user_priority": null,
    "reasons": [
@@ -48,16 +48,16 @@
      "label": "init_design"
     }
    ],
-   "first_line": 36645,
-   "last_line": 37282,
+   "first_line": 36345,
+   "last_line": 36547,
    "log": "/path/to/impl_1/runme.log"
   },
   {
    "id": "Timing 38-316",
    "severity": "warning",
-   "count": 82,
+   "count": 28,
    "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
-   "score": 4.53,
+   "score": 4.54,
    "priority": null,
    "user_priority": null,
    "reasons": [
@@ -77,14 +77,14 @@
      "label": "place_design"
     }
    ],
-   "first_line": 25160,
-   "last_line": 31785,
+   "first_line": 25026,
+   "last_line": 31237,
    "log": "/path/to/synth_1/runme.log"
   },
   {
    "id": "Synth 8-3917",
    "severity": "warning",
-   "count": 49,
+   "count": 36,
    "text": "design <module> has port reg_N_q driven by constant 0",
    "score": 4.49,
    "priority": null,
@@ -102,16 +102,16 @@
      "label": "Synthesis"
     }
    ],
-   "first_line": 13807,
-   "last_line": 20157,
+   "first_line": 13473,
+   "last_line": 19167,
    "log": "/path/to/synth_1/runme.log"
   },
   {
    "id": "Synth 8-3332",
    "severity": "warning",
-   "count": 62,
+   "count": 78,
    "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
-   "score": 4.41,
+   "score": 4.31,
    "priority": null,
    "user_priority": null,
    "reasons": [
@@ -127,40 +127,16 @@
      "label": "Synthesis"
     }
    ],
-   "first_line": 6190,
-   "last_line": 13807,
+   "first_line": 6500,
+   "last_line": 13473,
    "log": "/path/to/synth_1/runme.log"
-  },
-  {
-   "id": "Constraints 18-5210",
-   "severity": "warning",
-   "count": 29,
-   "text": "No constraint will be written out.",
-   "score": 3.59,
-   "priority": null,
-   "user_priority": null,
-   "reasons": [
-    "rule: constraints dropped"
-   ],
-   "new": false,
-   "delta": null,
-   "doc_url": "https://docs.amd.com/search?q=Constraints%2018-5210",
-   "nodes": [
-    {
-     "node_id": "impl_1/init_design",
-     "label": "init_design"
-    }
-   ],
-   "first_line": 20157,
-   "last_line": 25160,
-   "log": "/path/to/impl_1/runme.log"
   },
   {
    "id": "Synth 8-7080",
    "severity": "warning",
-   "count": 41,
+   "count": 66,
    "text": "Parallel synthesis criteria is not met",
-   "score": 3.54,
+   "score": 3.38,
    "priority": null,
    "user_priority": null,
    "reasons": [
@@ -176,13 +152,13 @@
     }
    ],
    "first_line": 120,
-   "last_line": 6190,
+   "last_line": 6500,
    "log": "/path/to/synth_1/runme.log"
   },
   {
    "id": "DRC RTSTAT-10",
    "severity": "warning",
-   "count": 90,
+   "count": 64,
    "text": "No routable loads",
    "score": 3.25,
    "priority": null,
@@ -199,16 +175,62 @@
      "label": "opt_design"
     }
    ],
-   "first_line": 31785,
-   "last_line": 36645,
+   "first_line": 31237,
+   "last_line": 36345,
    "log": "/path/to/impl_1/runme.log"
+  },
+  {
+   "id": "Constraints 18-5210",
+   "severity": "warning",
+   "count": 31,
+   "text": "No constraint will be written out.",
+   "score": 3.12,
+   "priority": null,
+   "user_priority": null,
+   "reasons": [
+    "rule: constraints dropped"
+   ],
+   "new": false,
+   "delta": null,
+   "doc_url": "https://docs.amd.com/search?q=Constraints%2018-5210",
+   "nodes": [
+    {
+     "node_id": "impl_1/init_design",
+     "label": "init_design"
+    }
+   ],
+   "first_line": 19167,
+   "last_line": 25026,
+   "log": "/path/to/impl_1/runme.log"
+  },
+  {
+   "id": "Project 1-570",
+   "severity": "info",
+   "count": 78,
+   "text": "Preparing netlist for logic optimization",
+   "score": 1.23,
+   "priority": "low",
+   "user_priority": null,
+   "reasons": [],
+   "new": false,
+   "delta": null,
+   "doc_url": "https://docs.amd.com/search?q=Project%201-570",
+   "nodes": [
+    {
+     "node_id": "synth",
+     "label": "Synthesis"
+    }
+   ],
+   "first_line": 44296,
+   "last_line": 46317,
+   "log": "/path/to/synth_1/runme.log"
   },
   {
    "id": "Timing 38-35",
    "severity": "info",
-   "count": 78,
+   "count": 72,
    "text": "Done setting XDC timing constraints.",
-   "score": 1.18,
+   "score": 1.22,
    "priority": "low",
    "user_priority": null,
    "reasons": [],
@@ -225,16 +247,82 @@
      "label": "place_design"
     }
    ],
-   "first_line": 46988,
-   "last_line": 49009,
+   "first_line": 46317,
+   "last_line": 49069,
+   "log": "/path/to/synth_1/runme.log"
+  },
+  {
+   "id": "Device 21-403",
+   "severity": "info",
+   "count": 35,
+   "text": "Loading part xczu48dr-ffvg1517-2-e",
+   "score": 1.18,
+   "priority": "low",
+   "user_priority": "mute",
+   "reasons": [],
+   "new": false,
+   "delta": null,
+   "doc_url": "https://docs.amd.com/search?q=Device%2021-403",
+   "nodes": [
+    {
+     "node_id": "synth",
+     "label": "Synthesis"
+    }
+   ],
+   "first_line": 42286,
+   "last_line": 44296,
+   "log": "/path/to/synth_1/runme.log"
+  },
+  {
+   "id": "Synth 8-256",
+   "severity": "info",
+   "count": 54,
+   "text": "done synthesizing module '<module>'",
+   "score": 1.14,
+   "priority": "low",
+   "user_priority": "mute",
+   "reasons": [],
+   "new": false,
+   "delta": null,
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-256",
+   "nodes": [
+    {
+     "node_id": "synth",
+     "label": "Synthesis"
+    }
+   ],
+   "first_line": 39794,
+   "last_line": 42286,
+   "log": "/path/to/synth_1/runme.log"
+  },
+  {
+   "id": "Synth 8-6157",
+   "severity": "info",
+   "count": 98,
+   "text": "synthesizing module '<module>'",
+   "score": 0.86,
+   "priority": "low",
+   "user_priority": "mute",
+   "reasons": [],
+   "new": false,
+   "delta": null,
+   "doc_url": "https://docs.amd.com/search?q=Synth%208-6157",
+   "nodes": [
+    {
+     "node_id": "synth",
+     "label": "Synthesis"
+    }
+   ],
+   "first_line": 36992,
+   "last_line": 39794,
    "log": "/path/to/synth_1/runme.log"
   },
   {
    "id": "Place 30-2005",
    "severity": "info",
-   "count": 72,
+   "count": 124,
    "text": "Estimated congestion level: 2 (Short: 2, Global: 2)",
-   "score": 1.16,
+   "score": 0.81,
    "priority": "low",
    "user_priority": null,
    "reasons": [
@@ -249,97 +337,9 @@
      "label": "place_design"
     }
    ],
-   "first_line": 49009,
-   "last_line": 51761,
+   "first_line": 49069,
+   "last_line": 51356,
    "log": "/path/to/impl_1/runme.log"
-  },
-  {
-   "id": "Synth 8-6157",
-   "severity": "info",
-   "count": 76,
-   "text": "synthesizing module '<module>'",
-   "score": 1.11,
-   "priority": "low",
-   "user_priority": "mute",
-   "reasons": [],
-   "new": false,
-   "delta": null,
-   "doc_url": "https://docs.amd.com/search?q=Synth%208-6157",
-   "nodes": [
-    {
-     "node_id": "synth",
-     "label": "Synthesis"
-    }
-   ],
-   "first_line": 37628,
-   "last_line": 39802,
-   "log": "/path/to/synth_1/runme.log"
-  },
-  {
-   "id": "Synth 8-256",
-   "severity": "info",
-   "count": 60,
-   "text": "done synthesizing module '<module>'",
-   "score": 1.1,
-   "priority": "low",
-   "user_priority": "mute",
-   "reasons": [],
-   "new": false,
-   "delta": null,
-   "doc_url": "https://docs.amd.com/search?q=Synth%208-256",
-   "nodes": [
-    {
-     "node_id": "synth",
-     "label": "Synthesis"
-    }
-   ],
-   "first_line": 39802,
-   "last_line": 42486,
-   "log": "/path/to/synth_1/runme.log"
-  },
-  {
-   "id": "Device 21-403",
-   "severity": "info",
-   "count": 54,
-   "text": "Loading part xczu48dr-ffvg1517-2-e",
-   "score": 0.91,
-   "priority": "low",
-   "user_priority": "mute",
-   "reasons": [],
-   "new": false,
-   "delta": null,
-   "doc_url": "https://docs.amd.com/search?q=Device%2021-403",
-   "nodes": [
-    {
-     "node_id": "synth",
-     "label": "Synthesis"
-    }
-   ],
-   "first_line": 42486,
-   "last_line": 44978,
-   "log": "/path/to/synth_1/runme.log"
-  },
-  {
-   "id": "Project 1-570",
-   "severity": "info",
-   "count": 35,
-   "text": "Preparing netlist for logic optimization",
-   "score": 0.91,
-   "priority": "low",
-   "user_priority": null,
-   "reasons": [],
-   "new": false,
-   "delta": null,
-   "doc_url": "https://docs.amd.com/search?q=Project%201-570",
-   "nodes": [
-    {
-     "node_id": "synth",
-     "label": "Synthesis"
-    }
-   ],
-   "first_line": 44978,
-   "last_line": 46988,
-   "log": "/path/to/synth_1/runme.log"
   }
  ]
 }

@@ -415,6 +415,74 @@ utilization_pct = 90
 timing_error_steps = ["route_design", "post_route_phys_opt_design", "write_bitstream"]   # timing is final once one of these is done
 timing_final_steps = ["route_design", "post_route_phys_opt_design"]   # their timing_summary reports are final results
 
+# ---------------------------------------------------------------- failures, crashes and resumes
+# Patterns are scanned in the tail of the run's runme.log / main log (and of a resume log). The first
+# pattern by `order` that hits gives the reason; every hit line (max max_details) goes into the details.
+# signal = true: group 1 is a signal number, named through [failure.signals].
+[failure]
+tail_bytes = 131072
+max_details = 6
+max_line_chars = 240
+hs_err_glob = "hs_err_pid*.log"
+hs_err_path_re = "Please check '([^']+hs_err_pid\\d+\\.log)'"
+hs_err_head_lines = 40
+hs_err_title_re = '^# (An unexpected error has occurred.*|A fatal error.*)'
+hs_err_skip_frames = 'libc\.so|libpthread|linux-vdso'
+
+[failure.signals]
+"11" = "Segmentation fault"
+"6" = "Aborted"
+"7" = "Bus error"
+"9" = "Killed"
+"15" = "Terminated"
+
+[failure.patterns.abnormal]
+order = 10
+re = 'Abnormal program termination \((\d+)\)'
+signal = true
+reason = "Abnormal termination (signal {1})"
+
+[failure.patterns.segfault]
+order = 20
+re = '^segfault in '
+reason = "Segmentation fault (signal 11)"
+
+[failure.patterns.license_lost]
+order = 30
+re = 'Lost license|FlexNet Licensing error'
+reason = "License lost"
+
+[failure.patterns.out_of_memory]
+order = 40
+re = '(?i)ERROR: \[Common 17-\d+\] .*(out of memory|failed to allocate)|std::bad_alloc'
+reason = "Out of memory"
+
+[failure.patterns.killed]
+order = 50
+re = '^Killed\s*$'
+reason = "Killed (signal 9)"
+
+[failure.patterns.halted]
+order = 60
+re = '\*\*\* Halting run'
+reason = "Run halted"
+
+# Resume = a non-project Vivado session (open_checkpoint + route_design ...) that continues a run.
+# The checkpoint file name suffix tells after which step it resumes (longest suffix wins).
+[resume]
+checkpoint_re = '^(?:# )?(?:Command: )?open_checkpoint\s+(?:\{([^}]+)\}|"([^"]+)"|(\S+))'
+cd_re = '^# cd\s+(?:\{([^}]+)\}|"([^"]+)"|(\S+))'
+session_start_re = 'Start of session at: (.+?)\s*$'
+scan_bytes = 262144
+
+[resume.checkpoints]
+"_init" = "init_design"
+"_opt" = "opt_design"
+"_placed" = "place_design"
+"_physopt" = "phys_opt_design"
+"_routed" = "route_design"
+"_postroute_physopt" = "post_route_phys_opt_design"
+
 # ---------------------------------------------------------------- documentation links
 # Templates only; edit freely in ~/.config/vmon/flows.toml. A value that is a bare Tcl command name is expanded
 # with tcl_command; a value containing "://" is used as is. {query} is URL-encoded.

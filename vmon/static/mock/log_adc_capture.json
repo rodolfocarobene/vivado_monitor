@@ -1,7 +1,7 @@
 {
- "path": "/path/to/impl_1/adc_capture.vdi",
+ "path": "/path/to/impl_1/runme.log",
  "start_line": 18000,
- "end_line": 18121,
+ "end_line": 18119,
  "lines": [
   "Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2800.1 ; gain = 0.0",
   "INFO: [Place 30-2005] Estimated congestion level: 2",
@@ -122,8 +122,6 @@
   "WARNING: [Constraints 18-5210] No constraint will be written out.",
   "CRITICAL WARNING: [Vivado 12-4739] create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
   "INFO: [Timing 38-35] Done setting XDC timing constraints.",
-  "Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device",
-  "ERROR: [Route 35-368] Router was unable to route all nets; 143 nets remain unrouted.",
-  "ERROR: [Common 17-39] 'route_design' failed due to earlier errors."
+  "Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device"
  ]
 }

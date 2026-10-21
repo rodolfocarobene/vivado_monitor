@@ -12,13 +12,16 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from . import alerts as alert_rules
+from . import failure as failure_mod
+from .attempts import AttemptStore
 from .config import StepDef
 from .discovery import pid_alive
+from .resume import scan_session
 from .docs import DocLinks
 from . import info as info_mod
 from .logparse import LogParser, SEVERITIES
 from .logtail import LogTail
-from .model import Firmware, Flow, Node, Timing, compute_met
+from .model import Firmware, Flow, Node, Timing, compute_met, counts_dict
 
 PID_RE = re.compile(r'Pid="(\d+)"')
 MAX_LOG_LINES = 5000
@@ -116,13 +119,14 @@ class Source:
     """Common state for project and log firmwares."""
     kind = "log"
 
-    def __init__(self, path, config, report_cache, catalog):
+    def __init__(self, path, config, report_cache, catalog, attempt_dir=None):
         self.path = str(path)
         self.cfg = config
         self.docs = DocLinks(config.data)
         self.reports = report_cache
         self.catalog = catalog
         self.id = fw_id(self.path)
+        self.store = AttemptStore(attempt_dir, self.id)
         self.logs = {}
         self.index = {}            # node id -> [(ParsedLog, line_start, line_end, running)]
         self.report_paths = set()
@@ -215,7 +219,7 @@ class Source:
         return {"done": sum(1 for c in kids if c.status == "done"), "total": len(kids)} if kids else None
 
     def _step_node(self, step_id, node_id, plog, section, status, open_status, alive, run_id,
-                   begin=None, end=None, reports=(), now=None):
+                   begin=None, end=None, reports=(), now=None, failure=None):
         stepdef = self.cfg.steps.get(step_id) or StepDef(step_id, {})
         node = Node(id=node_id, label=stepdef.label, kind="step", status=status, run=run_id)
         node.started_at, node.ended_at = begin, end
@@ -256,8 +260,44 @@ class Source:
                     clocks=summary.get("clocks", []))
         node.children = self.catalog.merge(step_id, node, status, self.version)
         stall = plog.growth_age(now or time.time()) if plog and section is not None else None
+        node.failure = failure
         node.alerts = alert_rules.node_alerts(node, step_id, self.cfg, stall, alive)
         return node
+
+    # ------------------------------------------------------------------ failures and attempts
+    def _failure_for(self, log_paths, run_dir=None, since=None, section=None, plog=None):
+        """Failure dict for a failed step: crash patterns / hs_err first, else its first ERROR messages."""
+        found = failure_mod.detect(log_paths, self.cfg, run_dir, since)
+        if found:
+            self._register_log(found["log"])
+            return found
+        if section is not None and plog is not None:
+            return failure_mod.from_errors(plog.parser.messages, section.line_start or 1,
+                                           section.line_end or plog.line_count, plog.path)
+        return {"reason": "Error", "details": [], "line": None, "log": None, "hs_err": None}
+
+    def _register_log(self, path):
+        """Make a failure log (runme.log) known so its lines can be shown around the failure."""
+        if path and path not in self.logs and os.path.isfile(path):
+            self._log(path)
+
+    def _attempt_summary(self, node, n, mode, checkpoint, log):
+        phase = _deepest_failed(node) if node.status == "failed" else None
+        text = node.status
+        if node.status == "failed":
+            text = "failed"
+            if phase is not None:
+                text += " in %s%s" % ("Phase " if phase.label[:1].isdigit() else "", phase.label)
+            if node.failure:
+                text += ": %s" % node.failure["reason"]
+        elif node.status == "done" and node.elapsed_s:
+            text = "done in %s" % fmt_duration(node.elapsed_s)
+        timing = node.timing
+        return {"n": n, "status": node.status, "started_at": node.started_at, "ended_at": node.ended_at,
+                "elapsed_s": node.elapsed_s, "log": log or node.log, "mode": mode, "checkpoint": checkpoint,
+                "failure": node.failure, "summary": text, "counts": counts_dict(node.counts),
+                "timing": {"wns": timing.wns, "tns": timing.tns, "whs": timing.whs, "ths": timing.ths,
+                           "met": timing.met} if timing else None}
 
     def _deepest_running(self, nodes):
         best = None
@@ -538,11 +578,13 @@ class Source:
 class ProjectSource(Source):
     kind = "project"
 
-    def __init__(self, runs_dir, config, report_cache, catalog):
-        super().__init__(runs_dir, config, report_cache, catalog)
+    def __init__(self, runs_dir, config, report_cache, catalog, attempt_dir=None):
+        super().__init__(runs_dir, config, report_cache, catalog, attempt_dir)
         self.runs_dir = Path(runs_dir)
         self.name = self.runs_dir.name[:-5]
         self._impl_ctx = (None, None)
+        self._extra_parsers = []     # resume logs parsed this tick
+        self._attempt_info = {}      # run id -> Firmware.attempt dict
 
     def _info(self, fw):
         impl, synth = self._impl_ctx
@@ -678,7 +720,7 @@ class ProjectSource(Source):
         return [s for s in self.cfg.step_order if s in run.markers and self.cfg.steps[s].flow == "impl"]
 
     # ---- reports
-    def _run_reports(self, run):
+    def _run_reports(self, run, begins=None):
         by_step = {}
         if not run.top:
             return by_step
@@ -694,7 +736,7 @@ class ProjectSource(Source):
                 if parsed is None:
                     break
                 step = rtype.step
-                begin = run.markers.get(step, {}).get("begin") or run.begin
+                begin = (begins or {}).get(step) or run.markers.get(step, {}).get("begin") or run.begin
                 mtime = entry.stat().st_mtime
                 stale = begin is not None and mtime < begin - 1
                 self.report_paths.add(entry.path)
@@ -730,6 +772,10 @@ class ProjectSource(Source):
         elif run.begin is not None and run.end is not None:
             node.elapsed_s = max(0.0, run.end - run.begin)
         node.reports = self._run_reports(run).get("synth_design", [])
+        if run.status == "failed":
+            section = sections[-1] if sections else None
+            node.failure = self._failure_for([str(run.dir / "runme.log"), run.log_path], run.dir, run.begin,
+                                             section, plog)
         quiet = run.status in ("done", "failed", "stopped") or (
             plog is not None and self.catalog.is_cached_ip("synth_design", plog.parser.messages, self.version))
         node.children = self.catalog.merge("synth_design", node, run.status, self.version, annotate_only=quiet)
@@ -756,7 +802,122 @@ class ProjectSource(Source):
         self._register_group(node)
         return node
 
-    def _impl_steps(self, run, now, live):
+    # ---- relaunch / resume bookkeeping
+    @staticmethod
+    def _check_relaunch(run, state):
+        """True when the run was launched again in project mode (markers rewritten or main log replaced)."""
+        sig = {"begin": run.begin, "log": run.log_path, "ino": None, "size": None}
+        if run.log_path:
+            try:
+                st = os.stat(run.log_path)
+                sig["ino"], sig["size"] = st.st_ino, st.st_size
+            except OSError:
+                pass
+        prev, state["sig"] = state.get("sig"), sig
+        if not prev:
+            return False
+        new_begin = run.begin and prev.get("begin") and run.begin > prev["begin"] + 1
+        replaced = (prev.get("log") == sig["log"] and prev.get("ino") is not None and sig["ino"] is not None
+                    and (sig["ino"] != prev["ino"] or sig["size"] < prev["size"]))
+        if not (new_begin or replaced):
+            return False
+        if state["last"] or state["sessions"]:
+            for sid, attempts in state["last"].items():
+                for att in attempts:
+                    if att["status"] in ("running", "queued"):
+                        att["status"] = "stopped"
+                        att["summary"] = "stopped"
+                state["archive"].setdefault(sid, []).extend(attempts)
+            state["launches"] += 1
+        state["last"], state["sessions"] = {}, []
+        return True
+
+    def _sessions(self, run, state, resumes, now):
+        """Resume sessions of this run (persisted + live), oldest first, with alive/resumed_from filled in."""
+        rc = self.cfg.resume
+        live_logs = {}
+        for item in resumes:
+            if item["log"]:
+                live_logs[item["log"]] = item
+                known = next((x for x in state["sessions"] if x["log"] == item["log"]), None)
+                if known is None:
+                    known = {"log": item["log"], "first_seen": now}
+                    state["sessions"].append(known)
+                known.update({"checkpoint": item["checkpoint"] or known.get("checkpoint"),
+                              "script": item["script"], "cwd": item["cwd"]})
+        state["sessions"] = [x for x in state["sessions"] if os.path.isfile(x["log"])]
+        out = []
+        for sess in state["sessions"]:
+            info = dict(sess)
+            info["alive"] = sess["log"] in live_logs
+            info["pid"] = live_logs[sess["log"]]["pid"] if info["alive"] else None
+            scanned = scan_session(sess["log"], sess.get("cwd"), self.cfg)
+            info["checkpoint"] = scanned["checkpoint"] or sess.get("checkpoint")
+            info["started_at"] = scanned["started_at"] or sess["first_seen"]
+            info["resumed_from"] = rc.step_for_checkpoint(info["checkpoint"]) if info["checkpoint"] else None
+            out.append(info)
+        return out
+
+    def _script_steps(self, script):
+        """Step ids a resume script will run, in order (read-only peek at the script)."""
+        if not script:
+            return []
+        try:
+            text = Path(script).read_text(errors="replace")
+        except OSError:
+            return []
+        out = []
+        for line in text.splitlines():
+            word = line.strip().split(" ", 1)[0]
+            if word in self.cfg.step_commands:
+                out.extend(s.id for s in self.cfg.steps_for_command(word))
+        return out
+
+    def _session_nodes(self, run, sess, step_ids, now):
+        """{step id: Node} for the steps this resume session ran (or is about to run)."""
+        plog = self._log(sess["log"])
+        sections = [c for c in plog.parser.root.children if c.kind == "step"]
+        resumed = sess["resumed_from"]
+        if resumed in step_ids:
+            after = [s for s in step_ids if self.cfg.step_order.index(s) > self.cfg.step_order.index(resumed)]
+        else:
+            after = list(step_ids)
+        assigned = assign_sections(after, sections, self.cfg)
+        alive, started = sess["alive"], sess["started_at"]
+        begins = {sid: (sec.started_at or started) for sid, sec in assigned.items()}
+        reports = self._run_reports(run, {sid: started for sid in assigned})
+        nodes = {}
+        last_sid = max(assigned, key=lambda sid: assigned[sid].line_start) if assigned else None
+        for sid, section in assigned.items():
+            status = section.status
+            if status == "running" and sid == last_sid and not alive:
+                status = "stopped"
+            elif status == "running" and sid != last_sid:
+                status = "done"
+            failure = None
+            if status in ("stopped", "failed"):
+                found = failure_mod.detect([sess["log"]], self.cfg)
+                if found or status == "failed":
+                    failure = found or self._failure_for([sess["log"]], None, None, section, plog)
+                    status = "failed"
+            open_status = {"running": "running", "stopped": "stopped", "failed": "failed"}.get(status, "done")
+            end = None
+            if status != "running" and sid == last_sid:
+                end = plog.tail.last_growth
+            node = self._step_node(sid, "%s/%s" % (run.id, sid), plog, section, status, open_status, alive,
+                                   run.id, begins[sid], end, reports.get(sid, ()), now, failure)
+            nodes[sid] = node
+        if alive and not [n for n in nodes.values() if n.status == "running"]:
+            # still loading the checkpoint / between steps: the next planned step is the one it will run
+            seen = set(assigned)
+            todo = [s for s in self._script_steps(sess.get("script")) if s in after and s not in seen]
+            sid = todo[0] if todo else next((s for s in after if s not in seen), None)
+            if sid and not assigned.get(sid):
+                nodes[sid] = self._step_node(sid, "%s/%s" % (run.id, sid), plog, None, "running", "running",
+                                             True, run.id, started, None, (), now)
+        return nodes
+
+    def _impl_steps(self, run, now, live, resumes=(), last_impl=False):
         sections = []
         plog = self._log(run.log_path) if run.log_path else None
         if plog is not None:
@@ -767,7 +928,10 @@ class ProjectSource(Source):
             set(assigned) | {s for s in run.markers if s in self.cfg.steps and s != "vivado"},
             key=self.cfg.step_order.index)
         reports = self._run_reports(run)
-        nodes = []
+        state = self.store.run(run.id)
+        self._check_relaunch(run, state)
+        fail_logs = [str(run.dir / "runme.log"), run.log_path]
+        nodes = {}
         began_after = {}
         seen_begin = False
         for sid in reversed(step_ids):
@@ -775,6 +939,7 @@ class ProjectSource(Source):
             seen_begin = seen_begin or "begin" in run.markers.get(sid, {})
         for sid in step_ids:
             marker = run.markers.get(sid, {})
+            failure = None
             if "error" in marker:
                 status = "failed"
             elif "end" in marker:
@@ -783,16 +948,74 @@ class ProjectSource(Source):
                 alive = run.alive or pid_alive(marker.get("pid"))
                 status = "running" if alive else ("done" if run.status == "done" else
                                                   "failed" if run.status == "failed" else "stopped")
+                if status == "stopped" and failure_mod.detect(fail_logs, self.cfg, run.dir, marker["begin"]):
+                    status = "failed"
             elif run.status == "done" or began_after.get(sid):
                 status = "skipped"
             else:
                 status = "queued" if run.status == "queued" else "pending"
+            if status == "failed":
+                failure = self._failure_for(fail_logs, run.dir, marker.get("begin") or run.begin,
+                                            assigned.get(sid), plog)
             open_status = {"running": "running", "stopped": "stopped", "failed": "failed"}.get(status, "done")
-            end = marker.get("end") or marker.get("error")
-            nodes.append(self._step_node(
+            end = marker.get("end") or marker.get("error") or (
+                run.markers.get("vivado", {}).get("error") if status == "failed" else None)
+            nodes[sid] = self._step_node(
                 sid, "%s/%s" % (run.id, sid), plog, assigned.get(sid), status, open_status, run.alive,
-                run.id, marker.get("begin"), end, reports.get(sid, ()), now))
-        return nodes
+                run.id, marker.get("begin"), end, reports.get(sid, ()), now, failure)
+
+        # attempts: main launch first, then every resume session replaces the steps it ran
+        main_n = 1 + state["launches"]
+        current = {}
+        for sid, node in nodes.items():
+            if node.status not in ("pending", "queued", "skipped"):
+                current[sid] = [self._attempt_summary(node, main_n, "project", None, plog.path if plog else None)]
+        sessions = self._sessions(run, state, resumes, now)
+        effective = []
+        for sess in sessions:
+            sess_nodes = self._session_nodes(run, sess, step_ids, now)
+            if not sess_nodes:
+                continue
+            effective.append(sess)
+            n = main_n + len(effective)
+            for sid, node in sess_nodes.items():
+                nodes[sid] = node
+                current.setdefault(sid, []).append(
+                    self._attempt_summary(node, n, "resume", sess["checkpoint"], sess["log"]))
+            if sess["log"] in self.logs:
+                self._extra_parsers.append(self.logs[sess["log"]])
+        archive = state["archive"]
+        for sid, node in nodes.items():
+            allatt = archive.get(sid, []) + current.get(sid, [])
+            if len(allatt) >= 2 or (allatt and node.status in ("pending", "queued", "skipped")):
+                node.attempts = allatt
+        state["last"] = current
+
+        run_n = main_n + len(effective)
+        latest = effective[-1] if effective else None
+        previous = None
+        for sid in nodes:
+            for att in archive.get(sid, []) + current.get(sid, []):
+                if att["failure"] and att["n"] < run_n and (previous is None or att["n"] > previous[0]):
+                    previous = (att["n"], att["failure"]["reason"])
+        self._attempt_info[run.id] = {
+            "n": run_n, "mode": "resume" if latest else "project",
+            "resumed_from": latest["resumed_from"] if latest else None,
+            "previous_failure": previous[1] if previous else None}
+        if effective:
+            run.status = self._derive_status([n.status for n in nodes.values()],
+                                             any(s["alive"] for s in effective), run.status)
+        return [nodes[sid] for sid in step_ids] + [nodes[sid] for sid in nodes if sid not in step_ids]
+
+    @staticmethod
+    def _derive_status(statuses, session_alive, fallback):
+        """Run status once resume sessions took over: the latest attempt of each step decides."""
+        for state in ("running", "failed", "stopped"):
+            if state in statuses:
+                return state
+        if session_alive:
+            return "running"
+        return "done" if "done" in statuses else fallback
 
     def snapshot(self, group, now=None):
         now = now or time.time()
@@ -826,14 +1049,19 @@ class ProjectSource(Source):
         self._impl_ctx = (impl_runs[-1] if impl_runs else None,
                           next((r for r in reversed(synth_runs) if r.kind == "synth"), None))
         flows = []
+        self._extra_parsers = []
+        self._attempt_info = {}
         for run in impl_runs:
             stages = [synth_stage] if synth_stage else []
-            stages.extend(self._impl_steps(run, now, live))
+            own = [r for r in (group.resumes if group else ())
+                   if r["run"] == run.id or (r["run"] is None and run is impl_runs[-1])]
+            stages.extend(self._impl_steps(run, now, live, own))
             flows.append(Flow(id=run.id, label=run.id, stages=stages))
             if run.log_path and run.log_path in self.logs:
                 parsers.append(self.logs[run.log_path])
         if not impl_runs and synth_stage:
             flows.append(Flow(id="synth", label="synthesis", stages=[synth_stage]))
+        parsers.extend(p for p in self._extra_parsers if p not in parsers)
 
         fw = Firmware(id=self.id, name=self.name, kind="project", path=self.path)
         run_states = [r.status for r in runs] or ["pending"]
@@ -846,7 +1074,11 @@ class ProjectSource(Source):
         if fw.started_at:
             ended = fw.updated_at if fw.status in ("done", "failed", "stopped") else now
             fw.elapsed_s = max(0.0, ended - fw.started_at)
+        infos = [self._attempt_info[r.id] for r in impl_runs if r.id in self._attempt_info]
+        fw.attempt = max(infos, key=lambda i: i["n"]) if infos else {
+            "n": 1, "mode": "project", "resumed_from": None, "previous_failure": None}
         self._finish(fw, flows, parsers, group, live, now)
+        self.store.save()
         return fw
 
     @staticmethod
@@ -869,8 +1101,8 @@ class ProjectSource(Source):
 class LogSource(Source):
     kind = "log"
 
-    def __init__(self, log_path, config, report_cache, catalog):
-        super().__init__(log_path, config, report_cache, catalog)
+    def __init__(self, log_path, config, report_cache, catalog, attempt_dir=None):
+        super().__init__(log_path, config, report_cache, catalog, attempt_dir)
         self.name = Path(log_path).stem
 
     def snapshot(self, group, now=None):
@@ -887,10 +1119,17 @@ class LogSource(Source):
             section = assigned[sid]
             status = section.status
             open_status = "running" if live else "stopped"
+            failure = None
             if section.status == "running" and not live:
                 status = "stopped"
+                found = failure_mod.detect([self.path], self.cfg)
+                if found:
+                    status, open_status, failure = "failed", "failed", found
+            elif status == "failed":
+                open_status = "failed"
+                failure = self._failure_for([self.path], None, None, section, plog)
             stages.append(self._step_node(sid, "log/" + sid, plog, section, status, open_status, live,
-                                          None, None, None, (), now))
+                                          None, None, None, (), now, failure))
         if live and order:
             flow_kind = self.cfg.steps[order[-1]].flow
             last = self.cfg.step_order.index(order[-1])
@@ -911,9 +1150,27 @@ class LogSource(Source):
         else:
             fw.status = "idle"
         fw.started_at = None
+        fw.attempt = {"n": 1, "mode": "project", "resumed_from": None, "previous_failure": None}
         fw.updated_at = plog.tail.last_growth
         self._finish(fw, [Flow(id="log", label=Path(self.path).name, stages=stages)], [plog], group, live, now)
         return fw
+
+
+def fmt_duration(seconds):
+    seconds = int(seconds)
+    hours, rest = divmod(seconds, 3600)
+    minutes, secs = divmod(rest, 60)
+    if hours:
+        return "%dh%02dm" % (hours, minutes)
+    return "%dm%02ds" % (minutes, secs) if minutes else "%ds" % secs
+
+
+def _deepest_failed(node):
+    """Deepest failed (non-expected) descendant of a step node, or None."""
+    for child in node.children:
+        if child.status == "failed" and not child.expected:
+            return _deepest_failed(child) or child
+    return None
 
 
 def _has_logic(report):

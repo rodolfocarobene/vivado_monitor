@@ -73,6 +73,53 @@ class ReportType:
         self.label = spec.get("label", self.kind.replace("_", " ").capitalize())
 
 
+class FailurePattern:
+    def __init__(self, name, spec):
+        self.name = name
+        self.regex = re.compile(spec["re"])
+        self.reason = spec.get("reason", name.replace("_", " ").capitalize())
+        self.signal = spec.get("signal", False)
+
+
+class FailureConfig:
+    def __init__(self, spec):
+        self.tail_bytes = spec.get("tail_bytes", 131072)
+        self.max_details = spec.get("max_details", 6)
+        self.max_line_chars = spec.get("max_line_chars", 240)
+        self.hs_err_glob = spec.get("hs_err_glob", "hs_err_pid*.log")
+        path_re = spec.get("hs_err_path_re")
+        self.hs_err_path_re = re.compile(path_re) if path_re else None
+        self.hs_err_head_lines = spec.get("hs_err_head_lines", 40)
+        title_re = spec.get("hs_err_title_re")
+        self.hs_err_title_re = re.compile(title_re) if title_re else None
+        skip = spec.get("hs_err_skip_frames")
+        self.hs_err_skip_frames = re.compile(skip) if skip else None
+        self.signals = spec.get("signals", {})
+        self.patterns = [FailurePattern(n, s) for n, s in _ordered(spec.get("patterns", {}))]
+
+
+class ResumeConfig:
+    def __init__(self, spec):
+        self.checkpoint_re = re.compile(spec["checkpoint_re"]) if "checkpoint_re" in spec else None
+        self.cd_re = re.compile(spec["cd_re"]) if "cd_re" in spec else None
+        self.session_start_re = re.compile(spec["session_start_re"]) if "session_start_re" in spec else None
+        self.scan_bytes = spec.get("scan_bytes", 262144)
+        # longest suffix first so "_postroute_physopt" wins over "_physopt"
+        self.checkpoints = sorted(spec.get("checkpoints", {}).items(), key=lambda kv: -len(kv[0]))
+
+    def step_for_checkpoint(self, path):
+        """Step a checkpoint file was written after (by its name suffix), or None."""
+        stem = re.sub(r"\.dcp$", "", str(path).rsplit("/", 1)[-1])
+        for suffix, step in self.checkpoints:
+            if stem.endswith(suffix):
+                return step
+        return None
+
+    @staticmethod
+    def first_group(match):
+        return next((g for g in match.groups() if g), None)
+
+
 class Config:
     def __init__(self, data):
         self.data = data
@@ -105,6 +152,8 @@ class Config:
         self.utilization_map = [(k, re.compile(v)) for k, v in reports["utilization"].items()]
         self.timing_columns = reports["timing_columns"]
         self.alerts = data["alerts"]
+        self.failure = FailureConfig(data.get("failure", {}))
+        self.resume = ResumeConfig(data.get("resume", {}))
         self._rules_by_char = {}
 
     def rules_for(self, first_char):

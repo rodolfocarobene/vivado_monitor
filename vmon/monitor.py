@@ -89,7 +89,7 @@ class Monitor:
     # ------------------------------------------------------------------ paths
     def _make_source(self, kind, path):
         cls = ProjectSource if kind == "project" else LogSource
-        return cls(path, self.cfg, self.reports, self.catalog)
+        return cls(path, self.cfg, self.reports, self.catalog, self.recent_file.parent / "attempts")
 
     def add_path(self, text):
         resolved = resolve_path(text)
@@ -200,7 +200,7 @@ class Monitor:
 
         def walk(node):
             if node.kind in ("step", "run"):
-                out[node.id] = (node.label, node.status)
+                out[node.id] = (node.label, node.status, node.failure["reason"] if node.failure else None)
             elif node.kind == "group" and not node.id.endswith("/ooc"):
                 for child in node.children:
                     walk(child)
@@ -214,11 +214,19 @@ class Monitor:
         steps = self._step_statuses(fw)
         alerts = {(a["node_id"], a["code"], _DIGITS.sub("#", a["message"])): a for a in fw.alerts}
         prev = self._seen.get(fw.id)
-        self._seen[fw.id] = {"status": fw.status, "nodes": steps, "alerts": set(alerts)}
+        attempt = (fw.attempt or {}).get("n", 1)
+        self._seen[fw.id] = {"status": fw.status, "nodes": steps, "alerts": set(alerts), "attempt": attempt}
         if prev is None:
             return                      # first observation: only live transitions produce events
         found = []
-        for node_id, (label, status) in steps.items():
+        if attempt > prev.get("attempt", 1):
+            how = fw.attempt.get("mode", "project")
+            origin = fw.attempt.get("resumed_from")
+            found.append(("attempt_started", "info", None, None,
+                          "Attempt %d started (%s%s)" % (attempt, how, " after " + origin if origin else ""),
+                          "previous failure: %s" % fw.attempt["previous_failure"]
+                          if fw.attempt.get("previous_failure") else ""))
+        for node_id, (label, status, reason) in steps.items():
             before = prev["nodes"].get(node_id, (label, "pending"))[1]
             if status == before:
                 continue
@@ -227,7 +235,7 @@ class Monitor:
             elif status == "done":
                 found.append(("step_done", "info", None, node_id, "%s done" % label, ""))
             elif status == "failed":
-                found.append(("step_failed", "error", "step_failed", node_id, "%s failed" % label, ""))
+                found.append(("step_failed", "error", "step_failed", node_id, "%s failed" % label, reason or ""))
         if fw.status != prev["status"]:
             if fw.status == "done":
                 found.append(("run_done", "info", None, None, "Build finished", ""))

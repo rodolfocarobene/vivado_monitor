@@ -3,6 +3,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .resume import scan_session
+
 LOG_SCAN_BYTES = 2_000_000
 
 
@@ -14,6 +16,9 @@ class Group:
     pids: set = field(default_factory=set)
     run_pids: dict = field(default_factory=dict)   # run id -> {pid}
     launcher: dict | None = None
+    # resume sessions (open_checkpoint + route_design ... in a non-project Vivado): they ARE the workers
+    # of the run they continue, not launchers. {"pid","run","log","script","checkpoint","cwd"}
+    resumes: list = field(default_factory=list)
 
 
 def _read(path):
@@ -84,6 +89,24 @@ def _arg_after(args, flag):
     return None
 
 
+def _log_of(proc):
+    args, cwd = proc["args"], proc["cwd"]
+    log = _arg_after(args, "-log") or (os.path.join(cwd, "vivado.log") if cwd else None)
+    if log and not os.path.isabs(log) and cwd:
+        log = os.path.join(cwd, log)
+    return log
+
+
+def is_run_worker(proc, run_dir):
+    """True for the process Vivado itself starts for a run (log = the run's .vdi/.vds/runme.log)."""
+    log = _log_of(proc)
+    if not log:
+        return False
+    name = os.path.basename(log)
+    return (os.path.dirname(os.path.normpath(log)) == os.path.normpath(run_dir)
+            and (name.endswith((".vdi", ".vds")) or name == "runme.log"))
+
+
 def _descendants(pid, children_of):
     out, todo = set(), [pid]
     while todo:
@@ -118,6 +141,21 @@ class Discovery:
         self._log_cache[log_path] = (size, runs_dir)
         return runs_dir
 
+    def _resume_target(self, proc, log):
+        """(runs_dir, run) when this process's log opens a checkpoint inside a *.runs dir."""
+        session = scan_session(log, proc["cwd"], self.cfg)
+        return runs_location(session["checkpoint"]) if session["checkpoint"] else None
+
+    def _add_resume(self, group, proc, run):
+        log = _log_of(proc)
+        session = scan_session(log, proc["cwd"], self.cfg) if log else {"checkpoint": None}
+        if run is None and session["checkpoint"]:
+            loc = runs_location(session["checkpoint"])
+            run = loc[1] if loc else None
+        group.resumes.append({"pid": proc["pid"], "run": run, "log": log,
+                              "script": _arg_after(proc["args"], "-source"),
+                              "checkpoint": session["checkpoint"], "cwd": proc["cwd"]})
+
     def discover(self):
         procs = scan_vivado()
         if not procs:
@@ -147,15 +185,15 @@ class Discovery:
                 runs_dir, run = loc
                 group = group_for("project", runs_dir, Path(runs_dir).name[:-5])
                 group.pids.add(proc["pid"])
-                if run:
+                if run and is_run_worker(proc, os.path.join(runs_dir, run)):
                     group.run_pids.setdefault(run, set()).add(proc["pid"])
+                else:
+                    self._add_resume(group, proc, run)
         for proc in procs:
             if proc["pid"] in in_runs:
                 continue
             args, cwd = proc["args"], proc["cwd"]
-            log = _arg_after(args, "-log") or (os.path.join(cwd, "vivado.log") if cwd else None)
-            if log and not os.path.isabs(log) and cwd:
-                log = os.path.join(cwd, log)
+            log = _log_of(proc)
             script = _arg_after(args, "-source")
             launcher = {"pid": proc["pid"], "log": log, "script": script}
             target = None
@@ -169,6 +207,10 @@ class Discovery:
                 group = group_for("project", target, Path(target).name[:-5])
                 group.pids.add(proc["pid"])
                 group.launcher = launcher
+            elif log and (ckpt := self._resume_target(proc, log)):
+                group = group_for("project", ckpt[0], Path(ckpt[0]).name[:-5])
+                group.pids.add(proc["pid"])
+                self._add_resume(group, proc, ckpt[1])
             elif log and os.path.exists(log):
                 group = group_for("log", log, Path(log).stem)
                 group.pids.add(proc["pid"])
