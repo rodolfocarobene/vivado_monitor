@@ -483,6 +483,17 @@ scan_bytes = 262144
 "_routed" = "route_design"
 "_postroute_physopt" = "post_route_phys_opt_design"
 
+# Files that prove a step ran when no log/session explains them (a run that failed and was then finished
+# outside vmon's sight: deleted resume script/log, other tools, ...). Only files in the run dir that are
+# newer than the failure count. {top} = the run's top name (the .vdi stem). Checkpoints use [resume.checkpoints]
+# and reports use [reports.types]; this table adds everything else (pattern on the file name -> step).
+[artifacts]
+tolerance_s = 1
+[artifacts.files]
+'^{top}\.bit$' = "write_bitstream"
+'^{top}\.bin$' = "write_bitstream"
+'^{top}_routed\.dcp$' = "route_design"
+
 # ---------------------------------------------------------------- documentation links
 # Templates only; edit freely in ~/.config/vmon/flows.toml. A value that is a bare Tcl command name is expanded
 # with tcl_command; a value containing "://" is used as is. {query} is URL-encoded.

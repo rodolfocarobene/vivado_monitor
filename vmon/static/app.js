@@ -117,6 +117,7 @@ const ui = {
   view: new Map(),        // fw id -> 'flow' | 'messages'
   mv: new Map(),          // fw id -> messages (triage) view state
   auto: new Map(),        // fw id -> {keys:Set auto-opened node keys, dismissed:Set, sig}: follow-live auto-expansion
+  rsel: new Map(),        // node key -> path of the report shown in the Reports tab
 };
 let hashOpen = new Set();
 let hashTab = new Map();
@@ -353,8 +354,8 @@ function attemptsHTML(n, fw) {
     const dur = live ? `<span data-start="${a.started_at}">${fmtDur(nowS() - a.started_at)}</span>` : a.started_at && a.ended_at ? fmtDur(a.ended_at - a.started_at) : '';
     const open = f && fx.has(`open|${fw.id}|${n.id}|${a.n}`);
     return `<div class="arow${isCur ? ' cur' : ' old'}" data-status="${esc(a.status)}"><div class="a-ic">${(ATT_ICON[a.status] || ICON.pending)}</div>
-      <div class="a-main"><div class="a-h"><b>Attempt ${a.n}</b><span class="a-mode">${a.mode === 'resume' ? 'resumed' : 'project run'}</span>${isCur ? '<span class="a-now">latest</span>' : ''}<span class="a-time num">${when}${dur ? ` · ${dur}` : ''}</span></div>
-      ${a.summary ? `<div class="a-sum">${esc(a.summary)}</div>` : ''}
+      <div class="a-main"><div class="a-h"><b>Attempt ${a.n}</b><span class="a-mode">${a.mode === 'resume' ? 'resumed' : a.mode === 'external' ? 'outside project flow (inferred from files)' : 'project run'}</span>${isCur ? '<span class="a-now">latest</span>' : ''}<span class="a-time num">${when}${dur ? ` · ${dur}` : ''}</span></div>
+      ${a.log_missing ? '<div class="a-sum a-muted">log no longer available</div>' : a.summary ? `<div class="a-sum">${esc(a.summary)}</div>` : ''}
       ${a.checkpoint ? `<div class="a-cp mono" title="${esc(a.checkpoint)}">from ${esc(a.checkpoint.split('/').pop())}</div>` : ''}
       ${f ? `<div class="a-fail"><b>${failKind(f)}:</b> ${esc(f.reason || 'Error')}${(f.details || f.hs_err) ? ` <button class="fbtn sm" data-act="att-toggle" data-key="open|${esc(fw.id)}|${esc(n.id)}|${a.n}">${open ? 'hide details' : 'details'}</button>` : ''}</div>${open ? failureHTML(f, fw, n, `a${a.n}`, '') : ''}` : ''}
       </div></div>`;
@@ -663,6 +664,7 @@ function infoHTML(fw) {
 function attemptLineHTML(a) {
   const parts = [`<b>Attempt ${a.n}</b>`];
   if (a.mode === 'resume') parts.push(`resumed${a.resumed_from ? ` from ${esc(String(a.resumed_from).replace(/_design$/, ''))} checkpoint` : ''}`);
+  else if (a.mode === 'external') parts.push(`outside project flow (inferred from files)${a.resumed_from ? `, after ${esc(String(a.resumed_from).replace(/_design$/, ''))} checkpoint` : ''}`);
   else parts.push('restarted');
   if (a.previous_failure) parts.push(`<span class="prev">previous attempt ${CRASH_RE.test(a.previous_failure) ? 'crashed' : 'failed'}: ${esc(a.previous_failure)}</span>`);
   return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span>${parts.join(' · ')}</span>`;
@@ -759,7 +761,7 @@ function updateNode(el, n, fw, depth) {
   r.label.title = n.description ? `${n.label} — ${n.description}` : n.label;
   const showDesc = n.description && n.status !== 'done' && (n.status === 'pending' || n.status === 'queued' || n.status === 'running');
   r.desc.hidden = !showDesc; setText(r.desc, showDesc ? n.description : '');
-  setHTML(r.rchips, (n.reports || []).map((rp) => `<span class="rchip${rp.stale ? ' stale' : ''}${(rp.alerts || []).length ? ' alerted' : ''}" data-act="rchip" title="${esc(rp.path || '')}${rp.stale ? ' (stale: from a previous run)' : ''}">${esc(rp.label || rp.name)}${rp.stale ? '<i>stale</i>' : ''}</span>`).join(''));
+  setHTML(r.rchips, (n.reports || []).map((rp) => `<span class="rchip${rp.stale ? ' stale' : ''}${(rp.alerts || []).length ? ' alerted' : ''}" data-act="rchip" data-path="${esc(rp.path || '')}" title="${esc(rp.path || '')}${rp.stale ? ' (stale: from a previous run)' : ''}">${esc(rp.label || rp.name)}${rp.stale ? '<i>stale</i>' : ''}</span>`).join(''));
   r.rchips.hidden = !(n.reports || []).length;
   setAttr(el, 'data-alert', lvl); setAttr(el, 'data-expected', n.expected ? '1' : '0'); setAttr(el, 'data-optional', n.optional ? '1' : '0');
   setHTML(r.badges, badgesHTML(n.counts));
@@ -887,8 +889,7 @@ function renderFlowView(fw, flow) {
   v.followBtn.classList.toggle('on', sel.follow);
   setAttr(v.followBtn, 'aria-pressed', String(sel.follow));
   setText(v.followBtn, 'follow live'); // same text in both states: the switch shows the state, the button never changes width
-  setAttr(v.followBtn, 'title', sel.follow ? 'Following the running stage — click to stop and stay on this stage' : 'Click to jump to the running stage and keep following it');
-  v.followBtn.hidden = sel.follow && fw.status !== 'running';
+  setAttr(v.followBtn, 'title', sel.follow ? (fw.status === 'running' ? 'Following the running stage — click to stop and stay on this stage' : 'Nothing running — showing the latest stage; it will follow when a step runs. Click to pin this stage') : 'Click to jump to the running stage and keep following it');
   patchList(v.stages, stages, (n) => n.id, createStage, (e, n) => updateStage(e, n, fw, n.id === selStage.id));
   if (v.selId !== selStage.id || v.selFlow !== flow.id || !v.detEl) {
     const prev = v.selId && v.selFlow === flow.id && stages.find((s) => s.id === v.selId);
@@ -983,7 +984,7 @@ function syncBody(el, n, fw, depth) {
       patchList(r.panes.flow, n.children, (c) => c.id, createNode, (e, c) => updateNode(e, c, fw, depth + 1));
     } else if (act === 'messages') ensureMessages(el, n, fw);
     else if (act === 'log') ensureLog(el, n, fw);
-    else if (act === 'reports') renderReports(r.panes.reports, n);
+    else if (act === 'reports') renderReports(r.panes.reports, n, keyOf(fw, n));
     else if (act === 'timing') renderTiming(r.panes.timing, n);
   } else if (r.panel && !el._clearT) {
     el._clearT = setTimeout(() => {
@@ -1140,8 +1141,14 @@ const REPORT_RENDERERS = {
 };
 REPORT_RENDERERS.methodology = REPORT_RENDERERS.drc;
 
-function renderReports(pane, n) {
-  const html = (n.reports || []).map((rp, i) => {
+function renderReports(pane, n, key) {
+  const reps = n.reports || [];
+  // one report at a time: the chip clicked on the card, else one with alerts, else the first
+  let cur = reps.findIndex((rp) => rp.path === ui.rsel.get(key));
+  if (cur < 0) cur = Math.max(0, reps.findIndex((rp) => (rp.alerts || []).length && !rp.stale));
+  const bar = reps.length > 1 ? `<div class="rsel">${reps.map((rp, i) => `<button class="rchip${i === cur ? ' on' : ''}${rp.stale ? ' stale' : ''}${(rp.alerts || []).length ? ' alerted' : ''}" data-act="rsel" data-path="${esc(rp.path || '')}" title="${esc(rp.path || '')}">${esc(rp.label || rp.name)}${rp.stale ? '<i>stale</i>' : ''}</button>`).join('')}</div>` : '';
+  const html = reps.map((rp, i) => {
+    if (i !== cur) return '';
     const fn = REPORT_RENDERERS[rp.kind] || renderGeneric;
     let body;
     try { body = rp.summary == null ? '<div class="none">No summary available.</div>' : fn(rp.summary); } catch (e) { body = renderGeneric(rp.summary); }
@@ -1150,7 +1157,7 @@ function renderReports(pane, n) {
     const soft = rp.kind === 'timing_summary' && n.timing && !n.timing.final;
     return `<section class="report${rp.stale ? ' stale' : ''}${soft ? ' soft' : ''}"><header><b>${esc(rp.label || rp.name)}</b><span class="kind">${esc(rp.name)}</span><span class="kind">${esc(rp.kind)}</span>${rp.stale ? '<span class="stag">stale</span>' : ''}<span class="age">${age}</span>${docBtn(rp.doc_url, `${rp.label || rp.name} documentation`)}<button class="rawbtn" data-act="raw" data-i="${i}">raw</button></header>${al}${body}</section>`;
   }).join('');
-  setHTML(pane, html || '<div class="none">No reports yet.</div>');
+  setHTML(pane, html ? bar + html : '<div class="none">No reports yet.</div>');
 }
 
 function showModal(title, text) {
@@ -1519,7 +1526,9 @@ document.addEventListener('click', async (ev) => {
     gotoNode(curFw(), t.dataset.node);
   } else if (act === 'rchip' && nodeEl) {
     const k = keyOf(nodeEl._fw, nodeEl._node);
-    ui.open.set(k, true); ui.tab.set(k, 'reports'); render();
+    ui.open.set(k, true); ui.tab.set(k, 'reports'); ui.rsel.set(k, t.dataset.path); render();
+  } else if (act === 'rsel' && nodeEl) {
+    ui.rsel.set(keyOf(nodeEl._fw, nodeEl._node), t.dataset.path); render();
   } else if (act === 'raw' && nodeEl) {
     const rp = nodeEl._node.reports[+t.dataset.i];
     try { showModal(rp.name + ' — ' + rp.path, await apiReportRaw(nodeEl._fw, rp.path)); } catch (e) { toast('Could not load report: ' + e.message); }

@@ -69,6 +69,7 @@ class Node:
     number_predicted: bool = False
     failure: dict | None = None
     attempts: list = field(default_factory=list)
+    log_missing: bool = False
 
     def to_dict(self):
         return {
@@ -81,7 +82,7 @@ class Node:
             "expected": self.expected, "optional": self.optional, "description": self.description,
             "estimate": self.estimate, "reports": self.reports, "alerts": self.alerts,
             "doc_url": self.doc_url, "number": self.number, "number_predicted": self.number_predicted,
-            "failure": self.failure, "attempts": self.attempts,
+            "failure": self.failure, "attempts": self.attempts, "log_missing": self.log_missing,
             "children": [c.to_dict() for c in self.children],
         }
 

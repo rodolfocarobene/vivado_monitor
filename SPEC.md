@@ -373,3 +373,15 @@ Attempts: Node.attempts = [{"n": int, "status": str, "started_at", "ended_at", "
 - Run status once a resume exists: running > failed > stopped by the latest attempts; all-done or finished-clean -> done.
 - Events: new `attempt_started`; `step_failed` events carry the failure reason. LogSource (plain log by path) also
   gets `failure` (crash patterns) and `attempt` {n:1,mode:"project"}.
+- Resume robustness: each session record in the attempts store also keeps `steps` ({step: attempt summary incl.
+  counts/timing/failure/log}), `final_status` (once its process ended), `started_at`, `checkpoint`. A session is
+  never dropped because its log vanished (only when it has no summary): its steps are then rebuilt from the
+  summary (no children), `Node.log_missing = true`, attempt `log_missing: true`, summary "log no longer available".
+- External attempt (flows.toml `[artifacts]`, `vmon/artifacts.py`): when the latest project attempt of a step failed
+  and no live session runs, run-dir files newer than the failure (error marker mtime, + `tolerance_s`) are matched
+  to steps: checkpoints (`[resume.checkpoints]`), reports (`[reports.types]`), and `[artifacts.files]`
+  (regex with `{top}` -> step, e.g. `.bit` -> write_bitstream). The furthest proven planned step and every step
+  between the failed one and it become `done` in a synthesized attempt (mode "external", `approx_times: true`:
+  start = earliest new artifact, end = newest artifact of the step; no children/log; reports judged stale only
+  against the failure time). Run done when the last planned step is proven, else stopped. Firmware.attempt mode
+  "external", `resumed_from` = step of the newest checkpoint written before the failure. A real session wins.

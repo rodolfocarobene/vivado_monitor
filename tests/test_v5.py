@@ -354,3 +354,98 @@ def _walk(node):
     yield node
     for c in node.children:
         yield from _walk(c)
+
+
+# ------------------------------------------------------------------ persisted sessions / external attempts
+QICK = FIXTURES / "qick"
+
+
+def _artifact(impl, name, mtime, source=None):
+    path = impl / name
+    if source:
+        shutil.copy(source, path)
+    else:
+        path.write_text("")
+    os.utime(path, (mtime, mtime))
+
+
+def test_deleted_resume_log_keeps_attempt_from_persisted_summary(tmp_path, cfg, report_cache, catalogs):
+    runs = crashed_run(tmp_path)
+    log = tmp_path / "scratch" / "resume.log"
+    log.parent.mkdir()
+    shutil.copy(CRASH / "resume.log", log)
+    snap(runs, cfg, report_cache, catalogs, resume_group(runs, log))            # live: summary persisted
+    live_fw = snap(runs, cfg, report_cache, catalogs, None)
+    live_route = stage_map(live_fw)["impl_1/route_design"]
+    shutil.rmtree(log.parent)                                                    # other tool's scratchpad is wiped
+    fw = snap(runs, cfg, report_cache, catalogs, None)
+    stages = stage_map(fw)
+    route, bit = stages["impl_1/route_design"], stages["impl_1/write_bitstream"]
+    assert fw.status == "done" and fw.attempt["n"] == 2 and fw.attempt["mode"] == "resume"
+    assert route.status == "done" and route.log_missing and not route.failure
+    assert [a["status"] for a in route.attempts] == ["failed", "done"]
+    second = route.attempts[1]
+    assert second["mode"] == "resume" and second["log_missing"] and second["summary"] == "log no longer available"
+    assert second["timing"] == live_route.attempts[1]["timing"]
+    assert (route.timing and route.timing.wns) == (live_route.timing and live_route.timing.wns)
+    assert bit.status == "done" and bit.log_missing
+    assert "step_failed" not in {a["code"] for a in fw.alerts}
+    json.dumps(fw.to_dict())
+
+
+def external_run(tmp_path, newer=True):
+    runs = crashed_run(tmp_path)
+    impl = runs / "impl_1"
+    when = T0 + 4000 if newer else T0 + 1000
+    _artifact(impl, "main_wrapper_physopt.dcp", T0 + 500)
+    _artifact(impl, "main_wrapper_route_status.rpt", when, QICK / "d_1_wrapper_route_status.rpt")
+    _artifact(impl, "main_wrapper_timing_summary_routed.rpt", when + 100,
+              QICK / "d_1_wrapper_timing_summary_routed.rpt")
+    _artifact(impl, "main_wrapper_routed.dcp", when + 300)
+    _artifact(impl, "main_wrapper.bit", when + 600)
+    return runs
+
+
+def test_external_attempt_inferred_from_newer_artifacts(tmp_path, cfg, report_cache, catalogs):
+    runs = external_run(tmp_path)
+    fw = snap(runs, cfg, report_cache, catalogs)
+    stages = stage_map(fw)
+    route, bit = stages["impl_1/route_design"], stages["impl_1/write_bitstream"]
+    assert fw.status == "done" and not fw.live
+    assert route.status == "done" and bit.status == "done" and not route.failure
+    assert fw.attempt == {"n": 2, "mode": "external", "resumed_from": "phys_opt_design",
+                          "previous_failure": "Segmentation fault (signal 11)"}
+    first, second = route.attempts
+    assert (first["n"], first["status"], first["mode"]) == (1, "failed", "project")
+    assert (second["n"], second["status"], second["mode"]) == (2, "done", "external")
+    assert second["approx_times"] and second["started_at"] == T0 + 4000 and second["ended_at"] == T0 + 4300
+    assert route.reports and not any(r["stale"] for r in route.reports)
+    assert route.timing.source == "report" and route.timing.final and fw.timing.wns == route.timing.wns
+    assert bit.started_at == T0 + 4300 and bit.ended_at == T0 + 4600 and bit.attempts == []
+    assert "step_failed" not in {a["code"] for a in fw.alerts}
+    json.dumps(fw.to_dict())
+
+
+def test_artifacts_older_than_failure_do_not_count(tmp_path, cfg, report_cache, catalogs):
+    runs = external_run(tmp_path, newer=False)
+    fw = snap(runs, cfg, report_cache, catalogs)
+    route = stage_map(fw)["impl_1/route_design"]
+    assert fw.status == "failed" and route.status == "failed"
+    assert fw.attempt["mode"] == "project" and stage_map(fw)["impl_1/write_bitstream"].status != "done"
+
+
+def test_bitstream_alone_proves_route_done(tmp_path, cfg, report_cache, catalogs):
+    runs = crashed_run(tmp_path)
+    _artifact(runs / "impl_1", "main_wrapper.bit", T0 + 5000)
+    fw = snap(runs, cfg, report_cache, catalogs)
+    stages = stage_map(fw)
+    assert stages["impl_1/route_design"].status == "done" and stages["impl_1/write_bitstream"].status == "done"
+    assert fw.status == "done" and fw.attempt["mode"] == "external"
+
+
+def test_artifact_map_is_configurable(tmp_path, catalogs):
+    cfg = load_config()
+    cfg.artifacts.files.append(("^{top}\\.xyz$", "write_bitstream"))
+    assert cfg.artifacts.step_for_file("main_wrapper.xyz", "main_wrapper") == "write_bitstream"
+    assert cfg.artifacts.step_for_file("main_wrapper.bit", "main_wrapper") == "write_bitstream"
+    assert cfg.artifacts.step_for_file("other.bit", "main_wrapper") is None

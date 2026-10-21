@@ -120,6 +120,18 @@ class ResumeConfig:
         return next((g for g in match.groups() if g), None)
 
 
+class ArtifactConfig:
+    def __init__(self, spec):
+        self.tolerance_s = spec.get("tolerance_s", 1)
+        self.files = list(spec.get("files", {}).items())      # (pattern with {top}, step)
+
+    def step_for_file(self, name, top):
+        for pattern, step in self.files:
+            if re.search(pattern.replace("{top}", re.escape(top)), name):
+                return step
+        return None
+
+
 class Config:
     def __init__(self, data):
         self.data = data
@@ -154,6 +166,7 @@ class Config:
         self.alerts = data["alerts"]
         self.failure = FailureConfig(data.get("failure", {}))
         self.resume = ResumeConfig(data.get("resume", {}))
+        self.artifacts = ArtifactConfig(data.get("artifacts", {}))
         self._rules_by_char = {}
 
     def rules_for(self, first_char):

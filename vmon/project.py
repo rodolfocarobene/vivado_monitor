@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from . import alerts as alert_rules
+from . import artifacts as artifacts_mod
 from . import failure as failure_mod
 from .attempts import AttemptStore
 from .config import StepDef
@@ -297,7 +298,7 @@ class Source:
                 "elapsed_s": node.elapsed_s, "log": log or node.log, "mode": mode, "checkpoint": checkpoint,
                 "failure": node.failure, "summary": text, "counts": counts_dict(node.counts),
                 "timing": {"wns": timing.wns, "tns": timing.tns, "whs": timing.whs, "ths": timing.ths,
-                           "met": timing.met} if timing else None}
+                           "met": timing.met, "final": timing.final, "stage": timing.stage} if timing else None}
 
     def _deepest_running(self, nodes):
         best = None
@@ -845,15 +846,19 @@ class ProjectSource(Source):
                     state["sessions"].append(known)
                 known.update({"checkpoint": item["checkpoint"] or known.get("checkpoint"),
                               "script": item["script"], "cwd": item["cwd"]})
-        state["sessions"] = [x for x in state["sessions"] if os.path.isfile(x["log"])]
+        # a session whose log is gone stays as long as it has a persisted summary to show
+        state["sessions"] = [x for x in state["sessions"] if os.path.isfile(x["log"]) or x.get("steps")]
         out = []
         for sess in state["sessions"]:
             info = dict(sess)
             info["alive"] = sess["log"] in live_logs
             info["pid"] = live_logs[sess["log"]]["pid"] if info["alive"] else None
+            info["log_missing"] = not os.path.isfile(sess["log"])
             scanned = scan_session(sess["log"], sess.get("cwd"), self.cfg)
             info["checkpoint"] = scanned["checkpoint"] or sess.get("checkpoint")
-            info["started_at"] = scanned["started_at"] or sess["first_seen"]
+            info["started_at"] = scanned["started_at"] or sess.get("started_at") or sess["first_seen"]
+            if not info["log_missing"]:
+                sess["checkpoint"], sess["started_at"] = info["checkpoint"], info["started_at"]
             info["resumed_from"] = rc.step_for_checkpoint(info["checkpoint"]) if info["checkpoint"] else None
             out.append(info)
         return out
@@ -875,6 +880,8 @@ class ProjectSource(Source):
 
     def _session_nodes(self, run, sess, step_ids, now):
         """{step id: Node} for the steps this resume session ran (or is about to run)."""
+        if sess.get("log_missing"):
+            return self._summary_nodes(run, sess, step_ids, now)
         plog = self._log(sess["log"])
         sections = [c for c in plog.parser.root.children if c.kind == "step"]
         resumed = sess["resumed_from"]
@@ -916,6 +923,69 @@ class ProjectSource(Source):
                 nodes[sid] = self._step_node(sid, "%s/%s" % (run.id, sid), plog, None, "running", "running",
                                              True, run.id, started, None, (), now)
         return nodes
+
+    def _summary_nodes(self, run, sess, step_ids, now):
+        """Nodes rebuilt from the persisted per-step summary of a session whose log no longer exists."""
+        steps = {sid: att for sid, att in (sess.get("steps") or {}).items() if sid in self.cfg.steps}
+        reports = self._run_reports(run, {sid: sess["started_at"] for sid in steps})
+        nodes = {}
+        for sid, att in steps.items():
+            status = att["status"]
+            if status in ("running", "queued"):
+                status = "running" if sess["alive"] else "stopped"
+            node = self._step_node(sid, "%s/%s" % (run.id, sid), None, None, status, status, sess["alive"],
+                                   run.id, att.get("started_at"), att.get("ended_at"), reports.get(sid, ()),
+                                   now, att.get("failure"))
+            self._restore_summary(node, att)
+            nodes[sid] = node
+        return nodes
+
+    @staticmethod
+    def _restore_summary(node, att):
+        """Counts, elapsed time and timing of a node that has no log to read them from."""
+        node.log_missing = True
+        node.log = att.get("log")
+        node.elapsed_s = att.get("elapsed_s", node.elapsed_s)
+        counts = att.get("counts")
+        if counts:
+            node.counts = [counts["info"], counts["warning"], counts["critical"], counts["error"]]
+        timing = att.get("timing")
+        if timing and (node.timing is None or node.timing.source != "report"):
+            node.timing = Timing(wns=timing["wns"], tns=timing["tns"], whs=timing["whs"], ths=timing["ths"],
+                                 met=timing["met"], source="summary", label="Saved summary",
+                                 final=timing.get("final", False), stage=timing.get("stage", ""))
+
+    def _external_nodes(self, run, nodes, current, step_ids, now):
+        """Attempt inferred from run-dir files newer than the failure, when nothing else explains them.
+
+        Returns (nodes by step, resumed_from) or None."""
+        failed = [sid for sid in step_ids if nodes[sid].status == "failed"
+                  and current.get(sid) and current[sid][-1]["mode"] == "project"]
+        if not failed or not run.top:
+            return None
+        first_failed = failed[0]
+        marker = run.markers.get(first_failed, {})
+        fail_time = max(t for t in (marker.get("error"), run.markers.get("vivado", {}).get("error"),
+                                    nodes[first_failed].ended_at, marker.get("begin")) if t is not None)
+        proven, before = artifacts_mod.scan(run.entries, run.top, fail_time, self.cfg)
+        start = step_ids.index(first_failed)
+        candidates = [s for s in step_ids[start:] if nodes[s].status != "done"]
+        proven = {s: v for s, v in proven.items() if s in candidates}
+        if not proven:
+            return None
+        last = max(proven, key=lambda s: step_ids.index(s))
+        chain = [s for s in candidates if step_ids.index(s) <= step_ids.index(last)]
+        earliest = min(v["first"] for v in proven.values())
+        reports = self._run_reports(run, {sid: fail_time for sid in chain})
+        out, begin = {}, earliest
+        for sid in chain:
+            end = proven[sid]["last"] if sid in proven else begin
+            end = max(end, begin)
+            node = self._step_node(sid, "%s/%s" % (run.id, sid), None, None, "done", "done", False, run.id,
+                                   begin, end, reports.get(sid, ()), now)
+            out[sid] = node
+            begin = end
+        return out, before
 
     def _impl_steps(self, run, now, live, resumes=(), last_impl=False):
         sections = []
@@ -978,12 +1048,33 @@ class ProjectSource(Source):
                 continue
             effective.append(sess)
             n = main_n + len(effective)
+            rec = next(x for x in state["sessions"] if x["log"] == sess["log"])
+            steps = rec.setdefault("steps", {}) if not sess["log_missing"] else rec["steps"]
             for sid, node in sess_nodes.items():
                 nodes[sid] = node
-                current.setdefault(sid, []).append(
-                    self._attempt_summary(node, n, "resume", sess["checkpoint"], sess["log"]))
+                att = self._attempt_summary(node, n, "resume", sess["checkpoint"], sess["log"])
+                if sess["log_missing"]:
+                    att.update(log_missing=True, summary="log no longer available")
+                else:
+                    steps[sid] = dict(att)
+                current.setdefault(sid, []).append(att)
+            if not sess["log_missing"]:
+                rec["alive"] = sess["alive"]
+                rec["final_status"] = None if sess["alive"] else self._derive_status(
+                    [n.status for n in sess_nodes.values()], False, "stopped")
             if sess["log"] in self.logs:
                 self._extra_parsers.append(self.logs[sess["log"]])
+        external = None
+        if not any(s["alive"] for s in effective):
+            external = self._external_nodes(run, nodes, current, step_ids, now)
+        if external:
+            ext_nodes, ext_before = external
+            n = main_n + len(effective) + 1
+            for sid, node in ext_nodes.items():
+                nodes[sid] = node
+                att = self._attempt_summary(node, n, "external", None, None)
+                att.update(approx_times=True, summary="outside project flow (inferred from files)")
+                current.setdefault(sid, []).append(att)
         archive = state["archive"]
         for sid, node in nodes.items():
             allatt = archive.get(sid, []) + current.get(sid, [])
@@ -991,7 +1082,7 @@ class ProjectSource(Source):
                 node.attempts = allatt
         state["last"] = current
 
-        run_n = main_n + len(effective)
+        run_n = main_n + len(effective) + (1 if external else 0)
         latest = effective[-1] if effective else None
         previous = None
         for sid in nodes:
@@ -1002,7 +1093,11 @@ class ProjectSource(Source):
             "n": run_n, "mode": "resume" if latest else "project",
             "resumed_from": latest["resumed_from"] if latest else None,
             "previous_failure": previous[1] if previous else None}
-        if effective:
+        if external:
+            self._attempt_info[run.id].update(mode="external", resumed_from=ext_before)
+            final = step_ids[-1] in external[0]
+            run.status = "done" if final and all(n.status == "done" for n in nodes.values()) else "stopped"
+        elif effective:
             run.status = self._derive_status([n.status for n in nodes.values()],
                                              any(s["alive"] for s in effective), run.status)
         return [nodes[sid] for sid in step_ids] + [nodes[sid] for sid in nodes if sid not in step_ids]
@@ -1070,6 +1165,8 @@ class ProjectSource(Source):
         fw.started_at = min(begins) if begins else launch_time
         activity = [p.tail.last_growth for p in parsers if p.tail.last_growth]
         activity += [r.end for r in runs if r.end] + begins
+        # resumed/external attempts end after the run's own markers
+        activity += [s.ended_at for f in flows for s in f.stages if s.ended_at]
         fw.updated_at = max(activity) if activity else launch_time
         if fw.started_at:
             ended = fw.updated_at if fw.status in ("done", "failed", "stopped") else now
