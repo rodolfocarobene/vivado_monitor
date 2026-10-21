@@ -2865,7 +2865,228 @@
     ],
     "final": true,
     "stage": "Route \u00b7 final report",
-    "carried": {}
+    "carried": {},
+    "report": "impl_1/top_timing_summary_routed.rpt",
+    "path_counts": {
+     "total": 405,
+     "setup": 230,
+     "hold": 175,
+     "setup_failing": 0,
+     "hold_failing": 0,
+     "failing": 0,
+     "failing_clocks": 0,
+     "clocks": [],
+     "shown": 46,
+     "capped": true,
+     "worst_setup": 0.006,
+     "worst_hold": 0.01
+    },
+    "paths": [
+     {
+      "id": 0,
+      "type": "setup",
+      "slack": 0.006,
+      "status": "MET",
+      "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[34]/C",
+      "destination": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[18]/R",
+      "source_clock": "clk_out1_d_1_clk_adc0_x2_0",
+      "dest_clock": "clk_out1_d_1_clk_adc0_x2_0",
+      "levels": 3,
+      "logic_pct": 19.08,
+      "route_pct": 80.92,
+      "skew": -0.181
+     },
+     {
+      "id": 1,
+      "type": "hold",
+      "slack": 0.01,
+      "status": "MET",
+      "source": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[52]/C",
+      "destination": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[95]/D",
+      "source_clock": "clk_out1_d_1_clk_adc0_x2_0",
+      "dest_clock": "clk_out1_d_1_clk_adc0_x2_0",
+      "levels": 0,
+      "logic_pct": 31.373,
+      "route_pct": 68.627,
+      "skew": 0.184
+     },
+     {
+      "id": 2,
+      "type": "hold",
+      "slack": 0.01,
+      "status": "MET",
+      "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[27]/C",
+      "destination": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/storage_data1_reg[53]/D",
+      "source_clock": "RFDAC2_CLK",
+      "dest_clock": "RFDAC2_CLK",
+      "levels": 0,
+      "logic_pct": 65.041,
+      "route_pct": 34.959,
+      "skew": -0.131
+     },
+     {
+      "id": 3,
+      "type": "hold",
+      "slack": 0.01,
+      "status": "MET",
+      "source": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[116]/C",
+      "destination": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[104]/CE",
+      "source_clock": "mmcm_clkout0",
+      "dest_clock": "mmcm_clkout0",
+      "levels": 1,
+      "logic_pct": 71.852,
+      "route_pct": 28.148,
+      "skew": -0.214
+     },
+     {
+      "id": 4,
+      "type": "hold",
+      "slack": 0.01,
+      "status": "MET",
+      "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[81]/C",
+      "destination": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[39]/CE",
+      "source_clock": "clk_out1_d_1_clk_core_0",
+      "dest_clock": "clk_out1_d_1_clk_core_0",
+      "levels": 1,
+      "logic_pct": 56.028,
+      "route_pct": 43.972,
+      "skew": -0.264
+     },
+     {
+      "id": 5,
+      "type": "hold",
+      "slack": 0.01,
+      "status": "MET",
+      "source": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[19]/C",
+      "destination": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[108]/CE",
+      "source_clock": "clk_pl_0",
+      "dest_clock": "clk_pl_0",
+      "levels": 2,
+      "logic_pct": 74.687,
+      "route_pct": 25.313,
+      "skew": 0.004
+     },
+     {
+      "id": 6,
+      "type": "hold",
+      "slack": 0.01,
+      "status": "MET",
+      "source": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[17]/C",
+      "destination": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[14]/D",
+      "source_clock": "RFDAC2_CLK",
+      "dest_clock": "RFDAC2_CLK",
+      "levels": 2,
+      "logic_pct": 74.016,
+      "route_pct": 25.984,
+      "skew": 0.068
+     },
+     {
+      "id": 7,
+      "type": "hold",
+      "slack": 0.014,
+      "status": "MET",
+      "source": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[10]/C",
+      "destination": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[13]/R",
+      "source_clock": "mmcm_clkout6",
+      "dest_clock": "mmcm_clkout6",
+      "levels": 1,
+      "logic_pct": 63.958,
+      "route_pct": 36.042,
+      "skew": 0.103
+     }
+    ],
+    "clocks": [
+     {
+      "name": "clk_out1_d_1_clk_adc0_x2_0",
+      "period": 1.808,
+      "wns": 0.006,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.01,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "RFDAC2_CLK",
+      "period": 3.255,
+      "wns": 0.043,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.01,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "mmcm_clkout0",
+      "period": 3.332,
+      "wns": 0.11,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.01,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "clk_out1_d_1_clk_core_0",
+      "period": 4.883,
+      "wns": 0.228,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.01,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "clk_pl_0",
+      "period": 10.0,
+      "wns": 1.23,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.01,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "mmcm_clkout6",
+      "period": 6.664,
+      "wns": 1.875,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.014,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "sys_clk_ddr4_clk_p",
+      "period": 4.998,
+      "wns": 3.116,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.05,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "mmcm_clkout5",
+      "period": 13.328,
+      "wns": 10.521,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.017,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "RFADC0_CLK",
+      "period": 43.403,
+      "wns": 42.694,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.02,
+      "ths": 0.0,
+      "ths_fail": 0
+     }
+    ]
    },
    "flows": [
     {
@@ -4296,7 +4517,228 @@
         ],
         "final": true,
         "stage": "Route \u00b7 final report",
-        "carried": {}
+        "carried": {},
+        "report": "impl_1/top_timing_summary_routed.rpt",
+        "path_counts": {
+         "total": 405,
+         "setup": 230,
+         "hold": 175,
+         "setup_failing": 0,
+         "hold_failing": 0,
+         "failing": 0,
+         "failing_clocks": 0,
+         "clocks": [],
+         "shown": 46,
+         "capped": true,
+         "worst_setup": 0.006,
+         "worst_hold": 0.01
+        },
+        "paths": [
+         {
+          "id": 0,
+          "type": "setup",
+          "slack": 0.006,
+          "status": "MET",
+          "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[34]/C",
+          "destination": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[18]/R",
+          "source_clock": "clk_out1_d_1_clk_adc0_x2_0",
+          "dest_clock": "clk_out1_d_1_clk_adc0_x2_0",
+          "levels": 3,
+          "logic_pct": 19.08,
+          "route_pct": 80.92,
+          "skew": -0.181
+         },
+         {
+          "id": 1,
+          "type": "hold",
+          "slack": 0.01,
+          "status": "MET",
+          "source": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[52]/C",
+          "destination": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[95]/D",
+          "source_clock": "clk_out1_d_1_clk_adc0_x2_0",
+          "dest_clock": "clk_out1_d_1_clk_adc0_x2_0",
+          "levels": 0,
+          "logic_pct": 31.373,
+          "route_pct": 68.627,
+          "skew": 0.184
+         },
+         {
+          "id": 2,
+          "type": "hold",
+          "slack": 0.01,
+          "status": "MET",
+          "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[27]/C",
+          "destination": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/storage_data1_reg[53]/D",
+          "source_clock": "RFDAC2_CLK",
+          "dest_clock": "RFDAC2_CLK",
+          "levels": 0,
+          "logic_pct": 65.041,
+          "route_pct": 34.959,
+          "skew": -0.131
+         },
+         {
+          "id": 3,
+          "type": "hold",
+          "slack": 0.01,
+          "status": "MET",
+          "source": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[116]/C",
+          "destination": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[104]/CE",
+          "source_clock": "mmcm_clkout0",
+          "dest_clock": "mmcm_clkout0",
+          "levels": 1,
+          "logic_pct": 71.852,
+          "route_pct": 28.148,
+          "skew": -0.214
+         },
+         {
+          "id": 4,
+          "type": "hold",
+          "slack": 0.01,
+          "status": "MET",
+          "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[81]/C",
+          "destination": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[39]/CE",
+          "source_clock": "clk_out1_d_1_clk_core_0",
+          "dest_clock": "clk_out1_d_1_clk_core_0",
+          "levels": 1,
+          "logic_pct": 56.028,
+          "route_pct": 43.972,
+          "skew": -0.264
+         },
+         {
+          "id": 5,
+          "type": "hold",
+          "slack": 0.01,
+          "status": "MET",
+          "source": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[19]/C",
+          "destination": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[108]/CE",
+          "source_clock": "clk_pl_0",
+          "dest_clock": "clk_pl_0",
+          "levels": 2,
+          "logic_pct": 74.687,
+          "route_pct": 25.313,
+          "skew": 0.004
+         },
+         {
+          "id": 6,
+          "type": "hold",
+          "slack": 0.01,
+          "status": "MET",
+          "source": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[17]/C",
+          "destination": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[14]/D",
+          "source_clock": "RFDAC2_CLK",
+          "dest_clock": "RFDAC2_CLK",
+          "levels": 2,
+          "logic_pct": 74.016,
+          "route_pct": 25.984,
+          "skew": 0.068
+         },
+         {
+          "id": 7,
+          "type": "hold",
+          "slack": 0.014,
+          "status": "MET",
+          "source": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[10]/C",
+          "destination": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[13]/R",
+          "source_clock": "mmcm_clkout6",
+          "dest_clock": "mmcm_clkout6",
+          "levels": 1,
+          "logic_pct": 63.958,
+          "route_pct": 36.042,
+          "skew": 0.103
+         }
+        ],
+        "clocks": [
+         {
+          "name": "clk_out1_d_1_clk_adc0_x2_0",
+          "period": 1.808,
+          "wns": 0.006,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.01,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "RFDAC2_CLK",
+          "period": 3.255,
+          "wns": 0.043,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.01,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "mmcm_clkout0",
+          "period": 3.332,
+          "wns": 0.11,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.01,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "clk_out1_d_1_clk_core_0",
+          "period": 4.883,
+          "wns": 0.228,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.01,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "clk_pl_0",
+          "period": 10.0,
+          "wns": 1.23,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.01,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "mmcm_clkout6",
+          "period": 6.664,
+          "wns": 1.875,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.014,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "sys_clk_ddr4_clk_p",
+          "period": 4.998,
+          "wns": 3.116,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.05,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "mmcm_clkout5",
+          "period": 13.328,
+          "wns": 10.521,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.017,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "RFADC0_CLK",
+          "period": 43.403,
+          "wns": 42.694,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.02,
+          "ths": 0.0,
+          "ths_fail": 0
+         }
+        ]
        },
        "run": "impl_1",
        "log": null,
@@ -4320,28 +4762,222 @@
           "ths": 0.0,
           "clocks": [
            {
-            "name": "clk_pl_0",
-            "period": 5.0,
+            "name": "clk_out1_d_1_clk_adc0_x2_0",
+            "period": 1.808,
             "wns": 0.006,
             "tns": 0.0,
-            "whs": 0.011,
-            "ths": 0.0
+            "tns_fail": 0,
+            "whs": 0.01,
+            "ths": 0.0,
+            "ths_fail": 0
            },
            {
-            "name": "adc_clk",
-            "period": 2.0,
-            "wns": 0.134,
+            "name": "RFDAC2_CLK",
+            "period": 3.255,
+            "wns": 0.043,
             "tns": 0.0,
-            "whs": 0.019,
-            "ths": 0.0
+            "tns_fail": 0,
+            "whs": 0.01,
+            "ths": 0.0,
+            "ths_fail": 0
            },
            {
-            "name": "dac_clk",
-            "period": 2.0,
-            "wns": 0.208,
+            "name": "mmcm_clkout0",
+            "period": 3.332,
+            "wns": 0.11,
             "tns": 0.0,
-            "whs": 0.022,
-            "ths": 0.0
+            "tns_fail": 0,
+            "whs": 0.01,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "clk_out1_d_1_clk_core_0",
+            "period": 4.883,
+            "wns": 0.228,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.01,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "clk_pl_0",
+            "period": 10.0,
+            "wns": 1.23,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.01,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "mmcm_clkout6",
+            "period": 6.664,
+            "wns": 1.875,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.014,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "sys_clk_ddr4_clk_p",
+            "period": 4.998,
+            "wns": 3.116,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.05,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "mmcm_clkout5",
+            "period": 13.328,
+            "wns": 10.521,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.017,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "RFADC0_CLK",
+            "period": 43.403,
+            "wns": 42.694,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.02,
+            "ths": 0.0,
+            "ths_fail": 0
+           }
+          ],
+          "path_counts": {
+           "total": 405,
+           "setup": 230,
+           "hold": 175,
+           "setup_failing": 0,
+           "hold_failing": 0,
+           "failing": 0,
+           "failing_clocks": 0,
+           "clocks": [],
+           "shown": 46,
+           "capped": true,
+           "worst_setup": 0.006,
+           "worst_hold": 0.01
+          },
+          "paths": [
+           {
+            "id": 0,
+            "type": "setup",
+            "slack": 0.006,
+            "status": "MET",
+            "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[34]/C",
+            "destination": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[18]/R",
+            "source_clock": "clk_out1_d_1_clk_adc0_x2_0",
+            "dest_clock": "clk_out1_d_1_clk_adc0_x2_0",
+            "levels": 3,
+            "logic_pct": 19.08,
+            "route_pct": 80.92,
+            "skew": -0.181
+           },
+           {
+            "id": 1,
+            "type": "hold",
+            "slack": 0.01,
+            "status": "MET",
+            "source": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[52]/C",
+            "destination": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[95]/D",
+            "source_clock": "clk_out1_d_1_clk_adc0_x2_0",
+            "dest_clock": "clk_out1_d_1_clk_adc0_x2_0",
+            "levels": 0,
+            "logic_pct": 31.373,
+            "route_pct": 68.627,
+            "skew": 0.184
+           },
+           {
+            "id": 2,
+            "type": "hold",
+            "slack": 0.01,
+            "status": "MET",
+            "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[27]/C",
+            "destination": "d_1_i/axis_register_slice_2/inst/axisc_register_slice_0/storage_data1/storage_data1_reg[53]/D",
+            "source_clock": "RFDAC2_CLK",
+            "dest_clock": "RFDAC2_CLK",
+            "levels": 0,
+            "logic_pct": 65.041,
+            "route_pct": 34.959,
+            "skew": -0.131
+           },
+           {
+            "id": 3,
+            "type": "hold",
+            "slack": 0.01,
+            "status": "MET",
+            "source": "d_1_i/ddr4/ddr4_0/inst/u_ddr4_mem_intfc/u_ddr_cal_riu/mcs0/inst/lmb_bram_I/lmb_bram_I_reg[116]/C",
+            "destination": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[104]/CE",
+            "source_clock": "mmcm_clkout0",
+            "dest_clock": "mmcm_clkout0",
+            "levels": 1,
+            "logic_pct": 71.852,
+            "route_pct": 28.148,
+            "skew": -0.214
+           },
+           {
+            "id": 4,
+            "type": "hold",
+            "slack": 0.01,
+            "status": "MET",
+            "source": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[81]/C",
+            "destination": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[39]/CE",
+            "source_clock": "clk_out1_d_1_clk_core_0",
+            "dest_clock": "clk_out1_d_1_clk_core_0",
+            "levels": 1,
+            "logic_pct": 56.028,
+            "route_pct": 43.972,
+            "skew": -0.264
+           },
+           {
+            "id": 5,
+            "type": "hold",
+            "slack": 0.01,
+            "status": "MET",
+            "source": "d_1_i/qick_processor_0/inst/QPROC/DISPATCHER/port_trig/port_trig_reg[19]/C",
+            "destination": "d_1_i/rst_adc0/U0/EXT_LPF/lpf_int/lpf_int_reg[108]/CE",
+            "source_clock": "clk_pl_0",
+            "dest_clock": "clk_pl_0",
+            "levels": 2,
+            "logic_pct": 74.687,
+            "route_pct": 25.313,
+            "skew": 0.004
+           },
+           {
+            "id": 6,
+            "type": "hold",
+            "slack": 0.01,
+            "status": "MET",
+            "source": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[17]/C",
+            "destination": "d_1_i/axis_clk_gen/inst/gen_pipelined/mesg/mesg_reg[14]/D",
+            "source_clock": "RFDAC2_CLK",
+            "dest_clock": "RFDAC2_CLK",
+            "levels": 2,
+            "logic_pct": 74.016,
+            "route_pct": 25.984,
+            "skew": 0.068
+           },
+           {
+            "id": 7,
+            "type": "hold",
+            "slack": 0.014,
+            "status": "MET",
+            "source": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[10]/C",
+            "destination": "d_1_i/qick_processor_0/inst/QPROC/CORE/count_value_i/count_value_i_reg[13]/R",
+            "source_clock": "mmcm_clkout6",
+            "dest_clock": "mmcm_clkout6",
+            "levels": 1,
+            "logic_pct": 63.958,
+            "route_pct": 36.042,
+            "skew": 0.103
            }
           ]
          },
@@ -4688,6 +5324,64 @@
         }
        ],
        "doc_url": "https://docs.amd.com/search?q=route_design",
+       "convergence": {
+        "iterations": [
+         {
+          "label": "4.1 Global Iteration 0",
+          "overlaps": [
+           31569,
+           2267,
+           230,
+           35,
+           9,
+           2,
+           1,
+           1,
+           0
+          ],
+          "final_overlaps": 0,
+          "wns": -0.05,
+          "tns": -2.259,
+          "whs": -0.021,
+          "ths": -0.206,
+          "t": 1759976960.0,
+          "line": 1376
+         },
+         {
+          "label": "4.2 Global Iteration 1",
+          "overlaps": [
+           146,
+           20,
+           1,
+           0
+          ],
+          "final_overlaps": 0,
+          "wns": -0.03,
+          "tns": -0.036,
+          "whs": null,
+          "ths": null,
+          "t": 1759977020.0,
+          "line": 1392
+         },
+         {
+          "label": "4.3 Global Iteration 2",
+          "overlaps": [
+           39,
+           5,
+           1,
+           0
+          ],
+          "final_overlaps": 0,
+          "wns": -0.03,
+          "tns": -0.03,
+          "whs": null,
+          "ths": null,
+          "t": 1759977080.0,
+          "line": 1403
+         }
+        ],
+        "trend": "converging"
+       },
        "number": null,
        "number_predicted": false
       },
@@ -4795,6 +5489,644 @@
      "message": "top: implementation completed, timing met (WNS 0.006 ns)"
     }
    ],
+   "clock_history": {
+    "clocks": [
+     "clk_out1_d_1_clk_adc0_x2_0",
+     "RFDAC2_CLK",
+     "mmcm_clkout0",
+     "clk_out1_d_1_clk_core_0",
+     "clk_pl_0",
+     "mmcm_clkout6",
+     "sys_clk_ddr4_clk_p",
+     "mmcm_clkout5",
+     "RFADC0_CLK"
+    ],
+    "builds": [
+     {
+      "started_at": 1758802280.0,
+      "label": "Sep 21 10:41",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": -0.065,
+        "tns": -0.735,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 29
+       },
+       "RFDAC2_CLK": {
+        "wns": -0.009,
+        "tns": -0.102,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 6
+       },
+       "mmcm_clkout0": {
+        "wns": 0.14,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.63,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759001000.0,
+      "label": "Sep 27 18:02",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": -0.027,
+        "tns": -0.305,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 13
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.031,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.181,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.54,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759199720.0,
+      "label": "Oct 03 09:15",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": -0.046,
+        "tns": -0.52,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 21
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.061,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.162,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.47,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759398440.0,
+      "label": "Oct 09 14:30",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": -0.005,
+        "tns": -0.057,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 5
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.074,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.209,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.53,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759597160.0,
+      "label": "Oct 14 21:07",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": 0.01,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.052,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.188,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.455,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759795880.0,
+      "label": "Oct 21 08:52",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": 0.006,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.043,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.11,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.23,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     }
+    ],
+    "stages": [
+     {
+      "step": "impl_1/place_design",
+      "label": "Place \u00b7 placed",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": -0.112,
+        "tns": -1.266,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 47
+       },
+       "RFDAC2_CLK": {
+        "wns": -0.019,
+        "tns": -0.215,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 10
+       },
+       "mmcm_clkout0": {
+        "wns": 0.066,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.2,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "step": "impl_1/phys_opt_design",
+      "label": "Phys_opt \u00b7 physopted",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": -0.056,
+        "tns": -0.633,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 25
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.022,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.098,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.23,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "step": "impl_1/route_design",
+      "label": "Route \u00b7 routed",
+      "per_clock": {
+       "clk_out1_d_1_clk_adc0_x2_0": {
+        "wns": 0.006,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFDAC2_CLK": {
+        "wns": 0.043,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout0": {
+        "wns": 0.11,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_out1_d_1_clk_core_0": {
+        "wns": 0.228,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_pl_0": {
+        "wns": 1.23,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout6": {
+        "wns": 1.875,
+        "tns": 0.0,
+        "whs": 0.014,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "sys_clk_ddr4_clk_p": {
+        "wns": 3.116,
+        "tns": 0.0,
+        "whs": 0.05,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "mmcm_clkout5": {
+        "wns": 10.521,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "RFADC0_CLK": {
+        "wns": 42.694,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     }
+    ]
+   },
    "resources": null,
    "top_messages": [
     {
@@ -4966,12 +6298,19 @@
    "updated_at": 1760000000.0,
    "elapsed_s": 24660.0,
    "current": {
-    "node_id": "impl_1/route_design/p3",
-    "label": "route_design / Phase 3 Initial Routing"
+    "node_id": "impl_1/route_design/p4/p4.7",
+    "label": "route_design / Phase 4.7 Global Iteration 6"
    },
-   "health": "ok",
+   "health": "warning",
    "progress_estimate": 0.8,
-   "alerts": [],
+   "alerts": [
+    {
+     "level": "warning",
+     "code": "route_not_converging",
+     "message": "Router stalled: overlaps 1,320 -> 1,290 -> 1,275 -> 1,270 -> 1,268 over the last 3 iterations (7 so far)",
+     "node_id": "impl_1/route_design"
+    }
+   ],
    "counts": {
     "error": 0,
     "critical": 0,
@@ -4979,9 +6318,9 @@
     "info": 610
    },
    "timing": {
-    "wns": -0.427,
-    "tns": -61.3,
-    "whs": 0.011,
+    "wns": -0.431,
+    "tns": -16.4,
+    "whs": 0.004,
     "ths": 0.0,
     "tns_fail": null,
     "ths_fail": null,
@@ -4990,20 +6329,65 @@
     "label": "Intermediate Timing Summary",
     "history": [
      {
-      "t": 1759999280.0,
-      "line": 240,
+      "t": 1759999500.0,
+      "line": 2100,
       "label": "Intermediate Timing Summary",
-      "wns": -0.9,
-      "tns": -180.0,
+      "wns": -0.512,
+      "tns": -19.5,
+      "whs": -0.012,
+      "ths": null
+     },
+     {
+      "t": 1759999540.0,
+      "line": 2411,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.463,
+      "tns": -17.6,
       "whs": null,
       "ths": null
      },
      {
-      "t": 1759999320.0,
-      "line": 551,
+      "t": 1759999580.0,
+      "line": 2722,
       "label": "Intermediate Timing Summary",
-      "wns": -0.427,
-      "tns": -61.3,
+      "wns": -0.448,
+      "tns": -17.0,
+      "whs": null,
+      "ths": null
+     },
+     {
+      "t": 1759999620.0,
+      "line": 3033,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.441,
+      "tns": -16.8,
+      "whs": 0.004,
+      "ths": 0.0
+     },
+     {
+      "t": 1759999660.0,
+      "line": 3344,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.436,
+      "tns": -16.6,
+      "whs": null,
+      "ths": null
+     },
+     {
+      "t": 1759999700.0,
+      "line": 3655,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.433,
+      "tns": -16.5,
+      "whs": null,
+      "ths": null
+     },
+     {
+      "t": 1759999740.0,
+      "line": 3966,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.431,
+      "tns": -16.4,
       "whs": null,
       "ths": null
      }
@@ -6383,9 +7767,9 @@
         "info": 24
        },
        "timing": {
-        "wns": -0.427,
-        "tns": -61.3,
-        "whs": 0.011,
+        "wns": -0.431,
+        "tns": -16.4,
+        "whs": 0.004,
         "ths": 0.0,
         "tns_fail": null,
         "ths_fail": null,
@@ -6394,20 +7778,65 @@
         "label": "Intermediate Timing Summary",
         "history": [
          {
-          "t": 1759999280.0,
-          "line": 240,
+          "t": 1759999500.0,
+          "line": 2100,
           "label": "Intermediate Timing Summary",
-          "wns": -0.9,
-          "tns": -180.0,
+          "wns": -0.512,
+          "tns": -19.5,
+          "whs": -0.012,
+          "ths": null
+         },
+         {
+          "t": 1759999540.0,
+          "line": 2411,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.463,
+          "tns": -17.6,
           "whs": null,
           "ths": null
          },
          {
-          "t": 1759999320.0,
-          "line": 551,
+          "t": 1759999580.0,
+          "line": 2722,
           "label": "Intermediate Timing Summary",
-          "wns": -0.427,
-          "tns": -61.3,
+          "wns": -0.448,
+          "tns": -17.0,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759999620.0,
+          "line": 3033,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.441,
+          "tns": -16.8,
+          "whs": 0.004,
+          "ths": 0.0
+         },
+         {
+          "t": 1759999660.0,
+          "line": 3344,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.436,
+          "tns": -16.6,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759999700.0,
+          "line": 3655,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.433,
+          "tns": -16.5,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759999740.0,
+          "line": 3966,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.431,
+          "tns": -16.4,
           "whs": null,
           "ths": null
          }
@@ -6421,14 +7850,21 @@
        "line_start": null,
        "line_end": null,
        "progress": {
-        "done": 2,
+        "done": 3,
         "total": 6
        },
        "expected": false,
        "optional": false,
        "description": null,
        "reports": [],
-       "alerts": [],
+       "alerts": [
+        {
+         "level": "warning",
+         "code": "route_not_converging",
+         "message": "Router stalled: overlaps 1,320 -> 1,290 -> 1,275 -> 1,270 -> 1,268 over the last 3 iterations (7 so far)",
+         "node_id": "impl_1/route_design"
+        }
+       ],
        "children": [
         {
          "id": "impl_1/route_design/p1",
@@ -6496,9 +7932,9 @@
          "id": "impl_1/route_design/p3",
          "label": "Phase 3 Initial Routing",
          "kind": "phase",
-         "status": "running",
+         "status": "done",
          "started_at": 1759999330.0,
-         "ended_at": null,
+         "ended_at": 1759999470.0,
          "elapsed_s": null,
          "peak_mem_mb": 5300,
          "counts": {
@@ -6527,8 +7963,8 @@
          "id": "impl_1/route_design/p4",
          "label": "Phase 4 Rip-up And Reroute",
          "kind": "phase",
-         "status": "pending",
-         "started_at": null,
+         "status": "running",
+         "started_at": 1759999470.0,
          "ended_at": null,
          "elapsed_s": null,
          "peak_mem_mb": null,
@@ -6544,15 +7980,233 @@
          "line_start": null,
          "line_end": null,
          "progress": null,
-         "expected": true,
+         "expected": false,
          "optional": false,
          "description": null,
          "reports": [],
          "alerts": [],
-         "children": [],
+         "children": [
+          {
+           "id": "impl_1/route_design/p4/p4.1",
+           "label": "Phase 4.1 Global Iteration 0",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759999480.0,
+           "ended_at": 1759999550.0,
+           "elapsed_s": 70,
+           "peak_mem_mb": 5300,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.2",
+           "label": "Phase 4.2 Global Iteration 1",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759999555.0,
+           "ended_at": 1759999625.0,
+           "elapsed_s": 70,
+           "peak_mem_mb": 5310,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.2",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.3",
+           "label": "Phase 4.3 Global Iteration 2",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759999630.0,
+           "ended_at": 1759999700.0,
+           "elapsed_s": 70,
+           "peak_mem_mb": 5320,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.3",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.4",
+           "label": "Phase 4.4 Global Iteration 3",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759999705.0,
+           "ended_at": 1759999775.0,
+           "elapsed_s": 70,
+           "peak_mem_mb": 5330,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.4",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.5",
+           "label": "Phase 4.5 Global Iteration 4",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759999780.0,
+           "ended_at": 1759999850.0,
+           "elapsed_s": 70,
+           "peak_mem_mb": 5340,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.5",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.6",
+           "label": "Phase 4.6 Global Iteration 5",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759999855.0,
+           "ended_at": 1759999925.0,
+           "elapsed_s": 70,
+           "peak_mem_mb": 5350,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.6",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.7",
+           "label": "Phase 4.7 Global Iteration 6",
+           "kind": "phase",
+           "status": "running",
+           "started_at": 1759999930.0,
+           "ended_at": null,
+           "elapsed_s": null,
+           "peak_mem_mb": 5360,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.7",
+           "number_predicted": false
+          }
+         ],
          "doc_url": null,
          "number": "4",
-         "number_predicted": true
+         "number_predicted": false
         },
         {
          "id": "impl_1/route_design/p5",
@@ -6654,6 +8308,146 @@
          "summary": "route_design from phys_opt checkpoint, in progress"
         }
        ],
+       "convergence": {
+        "iterations": [
+         {
+          "label": "4.1 Global Iteration 0",
+          "overlaps": [
+           49589,
+           33243,
+           22290,
+           14676,
+           10452,
+           7227,
+           4663,
+           3311,
+           2210
+          ],
+          "final_overlaps": 2210,
+          "wns": -0.512,
+          "tns": -19.46,
+          "whs": -0.012,
+          "ths": null,
+          "t": 1759999480.0,
+          "line": 2100
+         },
+         {
+          "label": "4.2 Global Iteration 1",
+          "overlaps": [
+           5022,
+           4217,
+           3446,
+           2753,
+           2282,
+           1799,
+           1480
+          ],
+          "final_overlaps": 1480,
+          "wns": -0.463,
+          "tns": -17.59,
+          "whs": null,
+          "ths": null,
+          "t": 1759999555.0,
+          "line": 2140
+         },
+         {
+          "label": "4.3 Global Iteration 2",
+          "overlaps": [
+           2527,
+           2299,
+           2072,
+           1876,
+           1591,
+           1490,
+           1320
+          ],
+          "final_overlaps": 1320,
+          "wns": -0.448,
+          "tns": -17.02,
+          "whs": null,
+          "ths": null,
+          "t": 1759999630.0,
+          "line": 2180
+         },
+         {
+          "label": "4.4 Global Iteration 3",
+          "overlaps": [
+           1857,
+           1777,
+           1637,
+           1599,
+           1480,
+           1403,
+           1290
+          ],
+          "final_overlaps": 1290,
+          "wns": -0.441,
+          "tns": -16.76,
+          "whs": 0.004,
+          "ths": 0.0,
+          "t": 1759999705.0,
+          "line": 2220
+         },
+         {
+          "label": "4.5 Global Iteration 4",
+          "overlaps": [
+           1604,
+           1607,
+           1563,
+           1443,
+           1439,
+           1287,
+           1275
+          ],
+          "final_overlaps": 1275,
+          "wns": -0.436,
+          "tns": -16.57,
+          "whs": null,
+          "ths": null,
+          "t": 1759999780.0,
+          "line": 2260
+         },
+         {
+          "label": "4.6 Global Iteration 5",
+          "overlaps": [
+           1510,
+           1397,
+           1421,
+           1404,
+           1381,
+           1338,
+           1270
+          ],
+          "final_overlaps": 1270,
+          "wns": -0.433,
+          "tns": -16.45,
+          "whs": null,
+          "ths": null,
+          "t": 1759999855.0,
+          "line": 2300
+         },
+         {
+          "label": "4.7 Global Iteration 6",
+          "overlaps": [
+           1409,
+           1417,
+           1396,
+           1382,
+           1345,
+           1283,
+           1268
+          ],
+          "final_overlaps": 1268,
+          "wns": -0.431,
+          "tns": -16.38,
+          "whs": null,
+          "ths": null,
+          "t": 1759999930.0,
+          "line": 2340
+         }
+        ],
+        "trend": "stalled"
+       },
        "number": null,
        "number_predicted": false
       },
@@ -6767,6 +8561,100 @@
      "message": "attempt 2 resumed from the phys_opt checkpoint"
     }
    ],
+   "clock_history": {
+    "clocks": [
+     "clk_core",
+     "clk_adc",
+     "clk_axi"
+    ],
+    "builds": [
+     {
+      "started_at": 1759597160.0,
+      "label": "Oct 14 13:05",
+      "per_clock": {
+       "clk_core": {
+        "wns": 0.044,
+        "tns": 0.0,
+        "whs": 0.012,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc": {
+        "wns": 0.071,
+        "tns": 0.0,
+        "whs": 0.015,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_axi": {
+        "wns": 0.455,
+        "tns": 0.0,
+        "whs": 0.021,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759795880.0,
+      "label": "Oct 21 07:15",
+      "per_clock": {
+       "clk_core": {
+        "wns": -0.062,
+        "tns": -0.701,
+        "whs": 0.011,
+        "ths": 0.0,
+        "failing": 27
+       },
+       "clk_adc": {
+        "wns": 0.021,
+        "tns": 0.0,
+        "whs": 0.012,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_axi": {
+        "wns": 0.402,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      },
+      "current": true,
+      "stage": "Phys_opt \u00b7 physopted"
+     }
+    ],
+    "stages": [
+     {
+      "step": "impl_1/phys_opt_design",
+      "label": "Phys_opt \u00b7 physopted",
+      "per_clock": {
+       "clk_core": {
+        "wns": -0.062,
+        "tns": -0.701,
+        "whs": 0.011,
+        "ths": 0.0,
+        "failing": 27
+       },
+       "clk_adc": {
+        "wns": 0.021,
+        "tns": 0.0,
+        "whs": 0.012,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_axi": {
+        "wns": 0.402,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     }
+    ]
+   },
    "resources": null,
    "top_messages": [
     {
@@ -10514,6 +12402,2967 @@
     },
     "jobs": 8,
     "project": "/home/user/projects/dsp_filter/dsp_filter.xpr"
+   }
+  },
+  {
+   "id": "rd06",
+   "name": "radar_dsp",
+   "kind": "project",
+   "path": "/home/user/projects/radar_dsp/radar_dsp.runs",
+   "status": "done",
+   "live": false,
+   "pids": [],
+   "launcher": null,
+   "started_at": 1759974080.0,
+   "updated_at": 1759998200.0,
+   "elapsed_s": 4320,
+   "current": null,
+   "health": "error",
+   "progress_estimate": 1.0,
+   "alerts": [
+    {
+     "level": "error",
+     "code": "timing_fail",
+     "message": "WNS -0.187 ns after route_design (final)",
+     "node_id": "impl_1/route_design"
+    },
+    {
+     "level": "error",
+     "code": "timing_fail",
+     "message": "WHS -0.034 ns after route_design (final)",
+     "node_id": "impl_1/route_design"
+    }
+   ],
+   "counts": {
+    "error": 0,
+    "critical": 0,
+    "warning": 811,
+    "info": 904
+   },
+   "timing": {
+    "wns": -0.187,
+    "tns": -2.31,
+    "whs": -0.034,
+    "ths": -0.046,
+    "tns_fail": null,
+    "ths_fail": null,
+    "met": false,
+    "source": "report",
+    "label": "timing_summary_routed.rpt",
+    "history": [
+     {
+      "t": 1759976880.0,
+      "line": 1000,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.412,
+      "tns": -9.1,
+      "whs": 0.004,
+      "ths": 0.0
+     },
+     {
+      "t": 1759976920.0,
+      "line": 1311,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.301,
+      "tns": -4.6,
+      "whs": 0.009,
+      "ths": 0.0
+     },
+     {
+      "t": 1759976960.0,
+      "line": 1622,
+      "label": "Intermediate Timing Summary",
+      "wns": -0.221,
+      "tns": -1.8,
+      "whs": 0.009,
+      "ths": 0.0
+     },
+     {
+      "t": 1759977090.0,
+      "line": 12950,
+      "label": "Post Routing Timing Summary",
+      "wns": -0.187,
+      "tns": -2.31,
+      "whs": -0.034,
+      "ths": -0.046
+     }
+    ],
+    "final": true,
+    "stage": "Route \u00b7 final report",
+    "carried": {},
+    "report": "impl_1/radar_dsp_timing_summary_routed.rpt",
+    "path_counts": {
+     "total": 3862,
+     "setup": 2201,
+     "hold": 1661,
+     "setup_failing": 13,
+     "hold_failing": 2,
+     "failing": 15,
+     "failing_clocks": 3,
+     "clocks": [
+      "clk_adc_div2",
+      "clk_axi",
+      "clk_dsp"
+     ],
+     "shown": 49,
+     "capped": true,
+     "worst_setup": -0.187,
+     "worst_hold": -0.034
+    },
+    "paths": [
+     {
+      "id": 0,
+      "type": "setup",
+      "slack": -0.187,
+      "status": "VIOLATED",
+      "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[106]/C",
+      "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[49]/R",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 7,
+      "logic_pct": 47.761,
+      "route_pct": 52.239,
+      "skew": -0.037
+     },
+     {
+      "id": 1,
+      "type": "setup",
+      "slack": -0.176,
+      "status": "VIOLATED",
+      "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[105]/C",
+      "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[80]/D",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 8,
+      "logic_pct": 69.632,
+      "route_pct": 30.368,
+      "skew": -0.213
+     },
+     {
+      "id": 2,
+      "type": "setup",
+      "slack": -0.152,
+      "status": "VIOLATED",
+      "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[26]/C",
+      "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[100]/D",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 7,
+      "logic_pct": 39.394,
+      "route_pct": 60.606,
+      "skew": 0.129
+     },
+     {
+      "id": 3,
+      "type": "setup",
+      "slack": -0.141,
+      "status": "VIOLATED",
+      "source": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[56]/C",
+      "destination": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[0]/D",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 6,
+      "logic_pct": 57.439,
+      "route_pct": 42.561,
+      "skew": -0.158
+     },
+     {
+      "id": 4,
+      "type": "setup",
+      "slack": -0.133,
+      "status": "VIOLATED",
+      "source": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[12]/C",
+      "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[60]/R",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 7,
+      "logic_pct": 31.928,
+      "route_pct": 68.072,
+      "skew": 0.101
+     },
+     {
+      "id": 5,
+      "type": "setup",
+      "slack": -0.121,
+      "status": "VIOLATED",
+      "source": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[119]/C",
+      "destination": "radar_i/adc_if/deser/q_reg/q_reg_reg[123]/D",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 9,
+      "logic_pct": 67.862,
+      "route_pct": 32.138,
+      "skew": 0.161
+     },
+     {
+      "id": 6,
+      "type": "setup",
+      "slack": -0.098,
+      "status": "VIOLATED",
+      "source": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[1]/u_madd/u_madd_reg[111]/C",
+      "destination": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[18]/CE",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 6,
+      "logic_pct": 61.229,
+      "route_pct": 38.771,
+      "skew": -0.049
+     },
+     {
+      "id": 7,
+      "type": "setup",
+      "slack": -0.077,
+      "status": "VIOLATED",
+      "source": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[107]/C",
+      "destination": "radar_i/adc_if/deser/q_reg/q_reg_reg[125]/D",
+      "source_clock": "clk_dsp",
+      "dest_clock": "clk_dsp",
+      "levels": 5,
+      "logic_pct": 31.994,
+      "route_pct": 68.006,
+      "skew": 0.09
+     }
+    ],
+    "clocks": [
+     {
+      "name": "clk_dsp",
+      "period": 4.0,
+      "wns": -0.187,
+      "tns": -1.91,
+      "tns_fail": 9,
+      "whs": 0.009,
+      "ths": 0.0,
+      "ths_fail": 0
+     },
+     {
+      "name": "clk_axi",
+      "period": 10.0,
+      "wns": -0.021,
+      "tns": -0.06,
+      "tns_fail": 2,
+      "whs": -0.012,
+      "ths": -0.012,
+      "ths_fail": 1
+     },
+     {
+      "name": "clk_adc_div2",
+      "period": 8.138,
+      "wns": -0.064,
+      "tns": -0.34,
+      "tns_fail": 3,
+      "whs": -0.034,
+      "ths": -0.034,
+      "ths_fail": 1
+     },
+     {
+      "name": "clk_ddr",
+      "period": 5.0,
+      "wns": 0.412,
+      "tns": 0.0,
+      "tns_fail": 0,
+      "whs": 0.018,
+      "ths": 0.0,
+      "ths_fail": 0
+     }
+    ]
+   },
+   "flows": [
+    {
+     "id": "impl_1",
+     "label": "impl_1",
+     "stages": [
+      {
+       "id": "synth",
+       "label": "Synthesis",
+       "kind": "group",
+       "status": "done",
+       "started_at": 1759974080.0,
+       "ended_at": 1759975520.0,
+       "elapsed_s": 1440,
+       "peak_mem_mb": 9800,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 592,
+        "info": 390
+       },
+       "timing": null,
+       "run": null,
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": {
+        "done": 13,
+        "total": 13
+       },
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [
+        {
+         "id": "synth/ooc",
+         "label": "IP out-of-context (12)",
+         "kind": "group",
+         "status": "done",
+         "started_at": 1759974080.0,
+         "ended_at": 1759974500.0,
+         "elapsed_s": 420,
+         "peak_mem_mb": 2650,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 190,
+          "info": 160
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": {
+          "done": 12,
+          "total": 12
+         },
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "synth/ooc/axis_clk_gen_synth_1",
+           "label": "axis_clk_gen_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974080.0,
+           "ended_at": 1759974210.0,
+           "elapsed_s": 130,
+           "peak_mem_mb": 1400,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 7,
+            "info": 14
+           },
+           "timing": null,
+           "run": "axis_clk_gen_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=axis_clk_gen_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/ddr4_mig_synth_1",
+           "label": "ddr4_mig_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974100.0,
+           "ended_at": 1759974239.0,
+           "elapsed_s": 139,
+           "peak_mem_mb": 1455,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 2,
+            "info": 18
+           },
+           "timing": null,
+           "run": "ddr4_mig_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=ddr4_mig_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/axi_dma_0_synth_1",
+           "label": "axi_dma_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974120.0,
+           "ended_at": 1759974268.0,
+           "elapsed_s": 148,
+           "peak_mem_mb": 1510,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 11,
+            "info": 17
+           },
+           "timing": null,
+           "run": "axi_dma_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=axi_dma_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/dds_compiler_0_synth_1",
+           "label": "dds_compiler_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974140.0,
+           "ended_at": 1759974297.0,
+           "elapsed_s": 157,
+           "peak_mem_mb": 1565,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 21,
+            "info": 12
+           },
+           "timing": null,
+           "run": "dds_compiler_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=dds_compiler_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/fifo_gen_adc_synth_1",
+           "label": "fifo_gen_adc_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974160.0,
+           "ended_at": 1759974326.0,
+           "elapsed_s": 166,
+           "peak_mem_mb": 1620,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 30,
+            "info": 19
+           },
+           "timing": null,
+           "run": "fifo_gen_adc_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=fifo_gen_adc_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/fifo_gen_dac_synth_1",
+           "label": "fifo_gen_dac_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974180.0,
+           "ended_at": 1759974355.0,
+           "elapsed_s": 175,
+           "peak_mem_mb": 1675,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 4,
+            "info": 11
+           },
+           "timing": null,
+           "run": "fifo_gen_dac_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=fifo_gen_dac_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/ila_dbg_synth_1",
+           "label": "ila_dbg_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974200.0,
+           "ended_at": 1759974384.0,
+           "elapsed_s": 184,
+           "peak_mem_mb": 1730,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 23,
+            "info": 16
+           },
+           "timing": null,
+           "run": "ila_dbg_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=ila_dbg_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/vio_ctrl_synth_1",
+           "label": "vio_ctrl_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974220.0,
+           "ended_at": 1759974413.0,
+           "elapsed_s": 193,
+           "peak_mem_mb": 1785,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 23,
+            "info": 11
+           },
+           "timing": null,
+           "run": "vio_ctrl_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=vio_ctrl_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/clk_wiz_0_synth_1",
+           "label": "clk_wiz_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974240.0,
+           "ended_at": 1759974442.0,
+           "elapsed_s": 202,
+           "peak_mem_mb": 1840,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 15,
+            "info": 13
+           },
+           "timing": null,
+           "run": "clk_wiz_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=clk_wiz_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/axis_dwidth_0_synth_1",
+           "label": "axis_dwidth_0_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974260.0,
+           "ended_at": 1759974471.0,
+           "elapsed_s": 211,
+           "peak_mem_mb": 1895,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 14,
+            "info": 19
+           },
+           "timing": null,
+           "run": "axis_dwidth_0_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=axis_dwidth_0_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/xlnx_tproc_synth_1",
+           "label": "xlnx_tproc_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974280.0,
+           "ended_at": 1759974500.0,
+           "elapsed_s": 220,
+           "peak_mem_mb": 1950,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 2,
+            "info": 11
+           },
+           "timing": null,
+           "run": "xlnx_tproc_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=xlnx_tproc_synth_1",
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/ooc/rfdc_ip_synth_1",
+           "label": "rfdc_ip_synth_1",
+           "kind": "run",
+           "status": "done",
+           "started_at": 1759974300.0,
+           "ended_at": 1759974529.0,
+           "elapsed_s": 229,
+           "peak_mem_mb": 2005,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 4,
+            "info": 9
+           },
+           "timing": null,
+           "run": "rfdc_ip_synth_1",
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": "https://docs.amd.com/search?q=rfdc_ip_synth_1",
+           "number": null,
+           "number_predicted": false
+          }
+         ],
+         "doc_url": "https://docs.amd.com/search?q=IP",
+         "number": null,
+         "number_predicted": false
+        },
+        {
+         "id": "synth/synth_1",
+         "label": "synth_1",
+         "kind": "run",
+         "status": "done",
+         "started_at": 1759974510.0,
+         "ended_at": 1759975520.0,
+         "elapsed_s": 1010,
+         "peak_mem_mb": 9800,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 402,
+          "info": 230
+         },
+         "timing": null,
+         "run": "synth_1",
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "synth/synth_1/t0",
+           "label": "Loading Part and Timing Information",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974510.0,
+           "ended_at": 1759974530.0,
+           "elapsed_s": 20,
+           "peak_mem_mb": 800,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 2,
+            "info": 2
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t1",
+           "label": "Start Handling Custom Attributes",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974540.0,
+           "ended_at": 1759974567.0,
+           "elapsed_s": 27,
+           "peak_mem_mb": 840,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 6,
+            "info": 1
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t2",
+           "label": "Start RTL Component Statistics",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974570.0,
+           "ended_at": 1759974604.0,
+           "elapsed_s": 34,
+           "peak_mem_mb": 880,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 2
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t3",
+           "label": "Start Part Resource Summary",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974600.0,
+           "ended_at": 1759974641.0,
+           "elapsed_s": 41,
+           "peak_mem_mb": 920,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 6,
+            "info": 4
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t4",
+           "label": "Start Cross Boundary and Area Optimization",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974630.0,
+           "ended_at": 1759974678.0,
+           "elapsed_s": 48,
+           "peak_mem_mb": 960,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 5,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t5",
+           "label": "Start Timing Optimization",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974660.0,
+           "ended_at": 1759974715.0,
+           "elapsed_s": 55,
+           "peak_mem_mb": 1000,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 5,
+            "info": 4
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t6",
+           "label": "Start Technology Mapping",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974690.0,
+           "ended_at": 1759974752.0,
+           "elapsed_s": 62,
+           "peak_mem_mb": 1040,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 13,
+            "info": 3
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t7",
+           "label": "Start IO Insertion",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974720.0,
+           "ended_at": 1759974789.0,
+           "elapsed_s": 69,
+           "peak_mem_mb": 1080,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 5,
+            "info": 3
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t8",
+           "label": "Start Renaming Generated Instances",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974750.0,
+           "ended_at": 1759974826.0,
+           "elapsed_s": 76,
+           "peak_mem_mb": 1120,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 10,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          },
+          {
+           "id": "synth/synth_1/t9",
+           "label": "Start Writing Synthesis Report",
+           "kind": "task",
+           "status": "done",
+           "started_at": 1759974780.0,
+           "ended_at": 1759974863.0,
+           "elapsed_s": 83,
+           "peak_mem_mb": 1160,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 1,
+            "info": 3
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": null,
+           "number_predicted": false
+          }
+         ],
+         "doc_url": "https://docs.amd.com/search?q=synth_1",
+         "number": null,
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=Synthesis",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/init_design",
+       "label": "init_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759975540.0,
+       "ended_at": 1759975632.0,
+       "elapsed_s": 92,
+       "peak_mem_mb": 3300,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 88,
+        "info": 120
+       },
+       "timing": null,
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [],
+       "doc_url": "https://docs.amd.com/search?q=init_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/opt_design",
+       "label": "opt_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759975635.0,
+       "ended_at": 1759975845.0,
+       "elapsed_s": 210,
+       "peak_mem_mb": 4200,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 102,
+        "info": 140
+       },
+       "timing": null,
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [
+        {
+         "id": "impl_1/opt_design/p1",
+         "label": "Phase 1 Initialization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759975635.0,
+         "ended_at": 1759975655.0,
+         "elapsed_s": 20,
+         "peak_mem_mb": 1220,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "impl_1/opt_design/p1/p1.1",
+           "label": "Phase 1.1 Core Generation And Design Setup",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759975635.0,
+           "ended_at": 1759975638.3333333,
+           "elapsed_s": 3.3333333333333335,
+           "peak_mem_mb": 900,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/opt_design/p1/p1.2",
+           "label": "Phase 1.2 Setup Constraints And Sort Netlist",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759975636.0,
+           "ended_at": 1759975639.3333333,
+           "elapsed_s": 3.3333333333333335,
+           "peak_mem_mb": 901,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.2",
+           "number_predicted": false
+          }
+         ],
+         "doc_url": null,
+         "number": "1",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/opt_design/p2",
+         "label": "Phase 2 Retarget",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759975655.0,
+         "ended_at": 1759975695.0,
+         "elapsed_s": 40,
+         "peak_mem_mb": 1240,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "2",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/opt_design/p3",
+         "label": "Phase 3 Sweep",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759975695.0,
+         "ended_at": 1759975765.0,
+         "elapsed_s": 70,
+         "peak_mem_mb": 1260,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "3",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/opt_design/p4",
+         "label": "Phase 4 Finalization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759975765.0,
+         "ended_at": 1759975805.0,
+         "elapsed_s": 40,
+         "peak_mem_mb": 1280,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "4",
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=opt_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/place_design",
+       "label": "place_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759975850.0,
+       "ended_at": 1759976490.0,
+       "elapsed_s": 640,
+       "peak_mem_mb": 6900,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 77,
+        "info": 120
+       },
+       "timing": {
+        "wns": -0.118,
+        "tns": -9.4,
+        "whs": 0.011,
+        "ths": 0.0,
+        "tns_fail": null,
+        "ths_fail": null,
+        "met": false,
+        "source": "log",
+        "label": "Post Placement Timing Summary",
+        "history": [
+         {
+          "t": 1759976150.0,
+          "line": 7200,
+          "label": "Post Placement Timing Summary",
+          "wns": -0.251,
+          "tns": -41.0,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759976190.0,
+          "line": 7511,
+          "label": "Post Placement Timing Summary",
+          "wns": -0.118,
+          "tns": -9.4,
+          "whs": null,
+          "ths": null
+         }
+        ],
+        "final": false,
+        "stage": "Place \u00b7 estimate",
+        "carried": {}
+       },
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [
+        {
+         "id": "impl_1/place_design/p1",
+         "label": "Phase 1 Placer Initialization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759975850.0,
+         "ended_at": 1759975910.0,
+         "elapsed_s": 60,
+         "peak_mem_mb": 1220,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "impl_1/place_design/p1/p1.1",
+           "label": "Phase 1.1 Placer Initialization Netlist Sorting",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759975850.0,
+           "ended_at": 1759975860.0,
+           "elapsed_s": 10.0,
+           "peak_mem_mb": 900,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/place_design/p1/p1.2",
+           "label": "Phase 1.2 Build Placer Device",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759975851.0,
+           "ended_at": 1759975861.0,
+           "elapsed_s": 10.0,
+           "peak_mem_mb": 901,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "1.2",
+           "number_predicted": false
+          }
+         ],
+         "doc_url": null,
+         "number": "1",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/place_design/p2",
+         "label": "Phase 2 Global Placement",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759975910.0,
+         "ended_at": 1759976210.0,
+         "elapsed_s": 300,
+         "peak_mem_mb": 1240,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "2",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/place_design/p3",
+         "label": "Phase 3 Detail Placement",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976210.0,
+         "ended_at": 1759976430.0,
+         "elapsed_s": 220,
+         "peak_mem_mb": 1260,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "3",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/place_design/p4",
+         "label": "Phase 4 Post Placement Optimization and Clean-Up",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976430.0,
+         "ended_at": 1759976490.0,
+         "elapsed_s": 60,
+         "peak_mem_mb": 1280,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "4",
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=place_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/phys_opt_design",
+       "label": "phys_opt_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759976495.0,
+       "ended_at": 1759976755.0,
+       "elapsed_s": 260,
+       "peak_mem_mb": 5200,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 2,
+        "info": 30
+       },
+       "timing": {
+        "wns": -0.062,
+        "tns": -2.1,
+        "whs": null,
+        "ths": null,
+        "tns_fail": null,
+        "ths_fail": null,
+        "met": false,
+        "source": "log",
+        "label": "Post Physical Optimization Timing Summary",
+        "history": [
+         {
+          "t": 1759976595.0,
+          "line": 9000,
+          "label": "Post Physical Optimization Timing Summary",
+          "wns": -0.118,
+          "tns": -9.4,
+          "whs": null,
+          "ths": null
+         },
+         {
+          "t": 1759976635.0,
+          "line": 9311,
+          "label": "Post Physical Optimization Timing Summary",
+          "wns": -0.062,
+          "tns": -2.1,
+          "whs": null,
+          "ths": null
+         }
+        ],
+        "final": false,
+        "stage": "Phys_opt \u00b7 estimate",
+        "carried": {}
+       },
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [],
+       "doc_url": "https://docs.amd.com/search?q=phys_opt_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/route_design",
+       "label": "route_design",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759976760.0,
+       "ended_at": 1759977170.0,
+       "elapsed_s": 410,
+       "peak_mem_mb": 7300,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 14,
+        "info": 61
+       },
+       "timing": {
+        "wns": -0.187,
+        "tns": -2.31,
+        "whs": -0.034,
+        "ths": -0.046,
+        "tns_fail": null,
+        "ths_fail": null,
+        "met": false,
+        "source": "report",
+        "label": "timing_summary_routed.rpt",
+        "history": [
+         {
+          "t": 1759976880.0,
+          "line": 1000,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.412,
+          "tns": -9.1,
+          "whs": 0.004,
+          "ths": 0.0
+         },
+         {
+          "t": 1759976920.0,
+          "line": 1311,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.301,
+          "tns": -4.6,
+          "whs": 0.009,
+          "ths": 0.0
+         },
+         {
+          "t": 1759976960.0,
+          "line": 1622,
+          "label": "Intermediate Timing Summary",
+          "wns": -0.221,
+          "tns": -1.8,
+          "whs": 0.009,
+          "ths": 0.0
+         },
+         {
+          "t": 1759977090.0,
+          "line": 12950,
+          "label": "Post Routing Timing Summary",
+          "wns": -0.187,
+          "tns": -2.31,
+          "whs": -0.034,
+          "ths": -0.046
+         }
+        ],
+        "final": true,
+        "stage": "Route \u00b7 final report",
+        "carried": {},
+        "report": "impl_1/radar_dsp_timing_summary_routed.rpt",
+        "path_counts": {
+         "total": 3862,
+         "setup": 2201,
+         "hold": 1661,
+         "setup_failing": 13,
+         "hold_failing": 2,
+         "failing": 15,
+         "failing_clocks": 3,
+         "clocks": [
+          "clk_adc_div2",
+          "clk_axi",
+          "clk_dsp"
+         ],
+         "shown": 49,
+         "capped": true,
+         "worst_setup": -0.187,
+         "worst_hold": -0.034
+        },
+        "paths": [
+         {
+          "id": 0,
+          "type": "setup",
+          "slack": -0.187,
+          "status": "VIOLATED",
+          "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[106]/C",
+          "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[49]/R",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 7,
+          "logic_pct": 47.761,
+          "route_pct": 52.239,
+          "skew": -0.037
+         },
+         {
+          "id": 1,
+          "type": "setup",
+          "slack": -0.176,
+          "status": "VIOLATED",
+          "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[105]/C",
+          "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[80]/D",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 8,
+          "logic_pct": 69.632,
+          "route_pct": 30.368,
+          "skew": -0.213
+         },
+         {
+          "id": 2,
+          "type": "setup",
+          "slack": -0.152,
+          "status": "VIOLATED",
+          "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[26]/C",
+          "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[100]/D",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 7,
+          "logic_pct": 39.394,
+          "route_pct": 60.606,
+          "skew": 0.129
+         },
+         {
+          "id": 3,
+          "type": "setup",
+          "slack": -0.141,
+          "status": "VIOLATED",
+          "source": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[56]/C",
+          "destination": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[0]/D",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 6,
+          "logic_pct": 57.439,
+          "route_pct": 42.561,
+          "skew": -0.158
+         },
+         {
+          "id": 4,
+          "type": "setup",
+          "slack": -0.133,
+          "status": "VIOLATED",
+          "source": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[12]/C",
+          "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[60]/R",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 7,
+          "logic_pct": 31.928,
+          "route_pct": 68.072,
+          "skew": 0.101
+         },
+         {
+          "id": 5,
+          "type": "setup",
+          "slack": -0.121,
+          "status": "VIOLATED",
+          "source": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[119]/C",
+          "destination": "radar_i/adc_if/deser/q_reg/q_reg_reg[123]/D",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 9,
+          "logic_pct": 67.862,
+          "route_pct": 32.138,
+          "skew": 0.161
+         },
+         {
+          "id": 6,
+          "type": "setup",
+          "slack": -0.098,
+          "status": "VIOLATED",
+          "source": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[1]/u_madd/u_madd_reg[111]/C",
+          "destination": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[18]/CE",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 6,
+          "logic_pct": 61.229,
+          "route_pct": 38.771,
+          "skew": -0.049
+         },
+         {
+          "id": 7,
+          "type": "setup",
+          "slack": -0.077,
+          "status": "VIOLATED",
+          "source": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[107]/C",
+          "destination": "radar_i/adc_if/deser/q_reg/q_reg_reg[125]/D",
+          "source_clock": "clk_dsp",
+          "dest_clock": "clk_dsp",
+          "levels": 5,
+          "logic_pct": 31.994,
+          "route_pct": 68.006,
+          "skew": 0.09
+         }
+        ],
+        "clocks": [
+         {
+          "name": "clk_dsp",
+          "period": 4.0,
+          "wns": -0.187,
+          "tns": -1.91,
+          "tns_fail": 9,
+          "whs": 0.009,
+          "ths": 0.0,
+          "ths_fail": 0
+         },
+         {
+          "name": "clk_axi",
+          "period": 10.0,
+          "wns": -0.021,
+          "tns": -0.06,
+          "tns_fail": 2,
+          "whs": -0.012,
+          "ths": -0.012,
+          "ths_fail": 1
+         },
+         {
+          "name": "clk_adc_div2",
+          "period": 8.138,
+          "wns": -0.064,
+          "tns": -0.34,
+          "tns_fail": 3,
+          "whs": -0.034,
+          "ths": -0.034,
+          "ths_fail": 1
+         },
+         {
+          "name": "clk_ddr",
+          "period": 5.0,
+          "wns": 0.412,
+          "tns": 0.0,
+          "tns_fail": 0,
+          "whs": 0.018,
+          "ths": 0.0,
+          "ths_fail": 0
+         }
+        ]
+       },
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [
+        {
+         "name": "Timing summary",
+         "kind": "timing_summary",
+         "path": "impl_1/radar_dsp_timing_summary_routed.rpt",
+         "mtime": 1759999100.0,
+         "stale": false,
+         "summary": {
+          "wns": -0.187,
+          "tns": -2.31,
+          "whs": -0.034,
+          "ths": -0.046,
+          "tns_fail": 14,
+          "ths_fail": 2,
+          "clocks": [
+           {
+            "name": "clk_dsp",
+            "period": 4.0,
+            "wns": -0.187,
+            "tns": -1.91,
+            "tns_fail": 9,
+            "whs": 0.009,
+            "ths": 0.0,
+            "ths_fail": 0
+           },
+           {
+            "name": "clk_axi",
+            "period": 10.0,
+            "wns": -0.021,
+            "tns": -0.06,
+            "tns_fail": 2,
+            "whs": -0.012,
+            "ths": -0.012,
+            "ths_fail": 1
+           },
+           {
+            "name": "clk_adc_div2",
+            "period": 8.138,
+            "wns": -0.064,
+            "tns": -0.34,
+            "tns_fail": 3,
+            "whs": -0.034,
+            "ths": -0.034,
+            "ths_fail": 1
+           },
+           {
+            "name": "clk_ddr",
+            "period": 5.0,
+            "wns": 0.412,
+            "tns": 0.0,
+            "tns_fail": 0,
+            "whs": 0.018,
+            "ths": 0.0,
+            "ths_fail": 0
+           }
+          ],
+          "path_counts": {
+           "total": 3862,
+           "setup": 2201,
+           "hold": 1661,
+           "setup_failing": 13,
+           "hold_failing": 2,
+           "failing": 15,
+           "failing_clocks": 3,
+           "clocks": [
+            "clk_adc_div2",
+            "clk_axi",
+            "clk_dsp"
+           ],
+           "shown": 49,
+           "capped": true,
+           "worst_setup": -0.187,
+           "worst_hold": -0.034
+          },
+          "paths": [
+           {
+            "id": 0,
+            "type": "setup",
+            "slack": -0.187,
+            "status": "VIOLATED",
+            "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[106]/C",
+            "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[49]/R",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 7,
+            "logic_pct": 47.761,
+            "route_pct": 52.239,
+            "skew": -0.037
+           },
+           {
+            "id": 1,
+            "type": "setup",
+            "slack": -0.176,
+            "status": "VIOLATED",
+            "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[105]/C",
+            "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[80]/D",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 8,
+            "logic_pct": 69.632,
+            "route_pct": 30.368,
+            "skew": -0.213
+           },
+           {
+            "id": 2,
+            "type": "setup",
+            "slack": -0.152,
+            "status": "VIOLATED",
+            "source": "radar_i/adc_if/deser/q_reg/q_reg_reg[26]/C",
+            "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[100]/D",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 7,
+            "logic_pct": 39.394,
+            "route_pct": 60.606,
+            "skew": 0.129
+           },
+           {
+            "id": 3,
+            "type": "setup",
+            "slack": -0.141,
+            "status": "VIOLATED",
+            "source": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[56]/C",
+            "destination": "radar_i/axi_if/regs/slv_reg/slv_reg_reg[0]/D",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 6,
+            "logic_pct": 57.439,
+            "route_pct": 42.561,
+            "skew": -0.158
+           },
+           {
+            "id": 4,
+            "type": "setup",
+            "slack": -0.133,
+            "status": "VIOLATED",
+            "source": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[2]/u_madd/u_madd_reg[12]/C",
+            "destination": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[0]/u_madd/u_madd_reg[60]/R",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 7,
+            "logic_pct": 31.928,
+            "route_pct": 68.072,
+            "skew": 0.101
+           },
+           {
+            "id": 5,
+            "type": "setup",
+            "slack": -0.121,
+            "status": "VIOLATED",
+            "source": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[119]/C",
+            "destination": "radar_i/adc_if/deser/q_reg/q_reg_reg[123]/D",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 9,
+            "logic_pct": 67.862,
+            "route_pct": 32.138,
+            "skew": 0.161
+           },
+           {
+            "id": 6,
+            "type": "setup",
+            "slack": -0.098,
+            "status": "VIOLATED",
+            "source": "radar_i/dsp_chain/fir_decim/U0/i_synth/g_mac[1]/u_madd/u_madd_reg[111]/C",
+            "destination": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[18]/CE",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 6,
+            "logic_pct": 61.229,
+            "route_pct": 38.771,
+            "skew": -0.049
+           },
+           {
+            "id": 7,
+            "type": "setup",
+            "slack": -0.077,
+            "status": "VIOLATED",
+            "source": "radar_i/dsp_chain/cic_comb/U0/i_comb/diff/diff_reg[107]/C",
+            "destination": "radar_i/adc_if/deser/q_reg/q_reg_reg[125]/D",
+            "source_clock": "clk_dsp",
+            "dest_clock": "clk_dsp",
+            "levels": 5,
+            "logic_pct": 31.994,
+            "route_pct": 68.006,
+            "skew": 0.09
+           }
+          ]
+         },
+         "alerts": [
+          {
+           "level": "error",
+           "code": "timing_fail",
+           "message": "WNS -0.187 ns"
+          }
+         ],
+         "doc_url": "https://docs.amd.com/r/en-US/ug906-vivado-design-analysis/report_timing_summary"
+        },
+        {
+         "name": "Power",
+         "kind": "power",
+         "path": "impl_1/top_power_routed.rpt",
+         "mtime": 1759999110.0,
+         "stale": false,
+         "summary": {
+          "total_w": 14.82,
+          "dynamic_w": 11.9,
+          "static_w": 2.92,
+          "junction_c": 58.4,
+          "confidence": "Medium"
+         },
+         "alerts": [],
+         "doc_url": "https://docs.amd.com/r/en-US/ug906-vivado-design-analysis/report_power"
+        },
+        {
+         "name": "Route status",
+         "kind": "route_status",
+         "path": "impl_1/top_route_status.rpt",
+         "mtime": 1759999120.0,
+         "stale": false,
+         "summary": {
+          "routable_nets": 182340,
+          "fully_routed": 182340,
+          "unrouted": 0,
+          "with_errors": 0
+         },
+         "alerts": [],
+         "doc_url": "https://docs.amd.com/r/en-US/ug906-vivado-design-analysis/report_route_status"
+        },
+        {
+         "name": "Utilization",
+         "kind": "utilization",
+         "path": "impl_1/top_utilization_placed.rpt",
+         "mtime": 1759999050.0,
+         "stale": false,
+         "summary": {
+          "rows": [
+           {
+            "name": "CLB LUTs",
+            "used": 41241,
+            "available": 230400,
+            "pct": 17.9
+           },
+           {
+            "name": "CLB Registers",
+            "used": 55756,
+            "available": 460800,
+            "pct": 12.1
+           },
+           {
+            "name": "CARRY8",
+            "used": 2016,
+            "available": 28800,
+            "pct": 7.0
+           },
+           {
+            "name": "Block RAM Tile",
+            "used": 496,
+            "available": 1080,
+            "pct": 46.0
+           },
+           {
+            "name": "URAM",
+            "used": 0,
+            "available": 80,
+            "pct": 0.0
+           },
+           {
+            "name": "DSPs",
+            "used": 3733,
+            "available": 4272,
+            "pct": 87.4
+           },
+           {
+            "name": "Bonded IOB",
+            "used": 322,
+            "available": 347,
+            "pct": 93.0
+           }
+          ]
+         },
+         "alerts": [],
+         "doc_url": "https://docs.amd.com/r/en-US/ug906-vivado-design-analysis/report_utilization"
+        }
+       ],
+       "alerts": [
+        {
+         "level": "error",
+         "code": "timing_fail",
+         "message": "WNS -0.187 ns after route_design (final)",
+         "node_id": "impl_1/route_design"
+        },
+        {
+         "level": "error",
+         "code": "timing_fail",
+         "message": "WHS -0.034 ns after route_design (final)",
+         "node_id": "impl_1/route_design"
+        }
+       ],
+       "children": [
+        {
+         "id": "impl_1/route_design/p1",
+         "label": "Phase 1 Build RT Design",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976760.0,
+         "ended_at": 1759976810.0,
+         "elapsed_s": 50,
+         "peak_mem_mb": 1220,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "1",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p2",
+         "label": "Phase 2 Router Initialization",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976810.0,
+         "ended_at": 1759976870.0,
+         "elapsed_s": 60,
+         "peak_mem_mb": 1240,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "2",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p3",
+         "label": "Phase 3 Initial Routing",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976870.0,
+         "ended_at": 1759976960.0,
+         "elapsed_s": 90,
+         "peak_mem_mb": 1260,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "3",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p4",
+         "label": "Phase 4 Rip-up And Reroute",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759976960.0,
+         "ended_at": 1759977120.0,
+         "elapsed_s": 160,
+         "peak_mem_mb": 1280,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [
+          {
+           "id": "impl_1/route_design/p4/p4.1",
+           "label": "Phase 4.1 Global Iteration 0",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759976960.0,
+           "ended_at": 1759976986.6666667,
+           "elapsed_s": 26.666666666666668,
+           "peak_mem_mb": 900,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.1",
+           "number_predicted": false
+          },
+          {
+           "id": "impl_1/route_design/p4/p4.2",
+           "label": "Phase 4.2 Global Iteration 1",
+           "kind": "phase",
+           "status": "done",
+           "started_at": 1759976961.0,
+           "ended_at": 1759976987.6666667,
+           "elapsed_s": 26.666666666666668,
+           "peak_mem_mb": 901,
+           "counts": {
+            "error": 0,
+            "critical": 0,
+            "warning": 0,
+            "info": 0
+           },
+           "timing": null,
+           "run": null,
+           "log": null,
+           "line_start": null,
+           "line_end": null,
+           "progress": null,
+           "expected": false,
+           "optional": false,
+           "description": null,
+           "reports": [],
+           "alerts": [],
+           "children": [],
+           "doc_url": null,
+           "number": "4.2",
+           "number_predicted": false
+          }
+         ],
+         "doc_url": null,
+         "number": "4",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p5",
+         "label": "Phase 5 Delay CleanUp",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977120.0,
+         "ended_at": 1759977140.0,
+         "elapsed_s": 20,
+         "peak_mem_mb": 1300,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "5",
+         "number_predicted": false
+        },
+        {
+         "id": "impl_1/route_design/p6",
+         "label": "Phase 6 Post Hold Fix",
+         "kind": "phase",
+         "status": "done",
+         "started_at": 1759977140.0,
+         "ended_at": 1759977170.0,
+         "elapsed_s": 30,
+         "peak_mem_mb": 1320,
+         "counts": {
+          "error": 0,
+          "critical": 0,
+          "warning": 0,
+          "info": 0
+         },
+         "timing": null,
+         "run": null,
+         "log": null,
+         "line_start": null,
+         "line_end": null,
+         "progress": null,
+         "expected": false,
+         "optional": false,
+         "description": null,
+         "reports": [],
+         "alerts": [],
+         "children": [],
+         "doc_url": null,
+         "number": "6",
+         "number_predicted": false
+        }
+       ],
+       "doc_url": "https://docs.amd.com/search?q=route_design",
+       "number": null,
+       "number_predicted": false
+      },
+      {
+       "id": "impl_1/write_bitstream",
+       "label": "write_bitstream",
+       "kind": "step",
+       "status": "done",
+       "started_at": 1759977175.0,
+       "ended_at": 1759977380.0,
+       "elapsed_s": 205,
+       "peak_mem_mb": 2900,
+       "counts": {
+        "error": 0,
+        "critical": 0,
+        "warning": 9,
+        "info": 18
+       },
+       "timing": null,
+       "run": "impl_1",
+       "log": null,
+       "line_start": null,
+       "line_end": null,
+       "progress": null,
+       "expected": false,
+       "optional": false,
+       "description": null,
+       "reports": [],
+       "alerts": [],
+       "children": [],
+       "doc_url": "https://docs.amd.com/search?q=write_bitstream",
+       "number": null,
+       "number_predicted": false
+      }
+     ]
+    }
+   ],
+   "clock_history": {
+    "clocks": [
+     "clk_dsp",
+     "clk_axi",
+     "clk_adc_div2",
+     "clk_ddr"
+    ],
+    "builds": [
+     {
+      "started_at": 1759001000.0,
+      "label": "Oct 02 11:20",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": 0.021,
+        "tns": 0.0,
+        "whs": 0.012,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_axi": {
+        "wns": 0.14,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc_div2": {
+        "wns": 0.101,
+        "tns": 0.0,
+        "whs": 0.015,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_ddr": {
+        "wns": 0.388,
+        "tns": 0.0,
+        "whs": 0.016,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759199720.0,
+      "label": "Oct 08 16:45",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": -0.043,
+        "tns": -0.486,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 20
+       },
+       "clk_axi": {
+        "wns": 0.132,
+        "tns": 0.0,
+        "whs": 0.019,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc_div2": {
+        "wns": 0.088,
+        "tns": 0.0,
+        "whs": 0.016,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_ddr": {
+        "wns": 0.401,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759398440.0,
+      "label": "Oct 13 09:30",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": 0.012,
+        "tns": 0.0,
+        "whs": 0.011,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_axi": {
+        "wns": 0.118,
+        "tns": 0.0,
+        "whs": 0.019,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc_div2": {
+        "wns": 0.081,
+        "tns": 0.0,
+        "whs": 0.011,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_ddr": {
+        "wns": 0.395,
+        "tns": 0.0,
+        "whs": 0.017,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759597160.0,
+      "label": "Oct 17 22:10",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": -0.092,
+        "tns": -1.04,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 39
+       },
+       "clk_axi": {
+        "wns": 0.121,
+        "tns": 0.0,
+        "whs": 0.021,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc_div2": {
+        "wns": 0.044,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_ddr": {
+        "wns": 0.41,
+        "tns": 0.0,
+        "whs": 0.018,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "started_at": 1759795880.0,
+      "label": "Oct 21 07:48",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": -0.187,
+        "tns": -2.113,
+        "whs": 0.009,
+        "ths": 0.0,
+        "failing": 77
+       },
+       "clk_axi": {
+        "wns": -0.021,
+        "tns": -0.237,
+        "whs": -0.012,
+        "ths": -0.048,
+        "failing": 11
+       },
+       "clk_adc_div2": {
+        "wns": -0.064,
+        "tns": -0.723,
+        "whs": -0.034,
+        "ths": -0.136,
+        "failing": 28
+       },
+       "clk_ddr": {
+        "wns": 0.412,
+        "tns": 0.0,
+        "whs": 0.018,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     }
+    ],
+    "stages": [
+     {
+      "step": "impl_1/place_design",
+      "label": "Place \u00b7 placed",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": -0.412,
+        "tns": -4.656,
+        "whs": 0.011,
+        "ths": 0.0,
+        "failing": 167
+       },
+       "clk_axi": {
+        "wns": 0.02,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc_div2": {
+        "wns": 0.01,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_ddr": {
+        "wns": 0.3,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "step": "impl_1/phys_opt_design",
+      "label": "Phys_opt \u00b7 physopted",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": -0.301,
+        "tns": -3.401,
+        "whs": 0.011,
+        "ths": 0.0,
+        "failing": 123
+       },
+       "clk_axi": {
+        "wns": 0.0,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_adc_div2": {
+        "wns": 0.0,
+        "tns": 0.0,
+        "whs": 0.01,
+        "ths": 0.0,
+        "failing": 0
+       },
+       "clk_ddr": {
+        "wns": 0.35,
+        "tns": 0.0,
+        "whs": 0.02,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     },
+     {
+      "step": "impl_1/route_design",
+      "label": "Route \u00b7 routed",
+      "per_clock": {
+       "clk_dsp": {
+        "wns": -0.187,
+        "tns": -2.113,
+        "whs": 0.009,
+        "ths": 0.0,
+        "failing": 77
+       },
+       "clk_axi": {
+        "wns": -0.021,
+        "tns": -0.237,
+        "whs": -0.012,
+        "ths": -0.048,
+        "failing": 11
+       },
+       "clk_adc_div2": {
+        "wns": -0.064,
+        "tns": -0.723,
+        "whs": -0.034,
+        "ths": -0.136,
+        "failing": 28
+       },
+       "clk_ddr": {
+        "wns": 0.412,
+        "tns": 0.0,
+        "whs": 0.018,
+        "ths": 0.0,
+        "failing": 0
+       }
+      }
+     }
+    ]
+   },
+   "utilization": {
+    "step": "impl_1/route_design",
+    "label": "routed utilization",
+    "report": "Utilization",
+    "path": "impl_1/radar_dsp_utilization_placed.rpt",
+    "rows": [
+     {
+      "name": "LUT",
+      "used": 96768,
+      "available": 230400,
+      "pct": 42.0
+     },
+     {
+      "name": "FF",
+      "used": 142848,
+      "available": 460800,
+      "pct": 31.0
+     },
+     {
+      "name": "BRAM",
+      "used": 302,
+      "available": 1080,
+      "pct": 28.0
+     },
+     {
+      "name": "URAM",
+      "used": 0,
+      "available": 80,
+      "pct": 0.0
+     },
+     {
+      "name": "DSP",
+      "used": 3908,
+      "available": 4272,
+      "pct": 91.5
+     },
+     {
+      "name": "IO",
+      "used": 76,
+      "available": 347,
+      "pct": 22.0
+     },
+     {
+      "name": "BUFG",
+      "used": 8,
+      "available": 96,
+      "pct": 9.0
+     }
+    ]
+   },
+   "events": [
+    {
+     "t": 1759998200.0,
+     "kind": "run_done",
+     "level": "info",
+     "code": null,
+     "node_id": null,
+     "title": "Run finished",
+     "message": "radar_dsp: implementation completed, timing NOT met (WNS -0.187 ns)"
+    },
+    {
+     "t": 1759998210.0,
+     "kind": "alert",
+     "level": "error",
+     "code": "timing_fail",
+     "node_id": "impl_1/route_design",
+     "title": "Timing not met",
+     "message": "WNS -0.187 ns after route_design (final)"
+    }
+   ],
+   "top_messages": [
+    {
+     "id": "Vivado 12-5201",
+     "severity": "critical",
+     "count": 2,
+     "text": "set_input_delay: no valid object found for -clock",
+     "score": 8.74,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: constraint not applied",
+      "rare (2x)"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Vivado%2012-5201",
+     "nodes": [
+      {
+       "node_id": "impl_1/init_design",
+       "label": "init_design"
+      }
+     ],
+     "first_line": 36547,
+     "last_line": 36992,
+     "log": "/path/to/impl_1/runme.log"
+    },
+    {
+     "id": "Vivado 12-4739",
+     "severity": "critical",
+     "count": 2,
+     "text": "create_clock:No valid object(s) found for '-objects [get_ports clk_in]'",
+     "score": 8.44,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: constraint not applied",
+      "affects timing",
+      "rare (2x)"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Vivado%2012-4739",
+     "nodes": [
+      {
+       "node_id": "impl_1/init_design",
+       "label": "init_design"
+      }
+     ],
+     "first_line": 36345,
+     "last_line": 36547,
+     "log": "/path/to/impl_1/runme.log"
+    },
+    {
+     "id": "Timing 38-316",
+     "severity": "warning",
+     "count": 28,
+     "text": "Clock period 'N' specified during out-of-context synthesis of instance differs from the actual clock",
+     "score": 4.54,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: clock mismatch",
+      "new since last build"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Timing%2038-316",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      },
+      {
+       "node_id": "impl_1/place_design",
+       "label": "place_design"
+      }
+     ],
+     "first_line": 25026,
+     "last_line": 31237,
+     "log": "/path/to/synth_1/runme.log"
+    },
+    {
+     "id": "Synth 8-3917",
+     "severity": "warning",
+     "count": 36,
+     "text": "design <module> has port reg_N_q driven by constant 0",
+     "score": 4.49,
+     "priority": null,
+     "user_priority": "high",
+     "reasons": [
+      "keyword: constant driver",
+      "rare (1x)"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Synth%208-3917",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      }
+     ],
+     "first_line": 13473,
+     "last_line": 19167,
+     "log": "/path/to/synth_1/runme.log"
+    },
+    {
+     "id": "Synth 8-3332",
+     "severity": "warning",
+     "count": 78,
+     "text": "Sequential element (reg_N_q) is unused and will be removed from module <module>.",
+     "score": 4.31,
+     "priority": null,
+     "user_priority": null,
+     "reasons": [
+      "rule: unused register removed",
+      "keyword: removed"
+     ],
+     "new": false,
+     "delta": null,
+     "doc_url": "https://docs.amd.com/search?q=Synth%208-3332",
+     "nodes": [
+      {
+       "node_id": "synth",
+       "label": "Synthesis"
+      }
+     ],
+     "first_line": 6500,
+     "last_line": 13473,
+     "log": "/path/to/synth_1/runme.log"
+    }
+   ],
+   "resources": null,
+   "eta": null,
+   "info": {
+    "part": "xczu48dr-ffvg1517-2-e",
+    "board": "xilinx.com:zcu111:part0:1.4",
+    "top": "radar_dsp",
+    "vivado_version": "2022.2",
+    "host": "rfsoc-build01",
+    "strategy_synth": "Vivado Synthesis Defaults",
+    "strategy_impl": "Performance_ExplorePostRoutePhysOpt",
+    "directives": {
+     "opt_design": "Explore",
+     "place_design": "ExtraTimingOpt",
+     "phys_opt_design": "AggressiveExplore",
+     "route_design": "Explore"
+    },
+    "jobs": 8,
+    "project": "/home/user/projects/radar_dsp/radar_dsp.xpr"
    }
   }
  ]

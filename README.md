@@ -12,6 +12,8 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **Master-detail drill-down flow**: synth, opt, place, phys_opt, route, bitstream. Upcoming steps and phases come from a per-version phase catalog, with predicted phase numbers.
 - **Timing you can trust**: intermediate and estimated values are shown as "not final"; red only when the final result fails. Missing hold metrics are carried forward and marked stale.
 - **Utilization card**, parsing of intermediate reports (timing, DRC, power, route status, ...).
+- **Worst timing paths** (setup/hold, logic vs route, expandable), **per-clock history** across stages and builds with regressions highlighted.
+- **Router convergence chart** (overlaps and slack per iteration, live) and an alert when the router stalls or diverges.
 - **Alerts** with browser notifications, and an in-app event log.
 - **Message triage**: severity, rules, keywords, rarity and "new since last build" scoring; pin or mute any message id.
 - **ETA** from the previous build of the same firmware.

@@ -15,6 +15,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `logparse.py` | Streaming parser: log lines to sections, phases, tasks, messages and timing. |
 | `project.py` | Builds a firmware's flow from a `.runs` directory (marker files, run tcl, logs, reports). |
 | `expected.py` | Merges catalog placeholders (upcoming steps/phases, predicted numbers, weights) into the seen nodes. |
+| `timing_paths.py`, `clocks.py`, `convergence.py` | Worst-path parser for timing reports (streamed), per-clock history across stages and builds, router overlap trend. |
 | `reports.py` | Parses utilization, timing summary, DRC/methodology, power, route status and other reports. |
 | `alerts.py`, `triage.py`, `eta.py`, `info.py`, `docs.py` | Alerts, message scoring and baselines, ETA, build info, documentation links. |
 | `sysstats.py`, `browse.py` | System CPU/RAM/swap from `/proc`; read-only directory listing for the folder explorer. |
@@ -77,6 +78,7 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 | `GET /api/triage?fw=&node=&sev=&q=&include_muted=&limit=` | Scored message groups, with `new`/`delta` against the previous build. |
 | `GET /api/log?fw=&node=&tail=` or `&log=&around=&context=` | Raw log excerpt for a node, or around a line. |
 | `GET /api/report?fw=&path=` | Raw text of a report (only paths listed in the model). |
+| `GET /api/paths?fw=&path=&type=&only_failing=` | Worst setup/hold paths (max 200, worst first) of a timing_summary report: `{path, paths, counts}`. `type=setup\|hold`, `only_failing=1`; same path validation as `/api/report`. |
 | `GET /api/browse?path=` | Read-only directory listing for the explorer (skips `/proc`, `/sys`, `/dev`). |
 | `POST /api/watch` `{"path": ...}` | Add a `.runs` dir, `.xpr` or log to watch. |
 | `POST /api/msgrule` `{"id": ..., "priority": ...}` | Set or clear a message priority override. |
@@ -92,3 +94,9 @@ Top-level model: `State` contains `Firmware` objects; each has `flows` of `Node`
 ## ETA
 
 For a running build, per-step durations of the last completed build of the same firmware (`~/.cache/vmon/durations/`) are summed for pending steps, plus the remainder of the current step. Without a previous build it falls back to catalog weights scaled by progress (low confidence).
+
+## Timing insights
+
+- **Worst paths**: the path sections of a `timing_summary` report are streamed line by line once per (mtime, size) change; only the worst 100 setup + 100 hold paths are kept (`[timing_paths]`). The report summary carries the 8 worst plus `path_counts`; the full list comes from `/api/paths`.
+- **Per-clock history**: per-clock values come from the Intra Clock Table of each timing report (`Firmware.clock_history.stages`). When a build finishes, its final values are stored in `~/.cache/vmon/timing/<fw_id>.json` (last 20 builds, keyed by start time; finished builds not yet stored are recorded at startup).
+- **Router convergence**: the parser records every `Number of Nodes with overlaps` value and the following Intermediate Timing Summary per router iteration (`Node.convergence`). The trend (converging / stalled / diverging) and the `route_not_converging` alert use `[convergence]`; the alert is raised for live attempts only.

@@ -60,7 +60,7 @@ def make_server(monitor, host, port):
                     return self._json(browse_mod.browse(query.get("path", [""])[0], str(Path.home()), live, recent))
                 except browse_mod.BrowseError as exc:
                     return self._error(exc.status, str(exc))
-            if route in ("/api/messages", "/api/log", "/api/report", "/api/triage"):
+            if route in ("/api/messages", "/api/log", "/api/report", "/api/triage", "/api/paths"):
                 source = self._source(query)
                 if source is None:
                     return
@@ -81,6 +81,15 @@ def make_server(monitor, host, port):
                             result = self._around(source, query, node, around)
                         else:
                             result = source.log_excerpt(node, _int(query, "tail", 200))
+                    elif route == "/api/paths":
+                        kind = query.get("type", [""])[0] or None
+                        if kind not in (None, "setup", "hold"):
+                            return self._error(400, "type must be setup or hold")
+                        result = source.timing_paths(
+                            query.get("path", [""])[0], kind,
+                            query.get("only_failing", ["0"])[0] in ("1", "true", "yes"))
+                        if result is None:
+                            return self._error(403, "not a known timing report of this firmware")
                     else:
                         return self._report(source, query.get("path", [""])[0])
                 if result is None:

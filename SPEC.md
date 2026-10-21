@@ -385,3 +385,33 @@ Attempts: Node.attempts = [{"n": int, "status": str, "started_at", "ended_at", "
   start = earliest new artifact, end = newest artifact of the step; no children/log; reports judged stale only
   against the failure time). Run done when the last planned step is proven, else stopped. Firmware.attempt mode
   "external", `resumed_from` = step of the newest checkpoint written before the failure. A real session wins.
+
+## v6 additions — timing insights
+```
+GET /api/paths?fw=&path=<report>&type=setup|hold&only_failing=0|1
+  -> {"path": str, "paths": [Path], "counts": PathCounts}   (403 unknown report, 400 bad type)
+Path = {"id","type":"setup"|"hold","slack","status":"MET"|"VIOLATED","source","source_clock","destination","dest_clock",
+        "from_clock","to_clock","group","path_type","corner","requirement","data_delay","logic_delay","logic_pct",
+        "route_delay","route_pct","levels","cells":{cell:count},"skew","uncertainty"}      # worst first
+PathCounts = {"total","setup","hold","setup_failing","hold_failing","failing","failing_clocks","clocks":[str],
+              "shown","capped","worst_setup","worst_hold"}
+Report.summary (timing_summary) += {"paths": [compact Path: id,type,slack,status,source,destination,source_clock,
+              dest_clock,levels,logic_pct,route_pct,skew] (8 worst), "path_counts": PathCounts};
+              clocks[] rows also carry "ths_fail". Rows without a WNS (pulse-width-only clocks) are skipped.
+Timing += {"report": path|null, "path_counts": PathCounts|null, "paths": [compact Path]}   (report-sourced timing)
+Firmware.clock_history = {"clocks":[names, worst WNS first],
+   "builds":[{"started_at","label","per_clock":{clk:{wns,tns,whs,ths,failing}}, "current"?:true,"stage"?}],  # oldest first, last 20
+   "stages":[{"step","label","per_clock":{...}}]} | null      # stages = this build's timing reports in flow order
+Node.convergence = {"iterations":[{"label","overlaps":[int],"final_overlaps","wns","tns","whs","ths","t","line"}],
+                    "trend":"converging"|"stalled"|"diverging"|null} | null
+attempt summaries also carry "convergence". Alert code "route_not_converging" (warning, live attempts only).
+```
+- Persistence: `~/.cache/vmon/timing/<fw_id>.json` = {"builds": [...]} written when the build is done (or failed after a
+  final timing report); same start time replaces the entry. The in-progress build appears as a `current` entry, not stored.
+- Trend ([convergence] in flows.toml): finals of the last `window`+1 iterations; 0 final -> converging; strictly
+  increasing -> diverging; still > 0 and down < `min_improvement_pct` -> stalled; fewer iterations: converging if
+  strictly dropping, else null. Alert needs `alert_min_iterations`.
+- Parser: iterations are phases matching `[convergence] phase_re` (Global Iteration, Initial (Net) Routing); overlap lines
+  outside such phases are ignored. Feeding is incremental (chunk-equivalent). Limits: 500 iterations, 64 values each.
+- UI: Timing view (clocks, stages, worst paths), worst-paths table in Reports/Timing tabs, header "N failing paths in K
+  clocks", Convergence tab with inline SVG chart, overlap sparkline on the running route card.

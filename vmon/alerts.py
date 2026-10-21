@@ -2,6 +2,7 @@
 
 Thresholds come from [alerts] in flows.toml. Stale reports (from an older launch) never alert.
 """
+from . import convergence as convergence_mod
 
 
 def _alert(level, code, message, node_id):
@@ -32,6 +33,14 @@ def timing_alerts(node, step_id):
     return out
 
 
+def convergence_alerts(node, cfg, alive):
+    """Router stalled/diverging: only for live attempts, so a finished run does not nag."""
+    if node.status != "running" or not alive or not node.convergence:
+        return []
+    message = convergence_mod.alert_message(node.convergence, cfg)
+    return [_alert("warning", "route_not_converging", message, node.id)] if message else []
+
+
 def node_alerts(node, step_id, cfg, stall_age=None, alive=True):
     """Alerts for a step or run node (not for phases)."""
     settings = cfg.alerts
@@ -49,6 +58,7 @@ def node_alerts(node, step_id, cfg, stall_age=None, alive=True):
         out.append(_alert("warning", "critical_warning",
                           "%d critical warning(s) in %s" % (critical, node.label), nid))
     out.extend(timing_alerts(node, step_id))
+    out.extend(convergence_alerts(node, cfg, alive))
     for report in node.reports:
         if not report["stale"]:
             for alert in report["alerts"]:

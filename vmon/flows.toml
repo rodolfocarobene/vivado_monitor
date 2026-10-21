@@ -82,6 +82,12 @@ action = "pair_close"
 prefix = ["Finished "]
 re = '^Finished (.+?)( : Time \(s\).*)?\s*$'
 
+[rules.overlaps]
+order = 46
+action = "overlaps"
+prefix = [" Number of Nodes with overlaps"]
+re = '^ Number of Nodes with overlaps = (\d+)'
+
 [rules.time_line]
 order = 50
 action = "time_line"
@@ -414,6 +420,26 @@ stall_minutes = 20
 utilization_pct = 90
 timing_error_steps = ["route_design", "post_route_phys_opt_design", "write_bitstream"]   # timing is final once one of these is done
 timing_final_steps = ["route_design", "post_route_phys_opt_design"]   # their timing_summary reports are final results
+
+# ---------------------------------------------------------------- timing paths (timing_summary reports)
+[timing_paths]
+max_paths = 200       # worst paths kept per report (half setup, half hold); the report is streamed, never loaded whole
+summary_paths = 8     # how many of them go into the report summary inside the state JSON
+
+# ---------------------------------------------------------------- router convergence
+# Per iteration of the router (phases matching phase_re), the "Number of Nodes with overlaps" values and the
+# Intermediate Timing Summary that follows. Trend over the last `window` iterations (final overlaps of each):
+#   converging: the latest iteration ended with 0 overlaps, or overlaps keep dropping
+#   diverging:  strictly increasing over the window
+#   stalled:    still > 0 but down by less than min_improvement_pct over the window
+[convergence]
+phase_re = 'Global Iteration|Initial Net Routing|Initial Routing'
+window = 3
+min_improvement_pct = 20
+alert = true                  # warning "route_not_converging" for live attempts
+alert_min_iterations = 4      # ...once at least this many iterations were seen
+max_iterations = 500
+max_values = 64               # overlap values kept per iteration
 
 # ---------------------------------------------------------------- failures, crashes and resumes
 # Patterns are scanned in the tail of the run's runme.log / main log (and of a resume log). The first

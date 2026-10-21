@@ -31,13 +31,17 @@ class Timing:
     final: bool = False
     stage: str = ""
     carried: dict = field(default_factory=dict)
+    report: str | None = None
+    path_counts: dict | None = None
+    paths: list = field(default_factory=list)
 
     def to_dict(self):
         return {"wns": self.wns, "tns": self.tns, "whs": self.whs, "ths": self.ths,
                 "tns_fail": self.tns_fail, "ths_fail": self.ths_fail, "met": self.met,
                 "source": self.source, "label": self.label, "history": self.history,
                 "wpws": self.wpws, "clocks": self.clocks, "final": self.final, "stage": self.stage,
-                "carried": self.carried}
+                "carried": self.carried, "report": self.report, "path_counts": self.path_counts,
+                "paths": self.paths}
 
 
 @dataclass
@@ -70,6 +74,7 @@ class Node:
     failure: dict | None = None
     attempts: list = field(default_factory=list)
     log_missing: bool = False
+    convergence: dict | None = None
 
     def to_dict(self):
         return {
@@ -83,6 +88,7 @@ class Node:
             "estimate": self.estimate, "reports": self.reports, "alerts": self.alerts,
             "doc_url": self.doc_url, "number": self.number, "number_predicted": self.number_predicted,
             "failure": self.failure, "attempts": self.attempts, "log_missing": self.log_missing,
+            "convergence": self.convergence,
             "children": [c.to_dict() for c in self.children],
         }
 
@@ -125,6 +131,7 @@ class Firmware:
     eta: dict | None = None
     info: dict | None = None
     attempt: dict | None = None
+    clock_history: dict | None = None
 
     def to_dict(self):
         return {
@@ -137,6 +144,6 @@ class Firmware:
             "vivado_version": self.vivado_version, "resources": self.resources,
             "utilization": self.utilization, "top_messages": self.top_messages,
             "events": self.events, "eta": self.eta, "info": self.info,
-            "attempt": self.attempt,
+            "attempt": self.attempt, "clock_history": self.clock_history,
             "flows": [f.to_dict() for f in self.flows],
         }

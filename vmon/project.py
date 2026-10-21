@@ -13,6 +13,7 @@ from pathlib import Path
 
 from . import alerts as alert_rules
 from . import artifacts as artifacts_mod
+from . import convergence as convergence_mod
 from . import failure as failure_mod
 from .attempts import AttemptStore
 from .config import StepDef
@@ -235,6 +236,7 @@ class Source:
             node.line_start = section.line_start
             node.line_end = section.line_end or plog.line_count
             node.timing = self._timing_from_history(section, step_id, status)
+            node.convergence = convergence_mod.summarize(section.iters, self.cfg)
             node.progress = self._progress(node)
             if node.started_at is None:
                 node.started_at = section.started_at
@@ -258,7 +260,8 @@ class Source:
                     met=compute_met(summary.get("wns"), summary.get("tns"), summary.get("whs"),
                                     summary.get("ths")),
                     source="report", label="Timing report", history=history,
-                    clocks=summary.get("clocks", []))
+                    clocks=summary.get("clocks", []), report=report["path"],
+                    path_counts=summary.get("path_counts"), paths=summary.get("paths", []))
         node.children = self.catalog.merge(step_id, node, status, self.version)
         stall = plog.growth_age(now or time.time()) if plog and section is not None else None
         node.failure = failure
@@ -298,7 +301,8 @@ class Source:
                 "elapsed_s": node.elapsed_s, "log": log or node.log, "mode": mode, "checkpoint": checkpoint,
                 "failure": node.failure, "summary": text, "counts": counts_dict(node.counts),
                 "timing": {"wns": timing.wns, "tns": timing.tns, "whs": timing.whs, "ths": timing.ths,
-                           "met": timing.met, "final": timing.final, "stage": timing.stage} if timing else None}
+                           "met": timing.met, "final": timing.final, "stage": timing.stage} if timing else None,
+                "convergence": node.convergence}
 
     def _deepest_running(self, nodes):
         best = None
@@ -573,6 +577,19 @@ class Source:
 
     def allowed_report(self, path):
         return path in self.report_paths
+
+    def timing_paths(self, path, kind=None, only_failing=False):
+        """Worst paths of a timing_summary report: {"path", "paths", "counts"} or None if unknown/unparsed."""
+        real = os.path.realpath(path)
+        known = path if path in self.report_paths else real if real in self.report_paths else None
+        if known is None:
+            return None
+        found = self.reports.paths(known)
+        if found is None:
+            return None
+        paths = [p for p in found["paths"]
+                 if (kind is None or p["type"] == kind) and (not only_failing or p["status"] == "VIOLATED")]
+        return {"path": known, "paths": paths, "counts": found["counts"]}
 
 
 # ====================================================================== project mode
