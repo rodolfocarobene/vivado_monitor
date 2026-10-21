@@ -253,17 +253,26 @@ The scale lives in `style.css` as `--fs-*` custom properties; every `font-size` 
 
 ## Layout
 
-A single centered column (max 1100px, 20px side padding) under a sticky top bar and a horizontal tab strip (one tab
-per firmware). Inside a firmware: a header panel (name, status pill, path, meta row), a sticky summary bar, then
-the flow. The flow is a master–detail layout: the stage column on the left and the expanded step details on the
-right. Below about 1000px it collapses to a single column with inline drill-down.
+Two columns under the sticky top bar and the firmware tab strip. On the left, a 290px **stage rail**: the stage list
+(Synthesis … write_bitstream) with the "follow live" switch on top. It is sticky beside everything else and scrolls
+on its own when long, so the stages and follow-live are always in view, in every view (Flow, Messages, Timing). On
+the right: the build header (name, status pill, "now" block, messages, top issues, timing and utilization cards that
+stack when the row is tight), the alert banner, then the selected stage's detail or the Messages/Timing view. Because
+the rail already shows each stage's counts, timing chip, time and progress, the detail header keeps only the name,
+status, description, report chips, docs link and peak memory. Max width 1760px, 20px side padding.
+
+The recap card stays compact: the start time sits under the elapsed readout, message counts are small chips, and Top
+issues is one summary line ("2 critical warnings · 1 warning") that expands on click (remembered). Opening anything in
+the right column (a step, a detail tab, a report, a message or path row, Build info) that ends below the window
+scrolls the page just enough to show it whole, never pushing the control that opened it under the sticky bars; a
+wheel or touch scroll by the user cancels that.
 
 The flow node is a two-column grid: a 36px rail gutter and the card. The rail's dashed connector runs exactly
 through every icon center.
 
 Density is high but evenly spaced: gaps of 5–6px inside chip rows, 10–14px between cards, 18–22px between major
-blocks. Responsive breakpoints at 1400, 1180, 1000, 960, 820 and 640px progressively hide secondary summary items
-(utilization, counts, ETA) rather than shrinking type.
+blocks. Below 1000px the layout stacks into one column (header, banner, stage list, detail). Top-bar breakpoints at
+1520, 1360, 1180 and 1100px progressively hide secondary items rather than shrinking type.
 
 ## Elevation & Depth
 

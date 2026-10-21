@@ -587,9 +587,6 @@ main { max-width: 1440px; }
   .np-cols { grid-template-columns: 1fr; }
   .liveinfo .ivl span { display: none; }
 }
-@media (min-width: 1001px) and (min-height: 780px) {
-  .stagecol { position: sticky; top: 76px; }
-}
 
 /* ======================= v4: timing severity, docs links, info, sticky summary, follow toggle ======================= */
 .tc-stage { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: var(--fs-small); color: var(--text-2); }
@@ -686,7 +683,6 @@ main { max-width: 1440px; }
 .sdotb[data-status="skipped"] { opacity: .5; border-style: dashed; }
 .sdotb.sel { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--text-2); }
 .sdotb[data-alert="warning"]:not([data-status="failed"]) { border-color: var(--warn); }
-.stagecol { top: var(--stick-top, 76px) !important; }
 .mrow { scroll-margin-top: calc(var(--stick-top, 80px) + 4px); }
 @media (max-width: 1000px) { .sm-util, .sm-counts { display: none; } }
 @media (max-width: 640px) { .sm-cur, .sm-time .sm-eta { display: none; } .sum-in { padding: 6px 12px; } }
@@ -1027,3 +1023,57 @@ h1, h2, h3, .now .cur, .label { text-wrap: balance; }
 .tabs[data-more~="right"] { -webkit-mask-image: linear-gradient(to right, var(--text) calc(100% - 48px), transparent); mask-image: linear-gradient(to right, var(--text) calc(100% - 48px), transparent); }
 .tabs[data-more~="left"] { -webkit-mask-image: linear-gradient(to left, var(--text) calc(100% - 48px), transparent); mask-image: linear-gradient(to left, var(--text) calc(100% - 48px), transparent); }
 .tabs[data-more="left right"] { -webkit-mask-image: linear-gradient(to right, transparent, var(--text) 48px, var(--text) calc(100% - 48px), transparent); mask-image: linear-gradient(to right, transparent, var(--text) 48px, var(--text) calc(100% - 48px), transparent); }
+
+/* ======================= stage rail: stages fixed on the left, everything else on the right ======================= */
+main.railed { max-width: 1760px; display: grid; grid-template-columns: 290px minmax(0, 1fr); column-gap: 26px; align-items: start; }
+main.railed > * { grid-column: 2; min-width: 0; }
+main.railed > .stagecol {
+  grid-column: 1; grid-row: 1 / span 6; position: sticky; top: var(--stick-top, 76px);
+  max-height: calc(100vh - var(--stick-top, 76px) - 14px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  padding: 2px 4px 12px 0;
+}
+main.railed > .stagecol .sl-head { position: sticky; top: 0; z-index: 3; background: var(--bg); padding-top: 4px; }
+main.railed .segwrap:empty { display: none; }
+main.railed .segwrap .seg { margin: 0 0 10px 36px; }
+main.railed > .split { display: block; margin-top: 18px; }
+/* header beside the rail: the cards stack in their own column when the row gets tight */
+main.railed .fw-head { display: flex; flex-wrap: wrap; gap: 18px 24px; }
+main.railed .fwl { flex: 1 1 400px; }
+main.railed .cards { flex: 0 1 auto; max-width: 100%; }
+main.railed .fwinfo { flex: 1 1 100%; }
+/* the rail already shows each stage's counts, timing chip, time and progress: the detail header keeps only what is new */
+main.railed .stagedetail > .rail { display: none; }
+main.railed .stagedetail > .main > .card { background: none; border: none; box-shadow: none; padding: 2px 0 6px; }
+main.railed .stagedetail > .main > .card:hover { background: none; }
+main.railed .stagedetail > .main > .card .badges, main.railed .stagedetail > .main > .card .chipwrap, main.railed .stagedetail > .main > .card .prog,
+main.railed .stagedetail > .main > .card .meta > :not(.mem) { display: none; }
+/* the summary bar's stage dots duplicate the rail */
+@media (min-width: 1001px) { .sm-strip { display: none; } }
+@media (max-width: 1000px) {
+  main.railed { display: flex; flex-direction: column; }
+  main.railed > .stagecol { order: 1; position: static; max-height: none; overflow: visible; margin-top: 18px; padding: 0; }
+  main.railed > .split, main.railed > .msgview, main.railed > .tview { order: 2; }
+  main.railed .stagecol .sl-head { position: static; }
+}
+
+/* compact recap: smaller message counts, collapsed top issues, cards beside the "now" block next to the rail */
+main.railed .fw-head { padding: 16px 20px; gap: 14px 22px; }
+main.railed .now { margin-top: 12px; }
+main.railed .now-run { margin-top: 6px; }
+main.railed .now + .fw-meta { margin-top: 12px; gap: 24px; }
+main.railed .fw-meta .cbadge { padding: 2px 8px; border-radius: 8px; }
+main.railed .fw-meta .cbadge b { font-size: var(--fs-title); }
+main.railed .fw-meta .counts { gap: 6px; }
+main.railed .topissues { margin-top: 12px; padding-top: 8px; }
+main.railed .fwl { flex: 1 1 380px; }
+main.railed .timing-card, main.railed .util-card { width: 292px; min-width: 0; padding: 11px 13px; }
+main.railed .fwinfo { padding-top: 8px; }
+.ti-h .infotoggle .chev { transform: rotate(90deg); }
+.ti-h .infotoggle[aria-expanded="false"] .chev { transform: none; }
+.ti-sum { font-size: var(--fs-caption); font-weight: 600; padding: 0 8px; border-radius: 99px; line-height: 19px; }
+/* warning-only alert strip: one line per alert at most, full text in the tooltip */
+.alerts.compact .amsg { max-width: 46ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alerts.compact .alert { min-width: 0; }
+.now-run .el { white-space: nowrap; }
+.now-run .started-wrap[hidden] { display: none; }
+main.railed .now-run .eta-wrap .sub2 { white-space: normal; max-width: 190px; }
