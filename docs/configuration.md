@@ -26,6 +26,9 @@ Other files:
 | `[docs]`, `[docs.steps]`, `[docs.reports]` | Documentation link templates |
 | `[ui]` | Utilization rows shown in the card |
 | `[messages.*]` | Message triage scoring, keywords and rules |
+| `[failure]`, `[failure.signals]`, `[failure.patterns.*]` | Crash and failure detection (segfault, lost license, out of memory, ...) |
+| `[resume]`, `[resume.checkpoints]` | Recognising non-project sessions that resume a run from a checkpoint |
+| `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
 
@@ -102,4 +105,36 @@ write_bitstream = "write_bitstream"     # expands via tcl_command
 
 [docs.reports]
 utilization = "report_utilization"
+```
+
+## Failures, resumes and artifacts
+
+A failed or crashed step gets a reason from the first matching `[failure.patterns.*]` entry (lowest `order`),
+searched in the tail of `runme.log` and the main log. `{1}` in `reason` is the first regex group; with
+`signal = true` it is translated through `[failure.signals]`.
+
+```toml
+[failure.patterns.disk_full]
+order = 45
+re = 'No space left on device'
+reason = "Disk full"
+```
+
+A Vivado session that runs `open_checkpoint` on a run's checkpoint is shown as a new attempt of that run.
+`[resume.checkpoints]` maps the checkpoint suffix to the step it was written after (longest suffix wins):
+
+```toml
+[resume.checkpoints]
+"_routed" = "route_design"
+```
+
+If a run failed and no session log explains later results, files newer than the failure prove that steps
+finished outside the project flow. `{top}` is the run's top module; `tolerance_s` absorbs filesystem timestamp skew:
+
+```toml
+[artifacts]
+tolerance_s = 1
+[artifacts.files]
+'^{top}\.bit$' = "write_bitstream"
+'^{top}_routed\.dcp$' = "route_design"
 ```

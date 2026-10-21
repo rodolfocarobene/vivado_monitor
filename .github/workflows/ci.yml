@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -r requirements-dev.txt
+      - name: Unit tests
+        run: python -m pytest -q
+      - name: Smoke test (server + API)
+        run: |
+          vmon --no-browser --port 8765 tests/fixtures/qick/d_1_wrapper.vdi &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/api/state > state.json && break; sleep 1; done
+          python -c "import json; s = json.load(open('state.json')); assert s['firmwares'] and 'system' in s, s.keys(); assert s['firmwares'][0]['flows'], 'no flow parsed'"
+          curl -sf http://127.0.0.1:8765/ | grep -q '<html'
+          curl -sf "http://127.0.0.1:8765/api/browse" | python -c "import json,sys; assert 'entries' in json.load(sys.stdin)"
+          curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8765/api/browse?path=/proc" | grep -q 403
+          kill %1
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: JavaScript syntax
+        run: node --check vmon/static/app.js
+      - name: Mock data is valid JSON
+        run: for f in vmon/static/mock/*.json; do python3 -m json.tool "$f" > /dev/null || { echo "::error file=$f::invalid JSON"; exit 1; }; done
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build wheel
+        run: python -m pip wheel . --no-deps -w dist
+      - name: Wheel contains the UI, config and catalog
+        run: |
+          unzip -l dist/*.whl > contents.txt
+          for f in vmon/flows.toml vmon/static/index.html vmon/static/app.js vmon/static/style.css \
+                   vmon/static/mock/state.json vmon/catalog/vivado_2023.2.toml; do
+            grep -q "$f" contents.txt || { echo "::error::wheel is missing $f"; exit 1; }
+          done
+
+  docs:
+    name: Docs up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Docs match the code (API routes, config sections, CLI options, links)
+        run: python tools/check_docs.py
+      - name: Code changed without docs (pull requests, warning only)
+        if: github.event_name == 'pull_request'
+        run: |
+          changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          if echo "$changed" | grep -qE '^vmon/.*\.(py|toml)$' && ! echo "$changed" | grep -qE '^(README\.md|docs/|SPEC\.md)'; then
+            echo "::warning::vmon/ code or config changed but README.md, docs/ and SPEC.md were not touched - check whether the docs need an update."
+          fi

@@ -1,5 +1,7 @@
 # vmon
 
+[![CI](https://github.com/rodolfocarobene/vivado_monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/rodolfocarobene/vivado_monitor/actions/workflows/ci.yml)
+
 Live web monitor for Xilinx Vivado builds: see which step and phase is running, what is still to come, timing, utilization and the warnings that matter, without opening a log file.
 
 ![Flow overview](docs/img/overview.png)
@@ -81,7 +83,10 @@ vmon is read-only on your build directories and never signals or kills processes
 ```sh
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest -q
+.venv/bin/python tools/check_docs.py   # docs cover every API route, config section and CLI option
 ```
+
+CI (GitHub Actions) runs the tests on Python 3.11–3.14, a server smoke test, frontend checks, a packaging check and the docs check on every push and pull request.
 
 The architecture contract is in [SPEC.md](SPEC.md).
 
