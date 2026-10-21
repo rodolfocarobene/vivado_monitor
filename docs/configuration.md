@@ -32,6 +32,7 @@ Other files:
 | `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
 | `[eta]` | ETA: history size, band quantiles, small-sample margin, floor for a running step/phase, builds needed for high confidence |
 | `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
+| `[history]` | Build history: builds kept per firmware, report kinds recorded, bitstream |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -155,6 +156,17 @@ small_sample_margin = 0.15
 current_floor = 0.10          # a running step/phase keeps at least this fraction of its median
 high_confidence_builds = 5    # with every remaining step known, gives "high" confidence
 ```
+
+## Build history
+
+```toml
+[history]
+max_builds = 100      # finished builds kept per firmware in ~/.cache/vmon/history/<fw_id>.json
+bitstream = true      # record <top>.bit of the impl run when this build wrote it
+kinds = ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]   # [] = every report kind
+```
+
+`kinds` values are the `kind` of `[reports.types.*]`. Only reports that are not stale are recorded, and they stay linked in the History page only while the file on disk is unchanged.
 
 ## Congestion
 

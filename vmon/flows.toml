@@ -472,6 +472,12 @@ small_sample_margin = 0.15
 current_floor = 0.10         # a running step/phase keeps at least this fraction of its typical duration
 high_confidence_builds = 5   # builds needed (with every step known) for "high" confidence
 
+# ---------------------------------------------------------------- build history (~/.cache/vmon/history/<fw_id>.json)
+[history]
+max_builds = 100      # finished builds kept per firmware (oldest dropped)
+bitstream = true      # also record <top>.bit of the impl run (when this build wrote it)
+kinds = ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]   # report kinds kept as artifacts; [] = all
+
 # ---------------------------------------------------------------- timing paths (timing_summary reports)
 [timing_paths]
 max_paths = 200       # worst paths kept per report (half setup, half hold); the report is streamed, never loaded whole

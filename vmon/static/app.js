@@ -144,6 +144,7 @@ function parseHash() {
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
+  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
   if (p.get('popover') === 'notif' && typeof openPop === 'function') openPop();
   if (p.get('popover') === 'explore' && typeof openExplore === 'function') openExplore(p.get('path'));
@@ -477,7 +478,7 @@ function checkAlerts() {
 
 function openEntry(e) {
   if (!state.firmwares.some((f) => f.id === e.fw)) return;
-  selected = e.fw; lsSet('vmon.tab', selected);
+  hist.on = false; selected = e.fw; lsSet('vmon.tab', selected);
   closePop();
   const fw = curFw();
   if (e.node_id) gotoNode(fw, e.node_id); else { ui.view.set(fw.id, 'flow'); render(); }
@@ -1492,6 +1493,7 @@ function render() {
   if (fws.length) firstLoad = false;
   patchList(tabsEl, fws, (f) => f.id, createTab, updateTab);
   syncTabsOverflow();
+  if (syncHistoryPage()) return;
 
   const fw = curFw();
   if (!fw) {
@@ -1627,7 +1629,19 @@ document.addEventListener('click', async (ev) => {
       toast(`Stopped watching ${fw.name}. Add it again with Watch or Explore.`);
       return;
     }
-    selected = el._key; lsSet('vmon.tab', selected); render();
+    hist.on = false; selected = el._key; lsSet('vmon.tab', selected); render();
+  } else if (act === 'history' || act === 'history-close') {
+    setHistory(act === 'history' ? !hist.on : false);
+  } else if (act === 'hsort') {
+    hist.asc = !hist.asc; render();
+  } else if (act === 'hrep') {
+    openHistoryReport(t);
+  } else if (act === 'hbit') {
+    if (t.getAttribute('aria-disabled') === 'true') ev.preventDefault();
+    else if (MOCK) { ev.preventDefault(); toast('Mock mode: download disabled'); }
+  } else if (act === 'hrow') {
+    if (ev.target.closest('a, button')) return;
+    if (state.firmwares.some((f) => f.id === t.dataset.fw)) { hist.on = false; selected = t.dataset.fw; lsSet('vmon.tab', selected); render(); }
   } else if (act === 'toggle' && nodeEl) {
     const k = keyOf(nodeEl._fw, nodeEl._node);
     const au = autoOf(nodeEl._fw); const sl = ui.sel.get(nodeEl._fw.id);
@@ -1765,6 +1779,7 @@ const SHORTCUTS = `1-9   switch firmware tab
 f     Flow view
 m     Messages view
 t     Timing view (when available)
+h     Build history (again, or Esc, to leave)
 j / k next / previous stage
 n     jump to the next alert
 c     collapse all expanded steps
@@ -1790,14 +1805,18 @@ document.addEventListener('keydown', (ev) => {
     ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
     return;
   }
-  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } return; }
+  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) setHistory(false); return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
   const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
     const f = state.firmwares[+ev.key - 1];
-    if (f) { selected = f.id; lsSet('vmon.tab', selected); render(); }
+    if (f) { hist.on = false; selected = f.id; lsSet('vmon.tab', selected); render(); }
   } else if (ev.key === '?') {
     showModal('Keyboard shortcuts', SHORTCUTS);
+  } else if (ev.key === 'h') {
+    setHistory(!hist.on);
+  } else if (hist.on) {
+    return;
   } else if (!fw || !mainEl._r) {
     return;
   } else if (ev.key === 'f' || ev.key === 'm' || (ev.key === 't' && hasTimingView(fw))) {
@@ -2036,7 +2055,7 @@ async function exploreWatch() {
   for (let i = 0; i < 14; i++) {
     await poll();
     const hit = state.firmwares.find((f) => !before.has(f.id)) || state.firmwares.find((f) => norm(f.path) === norm(t.path) || norm(f.path).startsWith(base) || norm(t.path).startsWith(norm(f.path)));
-    if (hit) { selected = hit.id; lsSet('vmon.tab', selected); render(); return; }
+    if (hit) { hist.on = false; selected = hit.id; lsSet('vmon.tab', selected); render(); return; }
     await new Promise((res) => setTimeout(res, 700));
   }
 }
@@ -2603,6 +2622,144 @@ function renderCongestion(pane, n) {
     ${cg.router_initial ? cgTable('Router initial estimate', 'level and % of tiles', cg.router_initial, cg, true) : ''}
     ${cg.router_final ? cgFinal(cg.router_final, cg) : ''}
     ${spark ? `<div class="cg-sec"><div class="cg-title">Router overlaps<small>per pass, log scale (see Convergence)</small></div><span class="cvchip">${spark}</span></div>` : ''}`);
+}
+
+/* ------------------------------------------------------------------ build history page (GET /api/history) */
+const hist = { on: false, fw: null, fwName: null, asc: false, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
+const HX_KIND = { timing_summary: 'Timing', utilization: 'Util', drc: 'DRC', methodology: 'Method', power: 'Power', route_status: 'Route', clock_utilization: 'Clocks', control_sets: 'Ctrl sets' };
+const HX_RESULT = {
+  met: { key: 'done', text: 'Finished, timing met' }, timing_not_met: { key: 'done-fail', text: 'Finished, timing not met' },
+  failed: { key: 'failed', text: 'Failed' }, stopped: { key: 'stopped', text: 'Stopped' }, done: { key: 'idle', text: 'Finished' },
+};
+const HX_ICON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1h-6.5a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h.5"/></svg>';
+const HX_GONE = 'Replaced by a later build';
+
+function setHistory(on) {
+  if (on === hist.on) return;
+  hist.on = on;
+  if (on) { hist.fw = null; hist.sig = null; window.scrollTo(0, 0); }
+  render();
+  if (on) { const b = $('select', hist.root) || $('#history-btn'); if (b) b.focus(); }
+}
+
+// Returns true when the history page owns the content area (render() then skips the firmware view).
+function syncHistoryPage() {
+  document.body.dataset.page = hist.on ? 'history' : '';
+  const btn = $('#history-btn'); setAttr(btn, 'aria-pressed', String(hist.on));
+  mainEl.hidden = hist.on; hist.root.hidden = !hist.on;
+  if (!hist.on) return false;
+  if (hist.fw === null) {
+    const named = hist.fwName && state.firmwares.find((f) => f.name === hist.fwName || f.id === hist.fwName);
+    hist.fw = named ? named.id : (hist.fwName === 'all' ? '' : selected || '');
+  }
+  const sig = state.firmwares.map((f) => `${f.id}:${f.status}`).join('|') + `#${hist.fw}`;
+  if (sig !== hist.sig) { hist.sig = sig; loadHistory(); }
+  renderHistory();
+  return true;
+}
+
+async function loadHistory() {
+  const id = ++hist.reqId, fwId = hist.fw;
+  try {
+    let d;
+    if (MOCK) {
+      if (!hist.mock) { hist.mock = syncJson('mock/history.json'); shiftTimes(hist.mock, nowS() - hist.mock.generated_at); }
+      d = { firmwares: hist.mock.firmwares, builds: hist.mock.builds.filter((b) => !fwId || b.fw_id === fwId) };
+    } else d = await jget(`/api/history${fwId ? `?fw=${q(fwId)}` : ''}`);
+    if (id !== hist.reqId) return;
+    hist.data = d; hist.error = null;
+  } catch (e) { if (id !== hist.reqId) return; hist.error = String(e.message || e); }
+  if (hist.on) renderHistory();
+}
+
+const fmtWhen = (t) => { if (t == null) return '—'; const d = new Date(t * 1000); return `${d.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}`; };
+
+function hxTiming(b) {
+  const t = b.timing;
+  if (!t || (t.wns == null && t.whs == null)) return '<span class="dim">—</span>';
+  const cell = (k, v) => `<div title="${t.final ? 'Final result' : 'Not a final result'}"><i>${k}</i><span${t.final && v != null && v < 0 ? ' class="neg"' : ''}>${fmtSlack(v)}</span></div>`;
+  return cell('WNS', t.wns) + cell('WHS', t.whs);
+}
+function hxUtil(b) {
+  const u = b.utilization;
+  if (!u) return '<span class="dim">—</span>';
+  const rows = ['LUT', 'FF', 'BRAM', 'DSP'].filter((k) => u[k]);
+  const worst = rows.reduce((w, k) => (w == null || u[k].pct > u[w].pct ? k : w), null);
+  return rows.map((k) => {
+    const p = u[k].pct, cls = k === worst && p >= 80 ? (p >= 90 ? ' class="u-crit"' : ' class="u-warn"') : '';
+    return `<span title="${esc(k)}: ${fmtInt(u[k].used)} of ${fmtInt(u[k].available)}"><i>${k}</i><b${cls}>${p == null ? '—' : p.toFixed(p < 10 ? 1 : 0)}%</b></span>`;
+  }).join('') || '<span class="dim">—</span>';
+}
+function hxLinks(b) {
+  const art = b.artifacts || [];
+  const at = (a) => `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}" data-path="${esc(a.path)}"`;
+  const reports = art.filter((a) => a.kind !== 'bitstream').map((a) => {
+    const name = HX_KIND[a.kind] || a.label;
+    const tip = a.current ? `Open ${a.label}${a.step ? ` (${a.step})` : ''}` : `${HX_GONE}: ${a.label}`;
+    return `<button type="button" class="hx-chip" data-act="hrep" ${at(a)} data-label="${esc(a.label)}" title="${esc(tip)}"${a.current ? '' : ' aria-disabled="true"'}>${esc(name)}</button>`;
+  }).join('');
+  const bit = art.find((a) => a.kind === 'bitstream');
+  let bitHTML = '';
+  if (bit) {
+    const href = `/api/history/artifact?fw=${q(b.fw_id)}&build=${q(b.build)}&path=${q(bit.path)}`;
+    bitHTML = bit.current
+      ? `<span class="hx-bitgrp"><a class="hx-chip bit" data-act="hbit" href="${esc(href)}" download title="Download ${esc(bit.path)} (${fmtMem(bit.size / 1048576)})">.bit</a><button type="button" class="hx-chip" data-act="copy" data-copy="${esc(bit.path)}" title="Copy the bitstream path" aria-label="Copy the bitstream path">${HX_ICON}</button></span>`
+      : `<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="${HX_GONE}">.bit</span>`;
+  } else bitHTML = '<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="No bitstream was recorded for this build">.bit</span>';
+  return `<div class="links">${reports || '<span class="dim">no reports</span>'}<span class="hx-bit"><span class="hx-sep"></span>${bitHTML}</span></div>`;
+}
+function hxRow(b, loaded) {
+  const res = HX_RESULT[b.result] || HX_RESULT.done;
+  const why = b.failure && b.failure.reason ? `${b.failure.step ? `${b.failure.step}: ` : ''}${b.failure.reason}` : '';
+  const where = [b.part, b.strategy_impl].filter(Boolean).join(' · ');
+  return `<tr class="${loaded ? 'go' : ''}" data-act="hrow" data-fw="${esc(b.fw_id)}"${loaded ? ' title="Open this firmware"' : ''}>
+    <td class="when" data-label="Date">${fmtWhen(b.started_at)}</td>
+    <td class="fw" data-label="Firmware"><span class="fwn">${esc(b.firmware)}</span>${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
+    <td class="dur" data-label="Duration">${fmtDur(b.duration_s)}</td>
+    <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
+    <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
+    <td class="ut" data-label="Utilization">${hxUtil(b)}</td>
+    <td class="links-c" data-label="Reports">${hxLinks(b)}</td></tr>`;
+}
+
+function renderHistory() {
+  const d = hist.data;
+  if (!d && !hist.error) { setHTML(hist.root, '<div class="hx-empty">Loading…</div>'); return; }
+  const fws = [...(d ? d.firmwares : [])];
+  for (const f of state.firmwares) if (!fws.some((x) => x.id === f.id)) fws.push({ id: f.id, name: f.name });
+  const opts = `<option value=""${hist.fw ? '' : ' selected'}>All firmwares</option>` + fws.map((f) => `<option value="${esc(f.id)}"${f.id === hist.fw ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
+  const builds = d ? [...d.builds].sort((a, b) => (hist.asc ? 1 : -1) * ((a.started_at || 0) - (b.started_at || 0))) : [];
+  const loaded = new Set(state.firmwares.map((f) => f.id));
+  const arrow = hist.asc ? '↑' : '↓';
+  let body;
+  if (hist.error) body = `<div class="hx-empty">Could not load the history (${esc(hist.error)}).</div>`;
+  else if (!builds.length) body = '<div class="hx-empty">No finished builds recorded yet. Builds are recorded when they finish.</div>';
+  else body = `<table class="hx"><thead><tr><th aria-sort="${hist.asc ? 'ascending' : 'descending'}"><button type="button" data-act="hsort" title="Sort by date">Date <span aria-hidden="true">${arrow}</span></button></th><th>Firmware</th><th>Duration</th><th>Result</th><th>WNS / WHS</th><th>Utilization</th><th>Reports</th></tr></thead><tbody>${builds.map((b) => hxRow(b, loaded.has(b.fw_id))).join('')}</tbody></table>`;
+  const sel = $('select', hist.root);
+  const focusSel = sel && document.activeElement === sel;
+  setHTML(hist.root, `<div class="hx-head"><h1>Build history</h1><span class="hx-n">${builds.length} build${builds.length === 1 ? '' : 's'}</span>
+    <div class="hx-tools"><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
+    <div class="hx-wrap">${body}</div>`);
+  if (focusSel) $('select', hist.root).focus();
+}
+hist.root.addEventListener('change', (ev) => {
+  if (ev.target.id !== 'hx-fw') return;
+  hist.fw = ev.target.value; hist.sig = null; hist.data = null; render();
+});
+
+async function openHistoryReport(t) {
+  if (t.getAttribute('aria-disabled') === 'true') { toast(HX_GONE); return; }
+  const { fw, build, path, label } = t.dataset;
+  try {
+    let text;
+    if (MOCK) text = (await jget('mock/report_raw.txt.json')).text;
+    else {
+      const r = await fetch(`/api/history/report?fw=${q(fw)}&build=${q(build)}&path=${q(path)}`, { cache: 'no-store' });
+      if (!r.ok) { let m = r.status; try { m = (await r.json()).error || m; } catch { /* plain text */ } throw new Error(m); }
+      text = await r.text();
+    }
+    showModal(`${label} — ${path}`, text);
+  } catch (e) { toast('Could not load report: ' + e.message); }
 }
 
 /* ------------------------------------------------------------------ boot */

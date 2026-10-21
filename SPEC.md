@@ -438,3 +438,30 @@ dir = "north"|"south"|"east"|"west";  L = log2 of the region size (1x1 -> 0, 16x
   routing> (<dir> <slot>, threshold T)". Shown by the UI as a Congestion tab and a "CONG Ln" chip (only when level != ok).
 - Parser: rules `congestion_placer|router|row|final|direction|effective` in flows.toml; incremental (a table cut by a
   chunk boundary is completed by the next feed); a new step resets the table state.
+
+## Build history
+```
+~/.cache/vmon/history/<fw_id>.json = {"firmware": {"id", "name"}, "builds": [HistoryRecord]}   # oldest first, cap [history] max_builds
+HistoryRecord = {
+  "build": str,                     # same key as the baselines: int(started_at) as text; one record per key
+  "fw_id": str, "firmware": str, "project": str,
+  "started_at": epoch, "ended_at": epoch, "duration_s": float,
+  "result": "met"|"timing_not_met"|"failed"|"stopped"|"done",   # met/timing_not_met need a final timing; done = none
+  "failure": {"step": str|null, "reason": str|null} | null,       # failed/stopped builds
+  "timing": {"wns","tns","whs","ths": float|null, "final": bool} | null,
+  "utilization": {"LUT"|"FF"|"BRAM"|"URAM"|"DSP"|"IO": {"used","available","pct"}} | null,
+  "part", "board", "vivado_version", "strategy_synth", "strategy_impl": str|null,
+  "counts": [errors, critical warnings, warnings, info],
+  "artifacts": [{"kind": str ("timing_summary"|"utilization"|"drc"|...|"bitstream"), "label": str, "step": str|null,
+                 "path": str, "mtime": float, "size": int}] }
+GET /api/history?fw=<id>&limit=N  -> {"builds": [HistoryRecord + artifacts[].current: bool, newest first],
+                                      "firmwares": [{"id","name"}]}     # no fw: every firmware with history
+GET /api/history/report?fw=&build=&path=    -> text/plain
+GET /api/history/artifact?fw=&build=&path=  -> application/octet-stream, Content-Disposition: attachment
+```
+- `current` = the file's mtime and size still equal the recorded ones (Vivado overwrites reports on every run).
+- Report/artifact routes: 404 when the firmware, build or path is not recorded (including any path not in that build's
+  artifacts, e.g. traversal attempts), 410 when the file changed or vanished since the build. Read-only.
+- Recording: when a build is done/failed/stopped, plus backfill of finished builds at startup. A record is replaced only
+  when its result changed. The bitstream is `<runs>/<impl run>/<top>.bit` and only counts if written after the build start.
+- UI: top-bar History button / `h` / `#page=history`; table of builds with firmware filter (default: current firmware).

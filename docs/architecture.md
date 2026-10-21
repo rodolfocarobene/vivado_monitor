@@ -17,6 +17,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `expected.py` | Merges catalog placeholders (upcoming steps/phases, predicted numbers, weights) into the seen nodes. |
 | `timing_paths.py`, `clocks.py`, `convergence.py`, `congestion.py` | Worst-path parser for timing reports (streamed), per-clock history across stages and builds, router overlap trend, congestion level summary. |
 | `reports.py` | Parses utilization, timing summary, DRC/methodology, power, route status and other reports. |
+| `history.py` | Build history store and records (`~/.cache/vmon/history/`), artifact validation for the history API. |
 | `alerts.py`, `triage.py`, `eta.py`, `info.py`, `docs.py` | Alerts, message scoring and baselines, ETA, build info, documentation links. |
 | `sysstats.py`, `browse.py` | System CPU/RAM/swap from `/proc`; read-only directory listing for the folder explorer. |
 | `monitor.py` | Background thread: each tick discover, update parsers, publish state. |
@@ -79,6 +80,9 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 | `GET /api/log?fw=&node=&tail=` or `&log=&around=&context=` | Raw log excerpt for a node, or around a line. |
 | `GET /api/report?fw=&path=` | Raw text of a report (only paths listed in the model). |
 | `GET /api/paths?fw=&path=&type=&only_failing=` | Worst setup/hold paths (max 200, worst first) of a timing_summary report: `{path, paths, counts}`. `type=setup\|hold`, `only_failing=1`; same path validation as `/api/report`. |
+| `GET /api/history?fw=&limit=` | Finished builds, newest first: `{"builds": [record], "firmwares": [{id, name}]}`. Without `fw`, all firmwares in the history dir (also ones not currently loaded). Each artifact carries `current`. |
+| `GET /api/history/report?fw=&build=&path=` | Text of a recorded report. `path` must be an artifact of that build and still current (same mtime and size); else 404 (not listed) or 410 (replaced by a later build). |
+| `GET /api/history/artifact?fw=&build=&path=` | Streams a recorded artifact (the bitstream) as `application/octet-stream` with `Content-Disposition: attachment`; same validation as the report route. |
 | `GET /api/browse?path=` | Read-only directory listing for the explorer (skips `/proc`, `/sys`, `/dev`). |
 | `POST /api/watch` `{"path": ...}` | Add a `.runs` dir, `.xpr` or log to watch. |
 | `POST /api/msgrule` `{"id": ..., "priority": ...}` | Set or clear a message priority override. |
@@ -101,3 +105,9 @@ Each completed build is stored (last `[eta] history_builds`, default 20, per fir
 - **Per-clock history**: per-clock values come from the Intra Clock Table of each timing report (`Firmware.clock_history.stages`). When a build finishes, its final values are stored in `~/.cache/vmon/timing/<fw_id>.json` (last 20 builds, keyed by start time; finished builds not yet stored are recorded at startup).
 - **Router convergence**: the parser records every `Number of Nodes with overlaps` value and the following Intermediate Timing Summary per router iteration (`Node.convergence`). The trend (converging / stalled / diverging) and the `route_not_converging` alert use `[convergence]`; the alert is raised for live attempts only.
 - **Congestion**: the parser reads the placer's `Post-Placement Estimated Congestion` table, the router's `Initial Estimated Congestion` table (with or without `% Tiles`) and the final `Congestion Report` (max % and effective level per direction) into `Node.congestion` as it streams (rules `congestion_*`). Region size `NxN` becomes level log2(N). `congestion.summarize` adds the worst level and `ok`/`warn`/`crit` from `[congestion]`; the amber `congestion` alert fires from `warn_level` and is never an error. The UI shows it in a Congestion tab and a `CONG Ln` chip on the stage card.
+
+## Build history
+
+When a build ends (`done`, `failed` or `stopped`) the monitor stores one record in `~/.cache/vmon/history/<fw_id>.json` (`{"firmware": {id, name}, "builds": [...]}`, oldest first, last `[history] max_builds` kept). Records are keyed by the same build key as the baselines (start time), so a build is stored once; builds already finished at startup are backfilled on the first tick, and a stored build is replaced only when its result changed (for example `stopped` then `done` after a resume).
+
+Result: `met` / `timing_not_met` (final timing only), `failed`, `stopped`, or `done` when there is no final timing. Artifacts are the non-stale reports of the last flow whose kind is in `[history] kinds`, plus `<runs>/<impl run>/<top>.bit` when it was written by this build (mtime not older than the build start). Vivado overwrites report files on every run, so an artifact is served only while its current mtime and size equal the recorded ones; `current` is computed on every read and never stored. The history routes only ever open a path found in the recorded artifacts of the requested build (firmware ids must match `[A-Za-z0-9_-]+`), never a path taken from the query. Nothing is written outside `~/.cache/vmon/`.

@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from . import clocks as clocks_mod
+from . import history as history_mod
 from .docs import DocLinks
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
 from .expected import CatalogSet
@@ -63,6 +64,9 @@ class Monitor:
         self.eta_cfg = eta_settings(config)
         self.durations = DurationStore(self.recent_file.parent / "durations", self.eta_cfg["history_builds"])
         self.clock_store = clocks_mod.ClockStore(self.recent_file.parent / "timing")
+        self.history_cfg = history_mod.settings(config)
+        self.history = history_mod.HistoryStore(self.recent_file.parent / "history", self.history_cfg["max_builds"])
+        self._history_seen = {}        # (fw_id, build) -> (status, updated_at) already stored
         self.docs = DocLinks(config.data)
         self.sampler = Sampler()
         self._recorded = set()         # (fw_id, build) already stored as a baseline this session
@@ -182,6 +186,7 @@ class Monitor:
                 self._record_baseline(fw_id, fw)
                 self._record_durations(fw_id, fw)
                 self._record_clocks(fw_id, fw)
+                self._record_history(fw_id, fw)
                 fw.eta = estimate(fw, self.durations.load(fw_id) if fw.status == "running" else None, now, self.eta_cfg)
                 fw.events = list(self._events.get(fw_id, ()))
                 fw.top_messages = self._top_messages(fw_id, fw)
@@ -281,6 +286,16 @@ class Monitor:
         """Per-step and per-phase durations of a finished build, for later builds' ETA."""
         if fw.status == "done" and fw.flows:
             self.durations.record(fw_id, self._build_key(fw), step_durations(fw), fw.elapsed_s, phase_durations(fw))
+
+    def _record_history(self, fw_id, fw):
+        """Store a finished build in the history (also catches up on builds finished before startup)."""
+        if fw.status not in history_mod.FINISHED or fw.started_at is None:
+            return
+        key, sig = (fw_id, self._build_key(fw)), (fw.status, fw.updated_at)
+        if self._history_seen.get(key) == sig:
+            return
+        self._history_seen[key] = sig
+        self.history.record(history_mod.build_record(fw, key[1], self.history_cfg))
 
     def _record_clocks(self, fw_id, fw):
         """Final per-clock timing of a finished build (also catches up on builds not stored yet)."""
