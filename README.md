@@ -9,7 +9,7 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 ## Features
 
 - **Auto-discovery** of running Vivado processes; one tab per firmware, finished runs stay visible.
-- **Master-detail drill-down flow**: synth, opt, place, phys_opt, route, bitstream. Upcoming steps and phases come from a per-version phase catalog, with predicted phase numbers.
+- **Stage rail + drill-down**: synth, opt, place, phys_opt, route, bitstream stay pinned in a left rail with a *follow live* switch; the selected stage drills down on the right (on narrow windows the list becomes one tree, with the stage opening in place). Upcoming steps and phases come from a per-version phase catalog, with predicted phase numbers.
 - **Timing you can trust**: intermediate and estimated values are shown as "not final"; red only when the final result fails. Missing hold metrics are carried forward and marked stale.
 - **Utilization card**, parsing of intermediate reports (timing, DRC, power, route status, ...).
 - **Worst timing paths** (setup/hold, logic vs route, expandable), **per-clock history** across stages and builds with regressions highlighted.
@@ -19,11 +19,12 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **ETA** from the previous build of the same firmware.
 - **Build info**: part, board, strategies, directives; links to AMD documentation.
 - **System CPU / RAM / swap** meters, sticky summary, folder explorer to add runs.
+- **Keyboard**: `1`-`9` firmware tabs, `f`/`m`/`t` views, `j`/`k` stages, `n` next alert, `c` collapse all, `?` help; arrow keys on the tab strip.
 - No AI: pure log parsing. Read-only. Python standard library only.
 
-| Messages triage | Light theme, finished build |
-|---|---|
-| ![Messages](docs/img/messages.png) | ![Light theme](docs/img/light-theme.png) |
+| Messages triage | Light theme, finished build | Narrow window |
+|---|---|---|
+| ![Messages](docs/img/messages.png) | ![Light theme](docs/img/light-theme.png) | <img src="docs/img/narrow.png" alt="Narrow window: stages as one tree" width="240"> |
 
 ## Requirements
 

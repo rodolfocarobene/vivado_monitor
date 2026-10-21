@@ -632,14 +632,13 @@ function buildView() {
       <div class="now">
         <div class="cur"></div>
         <div class="now-run">
-          <div class="kv"><div class="k">Elapsed</div><div class="v num el"></div></div>
+          <div class="kv"><div class="k">Elapsed</div><div class="v num el"></div><div class="sub2 started-wrap">started <span class="st num"></span></div></div>
           <div class="now-bar"><div class="eprog" hidden><i></i></div><span class="est" hidden></span></div>
           <div class="kv eta-wrap"><div class="k etak">Expected end</div><div class="v num eta"></div><div class="sub2 etasub"></div></div>
         </div>
       </div>
       <div class="fw-meta">
         <div class="kv counts-wrap"><div class="k">Messages</div><div class="cnt"></div></div>
-        <div class="kv started-wrap"><div class="k">Started</div><div class="v sm num st"></div></div>
         <div class="kv res-wrap"><div class="k">Vivado</div><div class="v sm num res"></div></div>
       </div>
       <div class="topissues" hidden></div>
@@ -648,10 +647,10 @@ function buildView() {
     <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
   head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head) };
   const banner = h('div', 'banner');
-  const segWrap = h('div', 'segwrap');
-  const split = h('div', 'split', `
-    <aside class="stagecol"><div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="stagelist"></div></aside>
-    <section class="detail"></section>`);
+  // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
+  const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="segwrap"></div><div class="stagelist"></div>`);
+  setAttr(rail, 'aria-label', 'Stages');
+  const split = h('div', 'split', '<section class="detail"></section>');
   const mv = h('section', 'msgview', `
     <div class="mv-bar"><div class="mv-chips"></div><input class="mv-q" type="search" placeholder="Search id or text…" spellcheck="false" autocomplete="off"></div>
     <div class="mv-hint" hidden></div>
@@ -659,8 +658,9 @@ function buildView() {
   mv.hidden = true;
   const tv = h('section', 'tview');
   tv.hidden = true;
-  mainEl.append(head, banner, segWrap, split, mv, tv);
-  mainEl._r = { banner, seg: segWrap, split, stages: $('.stagelist', split), detail: $('.detail', split), followBtn: $('.followbtn', split), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
+  mainEl.classList.add('railed');
+  mainEl.append(rail, head, banner, split, mv, tv);
+  mainEl._r = { banner, rail, seg: $('.segwrap', rail), split, stages: $('.stagelist', rail), detail: $('.detail', split), followBtn: $('.followbtn', rail), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
 }
 
 // Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
@@ -686,9 +686,15 @@ function topIssuesHTML(fw) {
   const tm = all.slice(0, TOP_ISSUES_SHOWN);
   if (!tm.length) return '';
   const more = all.length > tm.length ? `<button class="linkbtn ti-more" data-act="view" data-view="messages">all messages →</button>` : '';
-  return `<div class="ti-h">Top issues${more}</div>${tm.map((g) => `<div class="ti" data-act="topissue" data-id="${esc(g.id)}" title="${esc(g.text)}"><span class="spill ${sevInfo(g.severity).cls}">${esc(SEV_WORD[g.severity] || g.severity)}</span><span class="gid mono">${esc(g.id)}</span><span class="ti-t">${esc(g.text)}</span>${g.new ? '<span class="ntag">NEW</span>' : ''}<span class="ti-c mono">${fmtNum(g.count)}</span></div>`).join('')}`;
+  // Collapsed by default to one summary line; the full rows are one click away and the choice is remembered.
+  const bySev = SEVERITIES.map((sv) => [sv, tm.filter((g) => g.severity === sv.key).length]).filter(([, n]) => n);
+  const summary = bySev.map(([sv, n]) => `<span class="ti-sum ${sv.cls}">${n} ${esc(sv.label.toLowerCase().replace(/s$/, n === 1 ? '' : 's'))}</span>`).join('');
+  const head = `<div class="ti-h"><button class="infotoggle" data-act="issues-toggle" aria-expanded="${issuesOpen}">Top issues${CHEV}</button>${issuesOpen ? '' : summary}${more}</div>`;
+  if (!issuesOpen) return head;
+  return `${head}${tm.map((g) => `<div class="ti" data-act="topissue" data-id="${esc(g.id)}" title="${esc(g.text)}"><span class="spill ${sevInfo(g.severity).cls}">${esc(SEV_WORD[g.severity] || g.severity)}</span><span class="gid mono">${esc(g.id)}</span><span class="ti-t">${esc(g.text)}</span>${g.new ? '<span class="ntag">NEW</span>' : ''}<span class="ti-c mono">${fmtNum(g.count)}</span></div>`).join('')}`;
 }
 const TOP_ISSUES_SHOWN = 3;
+let issuesOpen = lsGet('vmon.issuesOpen') === '1';
 const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
 
 const ETA_METHOD = { 'previous build': 'based on previous build', 'catalog weights': 'rough estimate' };
@@ -928,7 +934,16 @@ function autoStage(stages) {
     || [...stages].reverse().find((s) => s.status === 'done') || stages[0];
 }
 
-function renderFlowView(fw, flow) {
+// Narrow windows have no room for rail + detail side by side: the stage list becomes the tree, with the selected
+// stage's detail (steps, tabs, messages) hosted directly under its own card.
+const narrowMQ = window.matchMedia('(max-width: 1000px)');
+function placeDetail(v) {
+  const host = narrowMQ.matches ? v.stages.querySelector(':scope > .stg.sel > .main') : v.split;
+  if (host && v.detail.parentElement !== host) host.appendChild(v.detail);
+}
+narrowMQ.addEventListener('change', () => { if (mainEl._r) render(); });
+
+function renderStageList(fw, flow) {
   const v = mainEl._r;
   const stages = flow.stages;
   let sel = ui.sel.get(fw.id);
@@ -940,6 +955,14 @@ function renderFlowView(fw, flow) {
   setText(v.followBtn, 'follow live'); // same text in both states: the switch shows the state, the button never changes width
   setAttr(v.followBtn, 'title', sel.follow ? (fw.status === 'running' ? 'Following the running stage — click to stop and stay on this stage' : 'Nothing running — showing the latest stage; it will follow when a step runs. Click to pin this stage') : 'Click to jump to the running stage and keep following it');
   patchList(v.stages, stages, (n) => n.id, createStage, (e, n) => updateStage(e, n, fw, n.id === selStage.id));
+  return selStage;
+}
+
+function renderFlowView(fw, flow) {
+  const v = mainEl._r;
+  const stages = flow.stages;
+  const selStage = renderStageList(fw, flow); // also creates the selection state on first render
+  const sel = ui.sel.get(fw.id);
   if (v.selId !== selStage.id || v.selFlow !== flow.id || !v.detEl) {
     const prev = v.selId && v.selFlow === flow.id && stages.find((s) => s.id === v.selId);
     if (prev) resetNode(fw, prev);
@@ -950,6 +973,7 @@ function renderFlowView(fw, flow) {
   }
   if (sel.follow && fw.status === 'running' && selStage.status === 'running') followExpand(fw, selStage, v);
   renderDetail(v.detEl, selStage, fw);
+  placeDetail(v);
   if (v.scrollTo) { const id = v.scrollTo; v.scrollTo = null; setTimeout(() => scrollRunningIntoView(id), 420); }
 }
 
@@ -1476,16 +1500,21 @@ function render() {
   setHTML(v.banner, als.length ? `<div class="alerts${topLevel(als) === 'error' ? '' : ' compact'}" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention</div>${als.map((a) => {
     const pn = a.node_id && findPath(fw, a.node_id);
     const where = pn ? pn.chain.map((n) => n.label).slice(-2).join(' / ') : '';
-    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<span class="acode" title="${esc(a.code || a.level)}">${esc(alertName(a))}</span><span class="amsg">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
+    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<span class="acode" title="${esc(a.code || a.level)}">${esc(alertName(a))}</span><span class="amsg" title="${esc(a.message)}">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
   }).join('')}</div>` : '');
 
   const view = curView(fw);
   v.split.hidden = view !== 'flow'; v.mv.hidden = view !== 'messages'; v.tv.hidden = view !== 'timing';
+  v.detail.hidden = view !== 'flow'; // may live inside the stage list on narrow windows
+  mainEl.dataset.view = view;
   // flow selector (only when several flows)
   const flow = fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
   if (fw.flows.length > 1) {
     setHTML(v.seg, `<div class="seg">${fw.flows.map((f) => `<button class="${f === flow ? 'on' : ''}" data-act="flow" data-flow="${esc(f.id)}">${esc(f.label)}</button>`).join('')}</div>`);
   } else setHTML(v.seg, '');
+  const hasStages = flow && flow.stages.length;
+  if (!hasStages) v.stages.innerHTML = '';
+  if (view !== 'flow' && hasStages) renderStageList(fw, flow);
   if (view === 'messages') { renderMsgView(fw); ensureTriage(fw); renderSummary(fw, flow); afterRender(); return; }
   if (view === 'timing') { renderTimingView(fw); renderSummary(fw, flow); afterRender(); return; }
   if (!flow || !flow.stages.length) { v.stages.innerHTML = ''; v.detail.innerHTML = '<div class="empty"><p>No flow data yet.</p></div>'; v.detEl = null; v.selId = null; renderSummary(fw, flow); afterRender(); return; }
@@ -1528,12 +1557,57 @@ function setState(s) {
 }
 
 /* ------------------------------------------------------------------ events */
+// ---- reveal: opening something that ends below the window scrolls just enough to show it whole, never pushing
+// the control that opened it under the sticky bars. Watches the region briefly, since logs and messages load async;
+// a wheel or touch scroll by the user cancels it.
+const css = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : String(v).replace(/["\\]/g, '\\$&'));
+const nodeCard = (n) => n && n.querySelector(':scope > .main > .card');
+function revealFinder(act, t, nodeEl) {
+  const d = t.dataset;
+  if (['toggle', 'dtab', 'rchip', 'rsel', 'att-toggle', 'fail-log'].includes(act) && nodeEl) return () => ({ ctrl: nodeCard(nodeEl) || nodeEl, region: nodeEl });
+  if (act === 'info-toggle') return () => { const r = $('.fwinfo', mainEl); return r && { ctrl: r, region: r }; };
+  if (act === 'issues-toggle') return () => { const r = $('.topissues', mainEl); return r && { ctrl: r, region: r }; };
+  const q = (sel) => mainEl.querySelector(sel);
+  if (act === 'mv-row') return () => { const c = q(`[data-act="mv-row"][data-id="${css(d.id)}"]`); return c && { ctrl: c, region: c.closest('.mrow') || c }; };
+  if (act === 'grp') return () => { const c = q(`[data-act="grp"][data-gid="${css(d.gid)}"]`); return c && { ctrl: c, region: c.parentElement }; };
+  if (act === 'pth-row') {
+    return () => {
+      const c = q(`[data-act="pth-row"][data-key="${css(d.key)}"][data-i="${css(d.i)}"]`);
+      if (!c) return null;
+      const nx = c.nextElementSibling;
+      return { ctrl: c, region: nx && !nx.dataset.act ? nx : c };
+    };
+  }
+  return null;
+}
+let revealJob = null;
+function revealOpened(find) {
+  if (revealJob) revealJob.stop();
+  let stopped = false; let observed = null;
+  const ro = new ResizeObserver(() => requestAnimationFrame(step));
+  const job = { stop() { stopped = true; ro.disconnect(); window.removeEventListener('wheel', job.stop); window.removeEventListener('touchmove', job.stop); } };
+  function step() {
+    if (stopped) return;
+    const f = find();
+    if (!f || !f.region || !f.region.isConnected) return;
+    if (observed !== f.region) { if (observed) ro.unobserve(observed); ro.observe(f.region); observed = f.region; }
+    const d = Math.min(f.region.getBoundingClientRect().bottom - (window.innerHeight - 16), f.ctrl.getBoundingClientRect().top - stickTop() - 8);
+    if (d > 4) { programmaticScroll = true; window.scrollBy({ top: d, behavior: 'smooth' }); setTimeout(() => { programmaticScroll = false; }, 500); }
+  }
+  window.addEventListener('wheel', job.stop, { passive: true }); window.addEventListener('touchmove', job.stop, { passive: true });
+  setTimeout(job.stop, 2500);
+  revealJob = job;
+  requestAnimationFrame(() => requestAnimationFrame(step));
+}
+
 document.addEventListener('click', async (ev) => {
   const t = ev.target.closest('[data-act]');
   if (!t) return;
   const act = t.dataset.act;
   if (act === 'doc') return; // plain link: open in new tab, never toggles the card around it
   const nodeEl = t.closest('.node');
+  const rf = revealFinder(act, t, nodeEl);
+  if (rf) setTimeout(() => revealOpened(rf), 0); // after this handler has re-rendered
   if (act === 'tab') {
     const el = t.closest('.tab');
     if (ev.target.closest('.t-x')) {
@@ -1608,12 +1682,14 @@ document.addEventListener('click', async (ev) => {
     ui.flow.set(curFw().id, t.dataset.flow); mainEl._r.stages.innerHTML = ''; mainEl._r.selId = null; render();
   } else if (act === 'select') {
     const el = t.closest('.stg');
-    ui.sel.set(el._fw.id, { id: el._node.id, follow: false }); render();
+    ui.sel.set(el._fw.id, { id: el._node.id, follow: false }); ui.view.set(el._fw.id, 'flow'); render();
   } else if (act === 'follow') {
     const fw = curFw(); const cur = ui.sel.get(fw.id);
     if (cur && cur.follow) ui.sel.set(fw.id, { id: mainEl._r.selId, follow: false }); // toggle off: pin the stage being shown
     else ui.sel.set(fw.id, { id: null, follow: true });
     render();
+  } else if (act === 'issues-toggle') {
+    issuesOpen = !issuesOpen; lsSet('vmon.issuesOpen', issuesOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'info-toggle') {
     infoOpen = !infoOpen; lsSet('vmon.infoOpen', infoOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'sumstage') {
