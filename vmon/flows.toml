@@ -475,6 +475,7 @@ high_confidence_builds = 5   # builds needed (with every step known) for "high" 
 # ---------------------------------------------------------------- build history (~/.cache/vmon/history/<fw_id>.json)
 [history]
 max_builds = 100      # finished builds kept per firmware (oldest dropped)
+max_messages = 500    # warning-or-worse message ids stored per build (for the build comparison)
 bitstream = true      # also record <top>.bit of the impl run (when this build wrote it)
 kinds = ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]   # report kinds kept as artifacts; [] = all
 
@@ -1012,3 +1013,46 @@ reason = "netlist note"
 match_id = '^BD 41-2576$'
 priority = "low"
 reason = "block design note"
+
+# ---------------------------------------------------------------- notifications outside the browser
+# Everything is off by default. Secrets belong in environment variables (*_env), not in this file.
+[notify]
+enabled = false                    # master switch
+kinds = ["step_failed", "run_failed", "run_done"]     # event kinds: step_done, step_failed, run_done, run_failed
+codes = ["timing_fail", "process_gone", "route_not_converging", "stalled", "congestion", "error"]   # alert codes
+min_level = "warning"              # alerts below this level (info < warning < error) are not sent
+timeout_s = 5                      # per delivery
+max_per_minute = 20                # excess events are coalesced into one "N more events" message
+title_prefix = "vmon"
+
+[notify.desktop]
+enabled = false
+command = "notify-send"            # program, or an argv list; the title and body are appended
+urgency_error = "critical"         # urgency for errors, "normal" otherwise
+
+[notify.ntfy]
+enabled = false
+url = ""                           # https://ntfy.sh/<topic> or your own server (or url_env)
+url_env = ""
+token = ""                         # optional bearer token (or token_env)
+token_env = ""
+priority_info = "default"
+priority_warning = "high"
+priority_error = "urgent"
+
+[notify.slack]
+enabled = false
+webhook_url = ""                   # or webhook_url_env
+webhook_url_env = ""
+
+[notify.matrix]
+enabled = false
+homeserver = ""                    # https://matrix.example.org
+room_id = ""                       # !abc:example.org
+access_token = ""                  # or access_token_env
+access_token_env = ""
+
+[notify.webhook]
+enabled = false
+url = ""                           # receives the event as JSON (or url_env)
+url_env = ""

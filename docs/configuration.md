@@ -32,7 +32,8 @@ Other files:
 | `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
 | `[eta]` | ETA: history size, band quantiles, small-sample margin, floor for a running step/phase, builds needed for high confidence |
 | `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
-| `[history]` | Build history: builds kept per firmware, report kinds recorded, bitstream |
+| `[history]` | Build history: builds kept per firmware, messages kept per build, report kinds recorded, bitstream |
+| `[notify]`, `[notify.desktop]`, `[notify.ntfy]`, `[notify.slack]`, `[notify.matrix]`, `[notify.webhook]` | Notifications outside the browser (all off by default) |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -162,6 +163,7 @@ high_confidence_builds = 5    # with every remaining step known, gives "high" co
 ```toml
 [history]
 max_builds = 100      # finished builds kept per firmware in ~/.cache/vmon/history/<fw_id>.json
+max_messages = 500    # message ids (warnings and worse, worst first) stored per build for the comparison
 bitstream = true      # record <top>.bit of the impl run when this build wrote it
 kinds = ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]   # [] = every report kind
 ```
@@ -190,3 +192,51 @@ alert_min_iterations = 4   # ...once this many iterations were seen
 ```
 
 `diverging` means the final overlaps strictly increased over the window. The `Number of Nodes with overlaps` line is matched by `[rules.overlaps]`.
+
+## Notifications outside the browser
+
+vmon can notify you with no browser open: desktop (`notify-send`), ntfy, Slack, Matrix or a generic webhook. Everything is off by default. Put it in `~/.config/vmon/flows.toml`; the UI only shows the status (bell, "Outside the browser").
+
+Keep secrets out of files: every secret has an `*_env` twin that names an environment variable read when vmon starts sending (`url_env`, `token_env`, `webhook_url_env`, `access_token_env`). Start vmon with those variables set.
+
+```toml
+[notify]
+enabled = true
+kinds = ["step_failed", "run_failed", "run_done"]   # step_done, step_failed, run_done, run_failed
+codes = ["timing_fail", "process_gone", "route_not_converging", "stalled", "congestion", "error"]
+min_level = "error"        # alerts below this level (info < warning < error) are skipped; kinds are not affected
+timeout_s = 5
+max_per_minute = 20        # the excess is sent as one "N more events" message
+title_prefix = "vmon"
+
+[notify.desktop]
+enabled = true
+command = "notify-send"    # or an argv list; "-u <urgency> -a vmon -- <title> <body>" is appended
+urgency_error = "critical"
+
+[notify.ntfy]
+enabled = true
+url_env = "VMON_NTFY_URL"  # e.g. https://ntfy.sh/my-private-topic, or your own server
+token_env = "VMON_NTFY_TOKEN"   # optional, sent as a bearer token
+priority_error = "urgent"       # also priority_info (default) and priority_warning (high)
+
+[notify.slack]
+enabled = true
+webhook_url_env = "VMON_SLACK_WEBHOOK"
+```
+
+```sh
+export VMON_NTFY_URL=https://ntfy.sh/my-private-topic
+export VMON_SLACK_WEBHOOK=https://hooks.slack.com/services/...
+vmon
+```
+
+| Channel | Settings | Request |
+|---|---|---|
+| `desktop` | `command`, `urgency_error` | runs the program with an argv list, no shell |
+| `ntfy` | `url`/`url_env`, `token`/`token_env`, `priority_*` | `POST` of the text, headers `Title`, `Priority`, `Tags`, optional `Authorization: Bearer` |
+| `slack` | `webhook_url`/`webhook_url_env` | `POST` `{"text": "*title*\nbody"}` |
+| `matrix` | `homeserver`, `room_id`, `access_token`/`access_token_env` | `PUT /_matrix/client/v3/rooms/<room>/send/m.room.message/<unique txn>` with `{"msgtype": "m.text", "body": ...}` |
+| `webhook` | `url`/`url_env` | `POST` JSON `{firmware, fw_id, kind, code, level, title, body, t, project}` (see `SPEC.md`) |
+
+Only events that happen while vmon runs are sent; builds already finished at startup are not. Logs and the API show only `scheme://host` of a URL, never its path, query or token. `POST /api/notify/test` (the "Send test" button) tests every enabled channel.

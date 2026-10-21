@@ -146,7 +146,7 @@ function parseHash() {
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
   hashPclk = p.get('pclk') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
-  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); }
+  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
   if (p.get('popover') === 'notif' && typeof openPop === 'function') openPop();
   if (p.get('popover') === 'explore' && typeof openExplore === 'function') openExplore(p.get('path'));
@@ -418,7 +418,7 @@ const NOTIF_DEFAULTS = {
   kinds: { step_done: false, step_failed: true, run_done: true, run_failed: true },
   codes: { timing_fail: true, critical_warning: true, error: true, drc: true, unrouted: true, util_high: true, stalled: true, route_not_converging: true, congestion: true, process_gone: true, other: true },
 };
-const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false };
+const notif = { cfg: NOTIF_DEFAULTS, log: [], seen: new Set(), open: false, out: null, outErr: false, testing: false };
 try {
   const sv = JSON.parse(lsGet('vmon.notif') || 'null');
   if (sv) notif.cfg = { kinds: { ...NOTIF_DEFAULTS.kinds, ...sv.kinds }, codes: { ...NOTIF_DEFAULTS.codes, ...sv.codes } };
@@ -629,7 +629,8 @@ function buildView() {
   head = h('section', 'fw-head', `
     <div class="fwl">
       <div class="fw-title"><h1></h1><span class="pill"></span>
-        <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div></div>
+        <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div>
+</div>
       <div class="fw-path mono"></div>
       <div class="fw-attempt" hidden></div>
       <div class="now">
@@ -643,12 +644,13 @@ function buildView() {
       <div class="fw-meta">
         <div class="kv counts-wrap"><div class="k">Messages</div><div class="cnt"></div></div>
         <div class="kv res-wrap"><div class="k">Vivado</div><div class="v sm num res"></div></div>
+        <span class="fw-exp" hidden><button type="button" class="hx-chip" data-act="hexp" data-format="md" title="Download a Markdown summary of this build">Export summary</button><a class="hx-chip" data-act="hexp" data-format="html" target="_blank" rel="noopener" title="Open a printable HTML summary of this build in a new tab">HTML</a></span>
       </div>
       <div class="topissues" hidden></div>
     </div>
     <div class="cards"><div class="timing-card"></div><div class="util-card"></div></div>
     <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
-  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head) };
+  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
   const banner = h('div', 'banner');
   // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
   const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="segwrap"></div><div class="stagelist"></div>`);
@@ -777,6 +779,8 @@ function renderHeader(fw) {
   setHTML(r.uc, utilCardHTML(fw));
   const ti = topIssuesHTML(fw);
   r.top.hidden = !ti; setHTML(r.top, ti);
+  r.exp.hidden = !['done', 'failed', 'stopped'].includes(fw.status) || fw.started_at == null;
+  if (!r.exp.hidden) for (const c of r.exp.children) { const build = String(Math.floor(fw.started_at)); c.dataset.fw = fw.id; c.dataset.build = build; if (c.tagName === 'A') c.href = summaryUrl(fw.id, build, 'html', false); }
   const view = curView(fw);
   for (const b of r.seg.children) { b.classList.toggle('on', b.dataset.view === view); setAttr(b, 'aria-pressed', String(b.dataset.view === view)); if (b.dataset.view === 'timing') b.hidden = !hasTimingView(fw) && view !== 'timing'; }
 }
@@ -1636,13 +1640,32 @@ document.addEventListener('click', async (ev) => {
     setHistory(act === 'history' ? !hist.on : false);
   } else if (act === 'hsort') {
     hist.asc = !hist.asc; render();
+  } else if (act === 'hpick') {
+    hxPick(ev, t);
+  } else if (act === 'hclear') {
+    hist.pick = []; renderHistory();
+  } else if (act === 'hcompare') {
+    startCompare(hist.pick);
+  } else if (act === 'hprev') {
+    const b = hist.data.builds.find((x) => x.fw_id === t.dataset.fw && x.build === t.dataset.build), p = b && previousOf(b);
+    if (p) startCompare([{ fw: p.fw_id, build: p.build }, { fw: b.fw_id, build: b.build }]);
+  } else if (act === 'hcmp-close') {
+    hist.cmp = null; renderHistory();
+  } else if (act === 'hcmptab') {
+    hist.cmpTab = t.dataset.tab; renderHistory();
   } else if (act === 'hrep') {
     openHistoryReport(t);
+  } else if (act === 'hexp') {
+    if (t.dataset.format === 'md') { ev.preventDefault(); exportMarkdown(t.dataset.fw, t.dataset.build); }
+    else if (MOCK) { ev.preventDefault(); window.open(mockSummaryUrl(t.dataset.fw, t.dataset.build, 'html'), '_blank', 'noopener'); }
+  } else if (act === 'hexp-copy') {
+    try { await navigator.clipboard.writeText(await summaryText(t.dataset.fw, t.dataset.build)); toast('Markdown summary copied'); }
+    catch (e) { toast(`Could not copy the summary: ${e.message}`); }
   } else if (act === 'hbit') {
     if (t.getAttribute('aria-disabled') === 'true') ev.preventDefault();
     else if (MOCK) { ev.preventDefault(); toast('Mock mode: download disabled'); }
   } else if (act === 'hrow' || act === 'hopen') {
-    if (act === 'hrow' && ev.target.closest('a, button')) return;
+    if (act === 'hrow' && ev.target.closest('a, button, input, label')) return;
     openFromHistory(t.dataset.fw, t.dataset.project, t.dataset.name);
   } else if (act === 'toggle' && nodeEl) {
     const k = keyOf(nodeEl._fw, nodeEl._node);
@@ -1741,6 +1764,8 @@ document.addEventListener('click', async (ev) => {
     syncBell(); renderPop();
   } else if (act === 'ntest') {
     try { new Notification('vmon · test — Notifications work', { body: 'route_design: WNS -0.123 ns (post-route)' }); } catch { /* ignore */ }
+  } else if (act === 'outtest') {
+    sendOutTest();
   } else if (act === 'nlog') {
     const e = notif.log[+t.dataset.i]; if (e) openEntry(e);
   } else if (act === 'nclear') {
@@ -1786,7 +1811,7 @@ const SHORTCUTS = `1-9   switch firmware tab
 f     Flow view
 m     Messages view
 t     Timing view (when available)
-h     Build history (again, or Esc, to leave)
+h     Build history (again, or Esc, to leave; Esc also closes a comparison)
 j / k next / previous stage
 n     jump to the next alert
 c     collapse all expanded steps
@@ -1812,7 +1837,7 @@ document.addEventListener('keydown', (ev) => {
     ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
     return;
   }
-  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) setHistory(false); return; }
+  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) { if (hist.cmp) { hist.cmp = null; renderHistory(); } else setHistory(false); } return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
   const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
@@ -2145,7 +2170,41 @@ function syncBell() {
   notifyBtn.title = unread ? `${unread} unread notification${unread === 1 ? '' : 's'}` : 'Notifications';
   notifyBtn.setAttribute('aria-label', notifyBtn.title);
 }
-function openPop() { notif.open = true; popEl.hidden = false; renderPop(); }
+function openPop() { notif.open = true; popEl.hidden = false; renderPop(); loadOut(); }
+// Server-side channels (read-only here; configured in ~/.config/vmon/flows.toml).
+async function loadOut() {
+  try { notif.out = await jget(MOCK ? 'mock/notify.json' : '/api/notify'); notif.outErr = false; } catch { notif.outErr = true; }
+  renderPop();
+}
+function outState(c) {
+  if (c.error) return ['err', `failed: ${c.error}`];
+  if (!c.enabled) return ['off', 'off'];
+  return c.configured ? ['ok', 'on'] : ['warn', 'not configured'];
+}
+function outHTML() {
+  const o = notif.out;
+  const rows = o ? o.channels.map((c) => { const [st, txt] = outState(c); return `<div class="no-row" data-st="${st}"><span class="no-dot"></span><b>${esc(c.label)}</b><code>${esc(c.target)}</code><span class="no-st">${esc(txt)}</span></div>`; }).join('')
+    : `<div class="none">${notif.outErr ? 'Could not read the server-side settings.' : 'Loading…'}</div>`;
+  const usable = o && o.enabled && o.channels.some((c) => c.enabled);
+  const sum = o ? `<div class="no-sum">${o.enabled ? `Sends: ${esc(o.kinds.map((k) => k.replace(/_/g, ' ')).join(', ') || 'no step or run events')}; alerts ${esc(o.codes.join(', ') || 'none')} from ${esc(o.min_level)}.` : 'Master switch is off (<code>enabled = false</code>).'}</div>` : '';
+  return `<div class="np-outhead"><b>Outside the browser</b><button class="rawbtn" data-act="outtest"${usable && !notif.testing ? '' : ' disabled'}>${notif.testing ? 'sending…' : 'send test'}</button></div>
+    <div class="no-list">${rows}</div>${sum}
+    <div class="no-hint">Set up in <code>~/.config/vmon/flows.toml</code> under <code>[notify]</code> (see docs/configuration.md).</div>`;
+}
+async function sendOutTest() {
+  notif.testing = true; renderPop();
+  try {
+    let results;
+    if (MOCK) results = notif.out.channels.filter((c) => c.enabled).map((c) => (c.configured ? { name: c.name, ok: true } : { name: c.name, ok: false, error: 'not configured' }));
+    else {
+      const r = await fetch('/api/notify/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!r.ok) throw new Error(r.status);
+      results = (await r.json()).results;
+    }
+    toast(results.length ? results.map((r) => `${r.name}: ${r.ok ? 'sent' : `failed (${r.error})`}`).join(' · ') : 'No channel is enabled');
+  } catch (e) { toast(`Could not send the test: ${e.message}`); }
+  notif.testing = false; await loadOut();
+}
 function closePop() {
   if (!notif.open) return;
   notif.open = false; popEl.hidden = true;
@@ -2169,6 +2228,7 @@ function renderPop() {
   const html = `<div class="np-head"><b>Notifications</b></div>${permRow}
     <div class="np-cols"><div><div class="np-h">Notify me when a…</div>${EVENT_KINDS.map(([k, l]) => box('kinds', k, l)).join('')}</div>
     <div><div class="np-h">…or an alert of type</div>${ALERT_CODES.map(([k, l]) => box('codes', k, l)).join('')}</div></div>
+    ${outHTML()}
     <div class="np-loghead"><b>Recent</b>${notif.log.length ? '<button class="rawbtn" data-act="nclear">clear</button>' : ''}</div><div class="np-log">${log}</div>`;
   if (popEl._h !== html) setHTML(popEl, html);
 }
@@ -2710,7 +2770,7 @@ function renderCongestion(pane, n) {
 }
 
 /* ------------------------------------------------------------------ build history page (GET /api/history) */
-const hist = { on: false, fw: null, fwName: null, asc: false, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
+const hist = { on: false, fw: null, fwName: null, asc: false, pick: [], cmp: null, cmpTab: 'new', cmpHash: null, mockCmp: null, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
 const HX_KIND = { timing_summary: 'Timing', utilization: 'Util', drc: 'DRC', methodology: 'Method', power: 'Power', route_status: 'Route', clock_utilization: 'Clocks', control_sets: 'Ctrl sets' };
 const HX_RESULT = {
   met: { key: 'done', text: 'Finished, timing met' }, timing_not_met: { key: 'done-fail', text: 'Finished, timing not met' },
@@ -2722,7 +2782,7 @@ const HX_GONE = 'Replaced by a later build';
 function setHistory(on) {
   if (on === hist.on) return;
   hist.on = on;
-  if (on) { hist.fw = null; hist.sig = null; window.scrollTo(0, 0); }
+  if (on) { hist.fw = null; hist.sig = null; hist.pick = []; hist.cmp = null; window.scrollTo(0, 0); }
   render();
   if (on) { const b = $('select', hist.root) || $('#history-btn'); if (b) b.focus(); }
 }
@@ -2748,11 +2808,12 @@ async function loadHistory() {
   try {
     let d;
     if (MOCK) {
-      if (!hist.mock) { hist.mock = syncJson('mock/history.json'); shiftTimes(hist.mock, nowS() - hist.mock.generated_at); }
+      mockHistory();
       d = { firmwares: hist.mock.firmwares, builds: hist.mock.builds.filter((b) => !fwId || b.fw_id === fwId) };
     } else d = await jget(`/api/history${fwId ? `?fw=${q(fwId)}` : ''}`);
     if (id !== hist.reqId) return;
     hist.data = d; hist.error = null;
+    if (hist.cmpHash) resolveHashCompare();
   } catch (e) { if (id !== hist.reqId) return; hist.error = String(e.message || e); }
   if (hist.on) renderHistory();
 }
@@ -2793,24 +2854,60 @@ function hxLinks(b) {
   } else bitHTML = '<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="No bitstream was recorded for this build">.bit</span>';
   return `<div class="links">${reports || '<span class="dim">no reports</span>'}<span class="hx-bit"><span class="hx-sep"></span>${bitHTML}</span></div>`;
 }
-function hxRow(b, loaded) {
+// Summary export: MD downloads, HTML opens printable in a tab, the clipboard button copies the Markdown.
+const summaryUrl = (fw, build, fmt, dl) => `/api/history/summary?fw=${q(fw)}&build=${q(build)}&format=${fmt}${dl ? '&download=1' : ''}`;
+function hxExport(b) {
+  const ds = `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"`;
+  return `<div class="hx-exp" role="group" aria-label="Export build summary"><span class="dim">Summary</span>
+    <a class="hx-chip" data-act="hexp" data-format="md" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'md', true))}" download title="Download the Markdown summary of this build">MD</a>
+    <a class="hx-chip" data-act="hexp" data-format="html" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'html', false))}" target="_blank" rel="noopener" title="Open the printable HTML summary in a new tab">HTML</a>
+    <button type="button" class="hx-chip" data-act="hexp-copy" ${ds} title="Copy the Markdown summary" aria-label="Copy the Markdown summary">${HX_ICON}Copy</button></div>`;
+}
+const MOCK_SUMMARY_FALLBACK = 'tp02_1759982000';
+function mockSummaryUrl(fw, build, fmt) {
+  const x = new XMLHttpRequest(), key = `${fw}_${build}`;
+  x.open('GET', `mock/summary_${key}.${fmt}`, false); x.send();
+  return `mock/summary_${x.status === 200 ? key : MOCK_SUMMARY_FALLBACK}.${fmt}`;
+}
+async function summaryText(fw, build) {
+  const r = await fetch(MOCK ? mockSummaryUrl(fw, build, 'md') : summaryUrl(fw, build, 'md', false), { cache: 'no-store' });
+  if (!r.ok) throw new Error('no recorded build to summarise');
+  return r.text();
+}
+async function exportMarkdown(fw, build) {
+  try {
+    const r = await fetch(MOCK ? mockSummaryUrl(fw, build, 'md') : summaryUrl(fw, build, 'md', true), { cache: 'no-store' });
+    if (!r.ok) throw new Error('no recorded build to summarise yet');
+    const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || `${fw}_${build}_summary.md`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`Saved ${name}`);
+  } catch (e) { toast(`Could not export the summary: ${e.message}`); }
+}
+function hxRow(b, loaded, hasPrev) {
   const res = HX_RESULT[b.result] || HX_RESULT.done;
   const why = b.failure && b.failure.reason ? `${b.failure.step ? `${b.failure.step}: ` : ''}${b.failure.reason}` : '';
   const where = [b.part, b.strategy_impl].filter(Boolean).join(' · ');
   const tip = `Open ${b.firmware} in the standard view${loaded ? '' : ' (loads the project again)'}; it shows the project's latest build`;
   const ds = `data-fw="${esc(b.fw_id)}" data-project="${esc(b.project || '')}" data-name="${esc(b.firmware)}"`;
-  return `<tr class="go" data-act="hrow" ${ds} title="${esc(tip)}">
-    <td class="when" data-label="Date">${fmtWhen(b.started_at)}</td>
+  const picked = hist.pick.some((p) => hxSame(p, b));
+  const ck = `<input type="checkbox" data-act="hpick" data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"${picked ? ' checked' : ''} aria-label="Select the ${esc(b.firmware)} build of ${esc(fmtWhen(b.started_at))} to compare">`;
+  const prev = hasPrev ? `<button type="button" class="hx-chip hx-prev" data-act="hprev" data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}" title="Compare with the previous ${esc(b.firmware)} build">vs previous</button>` : '';
+  return `<tr class="go${picked ? ' picked' : ''}" data-act="hrow" ${ds} title="${esc(tip)}">
+    <td class="pick" data-label="Compare">${ck}</td>
+    <td class="when" data-label="Date">${fmtWhen(b.started_at)}${prev}</td>
     <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
     <td class="dur" data-label="Duration">${fmtDur(b.duration_s)}</td>
     <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
     <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
     <td class="ut" data-label="Utilization">${hxUtil(b)}</td>
-    <td class="links-c" data-label="Reports">${hxLinks(b)}</td></tr>`;
+    <td class="links-c" data-label="Reports">${hxLinks(b)}${hxExport(b)}</td></tr>`;
 }
 
 function renderHistory() {
   const d = hist.data;
+  if (hist.cmp) { renderCompare(); return; }
   if (!d && !hist.error) { setHTML(hist.root, '<div class="hx-empty">Loading…</div>'); return; }
   const fws = [...(d ? d.firmwares : [])];
   for (const f of state.firmwares) if (!fws.some((x) => x.id === f.id)) fws.push({ id: f.id, name: f.name });
@@ -2821,18 +2918,144 @@ function renderHistory() {
   let body;
   if (hist.error) body = `<div class="hx-empty">Could not load the history (${esc(hist.error)}).</div>`;
   else if (!builds.length) body = '<div class="hx-empty">No finished builds recorded yet. Builds are recorded when they finish.</div>';
-  else body = `<table class="hx"><thead><tr><th aria-sort="${hist.asc ? 'ascending' : 'descending'}"><button type="button" data-act="hsort" title="Sort by date">Date <span aria-hidden="true">${arrow}</span></button></th><th>Firmware</th><th>Duration</th><th>Result</th><th>WNS / WHS</th><th>Utilization</th><th>Reports</th></tr></thead><tbody>${builds.map((b) => hxRow(b, loaded.has(b.fw_id))).join('')}</tbody></table>`;
+  else body = `<table class="hx"><thead><tr><th class="pick"><span class="sr">Compare</span></th><th aria-sort="${hist.asc ? 'ascending' : 'descending'}"><button type="button" data-act="hsort" title="Sort by date">Date <span aria-hidden="true">${arrow}</span></button></th><th>Firmware</th><th>Duration</th><th>Result</th><th>WNS / WHS</th><th>Utilization</th><th>Reports</th></tr></thead><tbody>${builds.map((b) => hxRow(b, loaded.has(b.fw_id), !!previousOf(b))).join('')}</tbody></table>`;
   const sel = $('select', hist.root);
   const focusSel = sel && document.activeElement === sel;
+  const n = hist.pick.length, pickName = n ? (builds.find((b) => b.fw_id === hist.pick[0].fw) || {}).firmware : '';
+  const hint = n === 0 ? 'Tick two builds of one firmware to compare them' : n === 1 ? `Pick one more ${pickName} build` : '2 builds selected';
+  const act = document.activeElement, keep = act && hist.root.contains(act) && act.dataset.act && act.dataset.build ? `[data-act="${act.dataset.act}"][data-build="${act.dataset.build}"][data-fw="${act.dataset.fw}"]` : null;
   setHTML(hist.root, `<div class="hx-head"><h1>Build history</h1><span class="hx-n">${builds.length} build${builds.length === 1 ? '' : 's'}</span>
-    <div class="hx-tools"><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
+    <div class="hx-tools"><span class="hx-hint" aria-live="polite">${hint}</span>${n ? '<button type="button" class="hx-back" data-act="hclear">Clear</button>' : ''}<button type="button" class="hx-go" data-act="hcompare"${n === 2 ? '' : ' disabled'} title="Compare the two selected builds">Compare</button><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
     <div class="hx-wrap">${body}</div>`);
   if (focusSel) $('select', hist.root).focus();
+  else if (keep) { const k = $(keep, hist.root); if (k) k.focus(); }
 }
 hist.root.addEventListener('change', (ev) => {
   if (ev.target.id !== 'hx-fw') return;
-  hist.fw = ev.target.value; hist.sig = null; hist.data = null; render();
+  hist.fw = ev.target.value; hist.sig = null; hist.data = null; hist.pick = []; render();
 });
+
+// Mock history and its precomputed diffs share one time offset (shifting also moves generated_at, so compute it once).
+function mockHistory() {
+  if (hist.mock) return;
+  hist.mock = syncJson('mock/history.json'); hist.mockShift = nowS() - hist.mock.generated_at; shiftTimes(hist.mock, hist.mockShift);
+}
+/* ---- compare two builds of one firmware (GET /api/history/compare; mock: mock/compare.json) */
+const hxSame = (p, b) => p.fw === b.fw_id && p.build === b.build;
+const hxOlderFirst = (x, y) => (x.started_at || 0) - (y.started_at || 0);
+
+async function openCompare(fw, a, b) {
+  hist.cmp = { fw, a, b, data: null, error: null };
+  const cmp = hist.cmp;
+  try {
+    if (MOCK) {
+      mockHistory();
+      hist.mockCmp = hist.mockCmp || shiftTimes(syncJson('mock/compare.json'), hist.mockShift);
+      cmp.data = hist.mockCmp[`${fw}|${a}|${b}`];
+      if (!cmp.data) throw new Error('no mock comparison for these builds');
+    } else cmp.data = await jget(`/api/history/compare?fw=${q(fw)}&a=${q(a)}&b=${q(b)}`);
+  } catch (e) { cmp.error = String(e.message || e); }
+  if (hist.cmp === cmp && hist.on) renderHistory();
+  if (hist.cmp === cmp) window.scrollTo(0, 0);
+}
+// A hash such as hcmp=<buildA>,<buildB> resolves to the first firmware that has both builds.
+function resolveHashCompare() {
+  const keys = hist.cmpHash || [], d = hist.data;
+  hist.cmpHash = null;
+  const first = keys.length === 2 && d && d.builds.find((x) => x.build === keys[0] && d.builds.some((y) => y.fw_id === x.fw_id && y.build === keys[1]));
+  if (first) startCompare(keys.map((build) => ({ fw: first.fw_id, build })));
+}
+function startCompare(pairs) {
+  const two = pairs.map((p) => hist.data.builds.find((b) => hxSame(p, b))).filter(Boolean).sort(hxOlderFirst);
+  if (two.length === 2 && two[0].fw_id === two[1].fw_id) { hist.pick = []; openCompare(two[0].fw_id, two[0].build, two[1].build); }
+}
+function previousOf(b) {
+  const older = hist.data.builds.filter((x) => x.fw_id === b.fw_id && hxOlderFirst(x, b) < 0).sort(hxOlderFirst);
+  return older[older.length - 1] || null;
+}
+function hxPick(ev, t) {
+  const key = { fw: t.dataset.fw, build: t.dataset.build };
+  const i = hist.pick.findIndex((p) => p.fw === key.fw && p.build === key.build);
+  if (i >= 0) hist.pick.splice(i, 1);
+  else if (hist.pick.length && hist.pick[0].fw !== key.fw) { ev.preventDefault(); toast('Compare builds of the same firmware: clear the selection to pick another firmware.'); return; }
+  else if (hist.pick.length >= 2) { ev.preventDefault(); toast('Pick at most two builds. Untick one first.'); return; }
+  else hist.pick.push(key);
+  renderHistory();
+}
+
+const fmtSigned = (v, digits, unit = '') => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(digits)}${unit}`);
+const fmtDurDelta = (v) => (v == null ? '—' : v === 0 ? '0s' : `${v > 0 ? '+' : '−'}${fmtDur(Math.abs(v))}`);
+// Never Cry Wolf: a regression is amber; red only when the newer build's final timing is actually failing.
+function deltaClass(delta, bValue, bFinal) {
+  if (delta == null || delta === 0) return 'dz';
+  if (delta > 0) return 'dg';
+  return bFinal && bValue != null && bValue < 0 ? 'dr' : 'da';
+}
+const hxNum = (v, fmt) => (v == null ? '<span class="nil">—</span>' : fmt(v));
+
+function cmpHeadCard(role, h) {
+  const res = HX_RESULT[h.result] || HX_RESULT.done;
+  const where = [h.part, h.strategy_impl].filter(Boolean).join(' · ');
+  return `<div class="cmp-b"><div class="cmp-role">${role}</div><div class="cmp-when">${fmtWhen(h.started_at)}</div>
+    <div class="cmp-meta"><span class="pill" data-status="${res.key}">${res.text}</span><span class="mono">${fmtDur(h.duration_s)}</span></div>${where ? `<div class="cmp-sub" title="${esc(where)}">${esc(where)}</div>` : ''}</div>`;
+}
+function cmpTiming(c) {
+  const t = c.timing, fin = t.final.b;
+  const row = ([k, label]) => {
+    const m = t.metrics[k];
+    const val = (v, final) => (v == null ? '<span class="nil">—</span>' : `<span${final && v < 0 ? ' class="neg"' : ''}>${fmtSlack(v)}</span>`);
+    return `<tr><th scope="row">${label}</th><td class="num">${val(m.a, t.final.a)}</td><td class="num">${val(m.b, fin)}</td><td class="num ${deltaClass(m.delta, m.b, fin)}">${fmtSigned(m.delta, 3)}</td></tr>`;
+  };
+  const clocks = t.clocks && t.clocks.length ? `<details class="cmp-clk"><summary>Per clock (${t.clocks.length})</summary><div class="ptable-wrap"><table class="cmp-t"><thead><tr><th>Clock</th><th>WNS A</th><th>WNS B</th><th>Δ</th><th>WHS A</th><th>WHS B</th><th>Δ</th></tr></thead><tbody>${t.clocks.map((k) => `<tr><th scope="row" class="mono" title="${esc(k.name)}">${esc(k.name)}</th>${['wns', 'whs'].map((m) => `<td class="num">${hxNum(k[m].a, fmtSlack)}</td><td class="num">${hxNum(k[m].b, fmtSlack)}</td><td class="num ${deltaClass(k[m].delta, k[m].b, fin)}">${fmtSigned(k[m].delta, 3)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>` : '';
+  const note = !t.final.a || !t.final.b ? `<p class="cmp-note">${!t.final.a && !t.final.b ? 'Neither build has a final timing result.' : `Build ${t.final.a ? 'B' : 'A'} has no final timing result; its numbers are estimates.`}</p>` : '';
+  return `<section class="cmp-card" aria-label="Timing"><h2>Timing <small>ns</small></h2><table class="cmp-t"><thead><tr><th></th><th>A</th><th>B</th><th>Δ</th></tr></thead><tbody>${TIMING_FIELDS.map(row).join('')}</tbody></table>${note}${clocks}</section>`;
+}
+function cmpUtil(c) {
+  const rows = Object.entries(c.utilization);
+  const body = rows.map(([k, u]) => `<tr><th scope="row">${esc(k)}</th><td class="num">${hxNum(u.pct.a, (v) => v.toFixed(1) + '%')}</td><td class="num">${hxNum(u.pct.b, (v) => v.toFixed(1) + '%')}</td><td class="num dz">${fmtSigned(u.pct.delta, 1, ' pp')}</td><td class="num used" title="Used: ${fmtInt(u.used.a)} → ${fmtInt(u.used.b)} of ${fmtInt(u.available)}">${fmtInt(u.used.a)} → ${fmtInt(u.used.b)}</td></tr>`).join('');
+  return `<section class="cmp-card" aria-label="Utilization"><h2>Utilization</h2>${rows.length ? `<table class="cmp-t"><thead><tr><th></th><th>A</th><th>B</th><th>Δ</th><th>Used</th></tr></thead><tbody>${body}</tbody></table>` : '<p class="cmp-empty">No utilization was recorded for these builds.</p>'}</section>`;
+}
+function cmpSteps(c) {
+  const max = Math.max(1, ...c.steps.flatMap((s) => [s.a || 0, s.b || 0]));
+  const bar = (v, cls) => `<span class="cmp-bar ${cls}" style="width:${v == null ? 0 : Math.max(1.5, v / max * 100)}%"></span>`;
+  const rows = c.steps.map((s) => `<li class="cmp-step"><span class="sn mono">${esc(s.step)}</span><span class="sb" aria-hidden="true">${bar(s.a, 'ba')}${bar(s.b, 'bb')}</span><span class="num sv">${hxNum(s.a, fmtDur)}</span><span class="num sv">${hxNum(s.b, fmtDur)}</span><span class="num sd">${fmtDurDelta(s.delta)}</span></li>`).join('');
+  return `<section class="cmp-card wide" aria-label="Step durations"><h2>Step durations <small>A grey, B blue</small></h2>${c.steps.length ? `<ul class="cmp-steps"><li class="cmp-step hd" aria-hidden="true"><span>Step</span><span></span><span>A</span><span>B</span><span>Δ</span></li>${rows}</ul>` : '<p class="cmp-empty">No step durations were recorded for these builds.</p>'}</section>`;
+}
+const CMP_MSG_TABS = [['new', 'New'], ['removed', 'Removed'], ['changed', 'Changed']];
+const CMP_MSG_EMPTY = {
+  new: 'No new warnings or errors in the newer build.', removed: 'No warnings or errors disappeared in the newer build.',
+  changed: 'No message changed its count between the two builds.',
+};
+function cmpMessages(c) {
+  const m = c.messages, tab = hist.cmpTab;
+  const totals = ['error', 'critical', 'warning'].map((k) => { const s = sevInfo(k), p = m.totals[k]; return `<span class="cmp-tot"><span class="badge ${s.cls}"><i>${s.short}</i>${p.a == null ? '—' : p.a} → ${p.b == null ? '—' : p.b}</span></span>`; }).join('');
+  const tabs = CMP_MSG_TABS.map(([k, label]) => `<button type="button" class="cmp-tab" data-act="hcmptab" data-tab="${k}" aria-pressed="${tab === k}">${label} <span class="num">${m.counts[k]}</span></button>`).join('');
+  const missing = ['a', 'b'].filter((s) => !m.available[s]);
+  let body;
+  if (missing.length) body = `<p class="cmp-empty">Message detail was not recorded for build ${missing.join(' and ')} (stored before comparisons existed), so the lists cannot be compared. The totals above still come from the saved counts.</p>`;
+  else if (!m[tab].length) body = `<p class="cmp-empty">${CMP_MSG_EMPTY[tab]}</p>`;
+  else {
+    const more = m.counts[tab] > m[tab].length ? `<p class="cmp-note">Showing ${m[tab].length} of ${m.counts[tab]}.</p>` : '';
+    const count = (e) => (tab === 'new' ? `×${fmtInt(e.b)}` : tab === 'removed' ? `×${fmtInt(e.a)}` : `${fmtInt(e.a)} → ${fmtInt(e.b)} <b class="${e.delta > 0 ? 'da' : 'dg'}">${fmtSigned(e.delta, 0)}</b>`);
+    body = `<ul class="cmp-msgs">${m[tab].map((e) => `<li><span class="badge ${sevInfo(e.severity).cls}">${esc(sevInfo(e.severity).short)}</span><span class="mid mono">${esc(e.id)}</span><span class="mtx" title="${esc(e.text)}">${esc(e.text)}</span><span class="num mc">${count(e)}</span></li>`).join('')}</ul>${more}`;
+  }
+  return `<section class="cmp-card wide" aria-label="Messages"><h2>Messages <small>warnings and worse</small></h2><div class="cmp-tots">${totals}</div><div class="cmp-tabs" role="group" aria-label="Message changes">${tabs}</div>${body}</section>`;
+}
+function renderCompare() {
+  const cmp = hist.cmp, c = cmp.data;
+  const back = '<button type="button" class="hx-back" data-act="hcmp-close" title="Back to the build list">‹ Back to the list</button>';
+  let body;
+  if (cmp.error) body = `<div class="hx-empty">Could not compare these builds (${esc(cmp.error)}).</div>`;
+  else if (!c) body = '<div class="hx-empty">Loading…</div>';
+  else {
+    const d = c.duration;
+    body = `<div class="cmp-top">${cmpHeadCard('A · base (older)', c.a)}<div class="cmp-mid" title="Duration change"><span class="num">${fmtDurDelta(d.delta)}</span><small>duration</small></div>${cmpHeadCard('B · newer', c.b)}</div>
+      <div class="cmp-grid">${cmpTiming(c)}${cmpUtil(c)}${cmpSteps(c)}${cmpMessages(c)}</div>`;
+  }
+  const act = document.activeElement, keep = act && hist.root.contains(act) && act.dataset.tab;
+  setHTML(hist.root, `<div class="hx-head"><h1>Compare builds</h1><span class="hx-n">${c ? esc(c.firmware) : ''}</span><div class="hx-tools">${back}</div></div>${body}`);
+  if (keep) { const n = $(`[data-tab="${keep}"]`, hist.root); if (n) n.focus(); }
+}
 
 async function openHistoryReport(t) {
   if (t.getAttribute('aria-disabled') === 'true') { toast(HX_GONE); return; }

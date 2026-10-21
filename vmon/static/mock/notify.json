@@ -1,0 +1,10 @@
+{"enabled": true,
+ "channels": [
+  {"name": "desktop", "label": "Desktop", "enabled": true, "configured": true, "target": "notify-send", "error": null},
+  {"name": "ntfy", "label": "ntfy", "enabled": true, "configured": true, "target": "https://ntfy.sh", "error": null},
+  {"name": "slack", "label": "Slack", "enabled": true, "configured": false, "target": "", "error": null},
+  {"name": "matrix", "label": "Matrix", "enabled": false, "configured": false, "target": "", "error": null},
+  {"name": "webhook", "label": "Webhook", "enabled": false, "configured": false, "target": "", "error": null}],
+ "kinds": ["run_done", "run_failed", "step_failed"],
+ "codes": ["congestion", "error", "process_gone", "route_not_converging", "stalled", "timing_fail"],
+ "min_level": "warning", "last_error": null}
