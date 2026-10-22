@@ -26,8 +26,9 @@ def config_sections():
 
 
 def cli_options():
-    out = subprocess.run([sys.executable, "-m", "vmon", "--help"], cwd=ROOT,
-                         capture_output=True, text=True, check=True).stdout
+    out = "".join(subprocess.run([sys.executable, "-m", "vmon", *args, "--help"], cwd=ROOT,
+                                 capture_output=True, text=True, check=True).stdout
+                  for args in ([], ["status"]))
     return sorted(set(re.findall(r"--[a-z][a-z-]*", out)) - {"--help"})
 
 

@@ -80,6 +80,8 @@ Or run without installing: `python -m vmon`.
 vmon                          # watch all running Vivado builds, open the browser
 vmon path/to/proj.runs        # also watch a .runs dir, .xpr or log file
 vmon --port 9000 --no-browser
+vmon status                   # one-shot text summary, no browser (quick check over SSH)
+vmon --tui                    # live full-screen terminal view
 ```
 
 | Option | Default | Meaning |
@@ -91,9 +93,42 @@ vmon --port 9000 --no-browser
 | `--no-browser` | | Do not open the browser |
 | `--config FILE` | | Extra `flows.toml` merged over the defaults |
 | `--remote NAME=URL` | | Aggregate another vmon, e.g. `buildsrv=http://127.0.0.1:9001` (repeatable; also `[remote]` in `flows.toml`) |
+| `--tui` | | Full-screen terminal view instead of the web UI (curses; on Windows a refreshing text view) |
 | `--ssh USER@HOST[:PORT]` | | Start `ssh -N -L` to the vmon on that host (default remote port 8765) and aggregate it; the tunnel ends with vmon |
 
 If a vmon is already running on the port, the new command hands it your paths and opens the browser on it instead of starting a second server.
+
+### Terminal mode
+
+`vmon status [paths...]` prints one line per firmware: name (`name@host` for remotes), outcome (the web UI's words, e.g. `Finished, timing not met`), current step or failure reason, progress (`~42%` is an estimate), elapsed, expected end with its range, WNS/WHS (a leading `~` marks a non-final estimate), message counts E/CW/W and the alert count. Firmwares with alerts or hints get up to three indented lines below. Colors (green met/done, red only final failures, amber warnings, estimates and stale remotes, blue running) are used only on a terminal, never with `--no-color` or `NO_COLOR`.
+
+```sh
+vmon status                                # whatever is running or remembered
+vmon status path/to/proj.runs --json       # for scripts
+vmon status --watch 5                      # refresh every 5 s, Ctrl-C to stop
+ssh user@server vmon status                # over SSH, nothing to forward
+```
+
+Data source: if a vmon answers on `--host`/`--port` it is used (with its remotes; `paths` then only filter its firmwares). Otherwise vmon computes one snapshot locally from the running Vivado processes, the remembered paths and the given paths, without a server or browser. Local mode never updates the remembered (recent) paths; its tick writes only the usual cache files (message baselines, step durations, history), and `[remote]` entries of `flows.toml` are not polled.
+
+`vmon status` is the subcommand only when it is the first argument and no file or directory called `status` exists in the current directory (then it is a path, as before).
+
+| Exit code | Meaning |
+|---|---|
+| 0 | nothing failed (running, done, stopped, queued) |
+| 1 | a firmware failed, or finished with final timing not met |
+| 2 | usage or configuration error |
+| 3 | nothing to show: no vmon reachable and no firmware found or watched |
+
+`vmon --tui [paths...]` is the same data in a live screen: firmware list on top, the selected firmware's stages (status markers, durations, running phase, WNS chip) and its alerts and hints below. Keys: `↑`/`↓` or `j`/`k` move, `Enter`/`→` expand (alerts under a firmware, children of a stage), `←` collapse, `Tab` switches between the two panes, `r` refreshes, `h` help, `q` quits. It connects to a running vmon or starts its own monitor in a background thread; the terminal is restored on exit. It needs `curses`, which Windows lacks: there (or without a TTY) `--tui` shows the refreshing text view of `vmon status --watch` instead.
+
+`vmon status` takes `paths`, `--port`, `--host` and `--config` like `vmon`, plus:
+
+| Option | Meaning |
+|---|---|
+| `--json` | Print JSON (firmware subset, remotes, exit code) instead of the table |
+| `--watch SECONDS` | Reprint every SECONDS until Ctrl-C (clears the screen on a terminal) |
+| `--no-color` | No ANSI colors (also `NO_COLOR`, or output that is not a terminal) |
 
 ### Watching a build server
 
@@ -131,7 +166,16 @@ vmon is read-only on your build directories and never signals or kills processes
 .venv/bin/python tools/check_docs.py   # docs cover every API route, config section and CLI option
 ```
 
-CI (GitHub Actions) runs the tests on Python 3.11–3.14, a server smoke test, frontend checks, a packaging check and the docs check on every push and pull request.
+Browser tests (`tests/e2e/`, marked `e2e`) drive the UI in headless Chromium through Playwright, which is a development-only dependency (pinned in `requirements-dev.txt`, currently 1.64.0; vmon itself still has no runtime dependencies). Install the browser once, then run them:
+
+```sh
+.venv/bin/python -m playwright install chromium
+.venv/bin/python -m pytest -m e2e -q
+```
+
+Without playwright or a browser they are skipped, so a plain `python -m pytest` works everywhere. Set `VMON_E2E_BROWSER=firefox` to use Firefox instead (`playwright install firefox`), `PLAYWRIGHT_BROWSERS_PATH` to keep the browsers outside `~/.cache/ms-playwright`, and `VMON_E2E_REQUIRE=1` to fail instead of skip when the browser is missing (CI does). A failing test leaves a screenshot and a Playwright trace in `.tmp/e2e-artifacts/` (`VMON_E2E_ARTIFACTS` changes the folder; open a trace with `playwright show-trace`).
+
+CI (GitHub Actions) runs the tests on Python 3.11–3.14, a server smoke test, frontend checks, the browser tests (job "Frontend e2e", failure screenshots and traces are uploaded as an artifact), a packaging check and the docs check on every push and pull request.
 
 The architecture contract is in [SPEC.md](SPEC.md).
 

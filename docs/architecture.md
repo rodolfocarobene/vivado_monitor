@@ -25,6 +25,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `sysstats.py`, `browse.py` | System CPU/RAM/swap through the platform backend; read-only directory listing for the folder explorer. |
 | `remote.py` | Remote vmon instances: config/CLI validation, one poller thread per remote, id namespacing, request forwarding. |
 | `monitor.py` | Background thread: each tick discover, update parsers, publish state. |
+| `term.py`, `source.py`, `status.py`, `tui.py` | Terminal mode: pure formatting over the state dict (`term`), the data source (`source`), `vmon status` and the curses `--tui`. |
 | `server.py` | `ThreadingHTTPServer`: static files, JSON API and Server-Sent Events. |
 | `static/` | `index.html`, `app.js`, `style.css` (no build step). `static/mock/` holds the demo data used by `?mock=1`. |
 
@@ -56,6 +57,7 @@ Everything read is read-only. The only files vmon writes are under the cache dir
 
 ## Windows notes
 
+- **Browser tests**: `tests/e2e/` (marker `e2e`, Playwright, dev-only) has two session fixtures: `mock_url` serves `vmon/static` from a `ThreadingHTTPServer` for `index.html?mock=1`, and `real_url` runs the real `Monitor` and HTTP server in-process on a temporary copy of the qick fixture `.runs` tree (with its reports) and a redirected profile. One browser per session, one context per test (1440x1000, 820 for the narrow test); a JS console error, page error or unhandled rejection fails the test. Mock tests pause the page clock (`page.clock`) once the UI is up and advance it explicitly, so follow-live checks are deterministic. Tests skip when playwright or the browser is missing.
 - **Data dirs**: see above; tests redirect `HOME`, `USERPROFILE`, `LOCALAPPDATA`, `APPDATA` and `XDG_*` to a temp dir, so nothing touches a real profile on any OS.
 - **Path contract**: parsing keeps the syntax of its input (Vivado writes both `C:/work/x.runs` and `C:\work\x.runs`). `discovery.runs_location` is purely syntactic: drive/UNC input comes back with backslashes, anything else as POSIX, on every OS. What becomes a key or is shown (group paths, watched and recent paths, `/api/*` paths) goes through `paths.canon`: native form on Windows (backslashes, upper-case drive letter), untouched on Linux. Firmware ids and group keys use `paths.path_key`, which is case-insensitive on Windows, so `c:/W/x.runs` and `C:\w\X.runs` are one firmware. Node ids such as `impl_1/route_design` always use `/`.
 - **CRLF**: Vivado on Windows writes `\r\n`. Binary readers decode with `textio.decode` (CRLF folded to LF) and `LogTail` strips the `\r` of every complete line; a `\r\n` split across two reads stays in the partial buffer until the `\n` arrives. Text-mode readers already fold it.
@@ -116,6 +118,12 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 Routes that take `fw=` accept `<host>~<id>` for a firmware of a [remote](#remote-vmon-instances) and are forwarded to that host; the table above describes them as the remote answers.
 
 Top-level model: `State` contains `Firmware` objects; each has `flows` of `Node` trees (`group`, `run`, `step`, `command`, `phase`, `task`) with `status`, `counts`, `timing`, `reports`, `alerts`, `expected`/`optional` flags and predicted phase numbers. The full field-level contract is in [`SPEC.md`](../SPEC.md).
+
+## Terminal mode
+
+`vmon status` and `vmon --tui` consume the same state dict as the web UI. `source.Source` first asks `GET /api/state` on `--host:--port`; a vmon that answers is the source (remotes included, `paths` only filter its firmwares). Otherwise it builds a `Monitor(read_only=True)` with the normal config, adds the given paths (the remembered ones load as usual) and ticks once synchronously in a worker thread with a 120 s bound; `--tui` starts the monitor thread instead and a poller thread hands snapshots to the UI, so rendering never blocks a tick. `read_only` only suppresses writes to `recent.json`; a tick still writes its normal cache files. No server is started and no browser opened.
+
+`term.py` is pure: a rendered line is a list of `(text, tone)` segments painted as ANSI (status) or curses attributes (tui). Outcome words and tones follow the UI (red only for failed or final timing not met; stale, non-final and estimated values are amber). `tui.Model` holds selection, expansion and scroll and renders to a list of lines for a given size, so it is tested without a terminal; `curses` is imported optionally and Windows falls back to `status --watch`. Exit codes of `status` are in the README.
 
 ## Remote vmon instances
 

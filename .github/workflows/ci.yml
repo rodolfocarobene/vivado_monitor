@@ -84,6 +84,33 @@ jobs:
       - name: Mock data is valid JSON
         run: for f in vmon/static/mock/*.json; do python3 -m json.tool "$f" > /dev/null || { echo "::error file=$f::invalid JSON"; exit 1; }; done
 
+  e2e:
+    name: Frontend e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -r requirements-dev.txt
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Browser tests (drill-down, follow live, reports, history)
+        env:
+          VMON_E2E_REQUIRE: "1"
+          VMON_E2E_ARTIFACTS: e2e-artifacts
+        run: python -m pytest -m e2e -q
+      - name: Upload screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: e2e-artifacts
+          if-no-files-found: ignore
+
   package:
     name: Package
     runs-on: ubuntu-latest

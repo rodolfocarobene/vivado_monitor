@@ -11,12 +11,19 @@ import webbrowser
 
 from .config import load_config
 from . import remote as remote_mod
+from . import status as status_mod
+from . import tui as tui_mod
 from .monitor import Monitor
 from .server import make_server
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="vmon", description="Live monitor for Vivado builds")
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["status"] and not os.path.exists("status"):     # an existing ./status wins: it is a path then
+        return status_mod.run(argv[1:])
+    parser = argparse.ArgumentParser(prog="vmon", description="Live monitor for Vivado builds",
+                                     epilog="`vmon status [paths] [--json] [--watch N]` prints a one-shot summary "
+                                            "(see `vmon status --help`).")
     parser.add_argument("paths", nargs="*", help=".runs dir, .xpr, run dir or log file to watch")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--host", default="127.0.0.1")
@@ -27,8 +34,14 @@ def main(argv=None):
                         help="aggregate another vmon, e.g. one reached through an SSH tunnel (repeatable)")
     parser.add_argument("--ssh", action="append", default=[], metavar="USER@HOST[:PORT]",
                         help="start an ssh tunnel to the vmon on that host and aggregate it (repeatable)")
+    parser.add_argument("--tui", action="store_true", help="full-screen terminal view instead of the web UI")
     args = parser.parse_args(argv)
 
+    if args.tui:
+        if args.remote or args.ssh:
+            print("vmon: --remote/--ssh are not used by --tui (connect to a vmon that has them)", file=sys.stderr)
+            return 2
+        return tui_mod.run(args)
     if _is_vmon(args.host, args.port):
         if args.remote or args.ssh:
             print("vmon: --remote/--ssh ignored, a vmon is already running on this port", file=sys.stderr)
