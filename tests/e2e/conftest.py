@@ -1,6 +1,7 @@
 """Headless-browser fixtures. Skipped without playwright or its browser (VMON_E2E_REQUIRE=1 makes that an error)."""
 import functools
 import os
+import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -18,6 +19,20 @@ ARTIFACTS = Path(os.environ.get("VMON_E2E_ARTIFACTS", ROOT / ".tmp" / "e2e-artif
 VIEWPORT = {"width": 1440, "height": 1000}
 BROWSER = os.environ.get("VMON_E2E_BROWSER", "chromium")
 REQUIRED = os.environ.get("VMON_E2E_REQUIRE") == "1"
+
+
+def _default_browsers_path():
+    """Playwright's own default browser cache, from the REAL profile."""
+    if sys.platform == "win32":
+        return Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "ms-playwright"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Caches" / "ms-playwright"
+    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "ms-playwright"
+
+
+# The test isolation (tests/conftest.py) points HOME etc. at a tmp dir before any browser starts, which would
+# make Playwright look for its browsers there. Pin the real location now, at import, while HOME is still real.
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(_default_browsers_path()))
 
 
 def unavailable(reason):
