@@ -33,7 +33,9 @@ Other files:
 | `[eta]` | ETA: history size, band quantiles, small-sample margin, floor for a running step/phase, builds needed for high confidence |
 | `[congestion]` | Congestion levels: warn and high thresholds, `congestion` alert, size/percent cell patterns |
 | `[history]` | Build history: builds kept per firmware, messages kept per build, report kinds recorded, bitstream |
+| `[[hints]]`, `[hints_config]` | Recommended actions: rule-based hints, built-in set, disabling by id |
 | `[notify]`, `[notify.desktop]`, `[notify.ntfy]`, `[notify.slack]`, `[notify.matrix]`, `[notify.webhook]` | Notifications outside the browser (all off by default) |
+| `[remote]` | Other vmon instances to aggregate (hosts, poll interval, timeout) |
 | `[artifacts]`, `[artifacts.files]` | Files that prove a step finished when no log is available |
 
 ## Adding a timing pattern
@@ -83,6 +85,69 @@ reason = "CDC"
 ```
 
 Because lists replace, copy the whole `[[messages.rules]]` list into your override file if you add rules there. The scoring weights live in `[messages.scoring]`. Individual messages can also be starred or muted in the UI; those overrides go to `~/.config/vmon/message_rules.json`, e.g. `{"Synth 8-327": "high", "Synth 8-7080": "mute"}`.
+
+### Sharing message rules
+
+In the Messages view, **Export rules** downloads your ★/mute rules as a `vmon-message-rules` file (no host or user name is added; `exported_by` stays empty) and **Import rules…** previews a file before touching anything: what is added, changed (old to new priority) and, in replace mode, removed. *Merge* keeps your other rules and lets the file win on conflicts (tick *keep my priority* to reverse that); *replace* discards your current rules. A raw `message_rules.json` from a teammate is accepted as is. Invalid entries are listed and block the import. To share rules in a team, keep one exported file in git or a shared folder and have everyone import it (merge); there is no live shared file. Rules are per machine: with remote firmwares, import on the machine that builds.
+
+## Recommended actions
+
+`[[hints]]` entries are rules that turn the model into advice ("Suggested actions" in the recap card, and in the detail of the stage a hint is anchored to). They are data: add or change them without touching Python. A hint fires when all conditions of `when` hold; the UI shows the hint's static `text` (why it matters) and an `evidence` line vmon computes (for example `WHS -0.034 ns after Route Design (final)`).
+
+```toml
+[[hints]]
+id = "my_rule"                 # unique; the same id as a built-in replaces that built-in
+title = "Retry with explore"
+severity = "info"              # "info" (accent) or "warning" (amber); never red
+step = "route_design"          # optional: also shown in this stage's detail
+text = "Why this matters."
+actions = [
+  {text = "Try this directive", command = "route_design -directive Explore", doc_url = "route_design"},
+  {text = "Advice without a command"},
+]
+when = {timing = {final = true, wns_lt = 0}}
+```
+
+`doc_url` is a full URL, or a bare Tcl command name expanded with `[docs] tcl_command`. `command` gets a copy button.
+
+Conditions (all optional, combined with AND; at least one is required):
+
+| Key | Holds when |
+|---|---|
+| `alert_codes = [..]` | one of these alert codes is active (`timing_fail`, `congestion`, `route_not_converging`, ...) |
+| `message_ids = [..]` | a warning-or-worse message with one of these ids exists; `*` and `?` are wildcards (`"DRC DPIP-*"`) |
+| `message_re = "re"` | the text of a warning-or-worse message matches (searched in the aggregated message groups only) |
+| `min_severity = "warning"\|"critical"\|"error"` | modifier: the message conditions of this table ignore lower severities |
+| `failure_re = "re"` | a failed or stopped step's failure reason or details match |
+| `status = [..]` | the build status is one of `idle queued running done failed stopped` |
+| `step_done = "route_design"` | these steps are done (string or list) |
+| `timing = {...}` | latest matching step timing: `final`, `stage` (step id or list), `wns_lt`, `tns_lt`, `whs_lt`, `ths_lt`. Stale (carried) values never match |
+| `worst_path = {...}` | worst violated path(s) of that timing report: `type` (`setup`/`hold`), `top` (how many of the worst, default 1), and `route_pct_ge`, `logic_pct_ge`, `levels_ge`, `fanout_ge` (largest net fanout on the path). Uses the report picked by `timing` in the same table, else the latest (final first) |
+| `congestion_level_ge = 5` | a step's worst congestion level is at least this |
+| `convergence_trend = [..]` | a router step is `stalled`/`diverging`/`converging` after at least `[convergence] alert_min_iterations` iterations |
+| `util_pct_ge = {any = 90}` | any resource in `[hints_config] util_any_resources` is at least 90% used; `{DSP = 85}` names one resource (all named ones must hold) |
+
+`when.any` is a list of condition tables; at least one must hold, in addition to the keys next to it:
+
+```toml
+when = {timing = {final = true, wns_lt = 0}, any = [{worst_path = {type = "setup", logic_pct_ge = 60}}, {worst_path = {type = "setup", levels_ge = 10}}]}
+```
+
+An unknown condition or key, a bad regex, a bad severity or an empty `when` stops vmon at startup with a message naming the hint (`hint 'my_rule': unknown condition 'wns_below' ...`).
+
+### Merging and disabling
+
+Arrays of tables do not deep-merge like tables. Hints get their own rule so your file can add to the built-ins: hints are merged **by id**. A hint of yours with a new id is appended; one with the id of a built-in replaces that built-in completely (no field-by-field merge). Other arrays of tables, such as `[[messages.rules]]`, are replaced as a whole.
+
+To switch built-ins off, list their ids. The list is united across `~/.config/vmon/flows.toml` and `--config`; an id that does not exist is an error, so typos are caught:
+
+```toml
+[hints_config]
+disabled = ["oom_jobs", "high_utilization"]
+util_any_resources = ["LUT", "FF", "BRAM", "DSP"]
+```
+
+Built-in ids: `hold_after_route`, `setup_route_dominated`, `setup_logic_dominated`, `high_fanout_worst_path`, `congestion_high`, `router_not_converging`, `oom_jobs`, `license_lost`, `latch_inferred`, `high_utilization`, `dsp_pipeline_registers`, `constraint_problem`. They follow AMD guidance (UG906, UG949, UG904) and only use documented commands and directives. Timing hints need final timing, so an estimate never produces advice.
 
 ## Alert thresholds
 
@@ -240,3 +305,28 @@ vmon
 | `webhook` | `url`/`url_env` | `POST` JSON `{firmware, fw_id, kind, code, level, title, body, t, project}` (see `SPEC.md`) |
 
 Only events that happen while vmon runs are sent; builds already finished at startup are not. Logs and the API show only `scheme://host` of a URL, never its path, query or token. `POST /api/notify/test` (the "Send test" button) tests every enabled channel.
+
+## Remote vmon instances
+
+`[remote]` lists other vmons to show in this UI, usually the ones running on build servers, reached through an SSH tunnel. Nothing is contacted unless a host is listed (or `--remote` / `--ssh` is used).
+
+```toml
+[remote]
+hosts = [
+  {name = "buildsrv", url = "http://127.0.0.1:9001"},
+  {name = "lab2",     url = "http://127.0.0.1:9002"},
+]
+interval_s = 3      # seconds between polls of each remote's /api/state
+timeout_s = 5       # per request, polls and proxied requests alike
+```
+
+```sh
+ssh -N -L 9001:127.0.0.1:8765 user@server      # on your machine; vmon on the server stays on 127.0.0.1
+vmon                                           # or: vmon --remote buildsrv=http://127.0.0.1:9001
+```
+
+- `name`: `[A-Za-z0-9_-]{1,32}`, unique; it becomes the host badge and the prefix of firmware ids (`buildsrv~<id>`).
+- `url`: `http://` or `https://`, `host[:port]` only (no credentials, path or query). It is shown in the UI as `scheme://host:port`.
+- `--remote NAME=URL` adds to the list (a command-line entry replaces a config entry of the same name). `--ssh USER@HOST[:PORT]` picks a free local port, runs `ssh -N -o ExitOnForwardFailure=yes -L <port>:127.0.0.1:<PORT or 8765> USER@HOST` as a child process, registers it as a remote named after the host and ends it on exit; authentication is whatever your ssh does (keys or agent; a prompt appears in the terminal).
+- Redirects are refused and environment proxies (`http_proxy`) are ignored. The remote is always taken from this config, never from a request.
+- Notifications outside the browser are sent by each machine's own vmon; the browser notifications of this UI cover remote events too. `/api/msgrule`, `/api/msgrules/*`, `/api/notify`, `/api/watch` and `/api/browse` act on this machine only.

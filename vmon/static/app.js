@@ -130,6 +130,7 @@ let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
 let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
+let hashRulesDemo = false; // #rulesdemo=1 (mock): open the import preview with a canned file (screenshots)
 let hashPclk = false; // #pclk=1: also open the "Clock & required" table of those rows
 let hashPth = []; // #pth=0,3: pre-expand those worst-path rows (screenshots/debug)
 
@@ -144,7 +145,7 @@ function parseHash() {
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
-  hashPclk = p.get('pclk') === '1';
+  hashPclk = p.get('pclk') === '1'; hashRulesDemo = p.get('rulesdemo') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
   if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
@@ -156,6 +157,11 @@ const keyOf = (fw, n) => `${fw.id}|${n.id}`;
 const autoOf = (fw) => { let a = ui.auto.get(fw.id); if (!a) { a = { keys: new Set(), dismissed: new Set(), sig: null }; ui.auto.set(fw.id, a); } return a; };
 const isOpen = (fw, n) => (ui.open.has(keyOf(fw, n)) ? ui.open.get(keyOf(fw, n)) : (autoOf(fw).keys.has(keyOf(fw, n)) || hashOpen.has(n.id)));
 const curFw = () => state.firmwares.find((f) => f.id === selected);
+// Remote firmwares (host set) go stale when their vmon cannot be reached: kept, but not live. Never an error colour.
+const remoteOf = (fw) => (fw.host && (state.remotes || []).find((r) => r.name === fw.host)) || null;
+const staleRemote = (fw) => { const r = remoteOf(fw); return r && !r.online ? r : null; };
+const fwLabel = (fw) => (fw.host ? `${fw.name} · ${fw.host}` : fw.name);
+const staleText = (r) => `${r.name} unreachable${r.last_ok ? ` · last update ${fmtClock(r.last_ok)}` : ''}`;
 const curView = (fw) => ui.view.get(fw.id) || (hashView === 'messages' || hashView === 'timing' ? hashView : 'flow');
 
 // Forget open-state, chosen details tab and fetched data of a node and all its descendants,
@@ -182,7 +188,7 @@ function shiftTimes(o, d) {
   if (Array.isArray(o)) { o.forEach((x) => shiftTimes(x, d)); return o; }
   if (o && typeof o === 'object') {
     for (const k of Object.keys(o)) {
-      if (['started_at', 'ended_at', 'updated_at', 'generated_at', 't', 'mtime', 'expected_end', 'low_end', 'high_end'].includes(k) && typeof o[k] === 'number') o[k] += d;
+      if (['started_at', 'ended_at', 'updated_at', 'generated_at', 't', 'mtime', 'last_ok', 'expected_end', 'low_end', 'high_end'].includes(k) && typeof o[k] === 'number') o[k] += d;
       else shiftTimes(o[k], d);
     }
   }
@@ -227,6 +233,7 @@ async function apiLogAround(fw, log, line) {
   return mockLogAround(fw, log, line);
 }
 async function apiMsgRule(fw, id, priority) {
+  if (fw.host) throw new Error(`message rules are per machine: set them on ${fw.host}`);
   if (!MOCK) {
     const r = await fetch('/api/msgrule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, priority }) });
     if (!r.ok) throw new Error(await r.text() || r.status);
@@ -457,7 +464,7 @@ function processEvents() {
       if (notif.seen.has(key)) continue;
       notif.seen.add(key);
       if (ev.t < PAGE_T || !eventWanted(ev)) continue;
-      const entry = { fw: fw.id, fwName: fw.name, t: ev.t, level: ev.level, title: `vmon · ${fw.name} — ${ev.title}`, evTitle: ev.title, body: eventBody(fw, ev), node_id: ev.node_id, read: false };
+      const entry = { fw: fw.id, fwName: fwLabel(fw), t: ev.t, level: ev.level, title: `vmon · ${fw.name} — ${ev.title}`, evTitle: ev.title, body: eventBody(fw, ev), node_id: ev.node_id, read: false };
       notif.log.unshift(entry); added = true; announce(`${fw.name}: ${ev.title}. ${entry.body}`);
       if ('Notification' in window && Notification.permission === 'granted') {
         try {
@@ -499,19 +506,23 @@ tabsEl.addEventListener('scroll', syncTabsOverflow, { passive: true });
 window.addEventListener('resize', syncTabsOverflow);
 
 function createTab(fw) {
-  const el = h('div', 'tab', '<span class="sdot"></span><span class="t-main"><span class="t-name"></span><span class="t-sub"></span></span><span class="abadge" hidden></span><button class="t-x" title="Stop watching (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>');
+  const el = h('div', 'tab', '<span class="sdot"></span><span class="t-main"><span class="t-name"></span><span class="t-sub"></span></span><span class="hbadge" hidden></span><span class="abadge" hidden></span><button class="t-x" title="Stop watching (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>');
   el.setAttribute('role', 'tab'); el.tabIndex = -1;
-  el._r = { dot: $('.sdot', el), name: $('.t-name', el), sub: $('.t-sub', el), ab: $('.abadge', el), x: $('.t-x', el) };
+  el._r = { dot: $('.sdot', el), name: $('.t-name', el), sub: $('.t-sub', el), ab: $('.abadge', el), host: $('.hbadge', el), x: $('.t-x', el) };
   el.dataset.act = 'tab';
   return el;
 }
 function updateTab(el, fw) {
   const r = el._r;
   const oc = outcomeOf(fw);
-  setAttr(r.dot, 'data-status', oc.key);
+  const stale = staleRemote(fw);
+  setAttr(r.dot, 'data-status', stale ? 'stale' : oc.key);
+  setAttr(el, 'data-stale', stale ? '1' : '0');
   setText(r.name, fw.name);
+  r.host.hidden = !fw.host; setText(r.host, fw.host || '');
   let sub;
-  if (fw.status === 'running') {
+  if (stale) sub = `unreachable${stale.last_ok ? ` · ${fmtClock(stale.last_ok)}` : ''}`;
+  else if (fw.status === 'running') {
     const cur = fw.current ? esc(fw.current.label) : 'running';
     sub = `${cur} · <span data-start="${fw.started_at ?? ''}">${fmtDur(fw.started_at ? nowS() - fw.started_at : fw.elapsed_s)}</span>${fw.resources ? ` · <span class="t-res" title="Vivado CPU / RSS">${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</span>` : ''}`;
   } else sub = `${oc.label} · ${fmtDur(fw.elapsed_s)}`;
@@ -523,7 +534,7 @@ function updateTab(el, fw) {
   el.tabIndex = fw.id === selected ? 0 : -1; // roving tabindex: one tab stop for the whole strip
   setAttr(el, 'aria-keyshortcuts', fw.live ? '' : 'Delete');
   r.x.hidden = !!fw.live;
-  el.title = fw.path || fw.name;
+  el.title = `${fw.host ? `${fw.host}: ` : ''}${fw.path || fw.name}`;
 }
 
 /* ------------------------------------------------------------------ rendering: firmware header */
@@ -632,6 +643,7 @@ function buildView() {
         <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div>
 </div>
       <div class="fw-path mono"></div>
+      <div class="fw-host" hidden></div>
       <div class="fw-attempt" hidden></div>
       <div class="now">
         <div class="cur"></div>
@@ -647,17 +659,19 @@ function buildView() {
         <span class="fw-exp" hidden><button type="button" class="hx-chip" data-act="hexp" data-format="md" title="Download a Markdown summary of this build">Export summary</button><a class="hx-chip" data-act="hexp" data-format="html" target="_blank" rel="noopener" title="Open a printable HTML summary of this build in a new tab">HTML</a></span>
       </div>
       <div class="topissues" hidden></div>
+      <div class="hintbar" hidden></div>
     </div>
     <div class="cards"><div class="timing-card"></div><div class="util-card"></div></div>
     <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
-  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
+  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), host: $('.fw-host', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), hints: $('.hintbar', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
   const banner = h('div', 'banner');
   // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
   const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="segwrap"></div><div class="stagelist"></div>`);
   setAttr(rail, 'aria-label', 'Stages');
   const split = h('div', 'split', '<section class="detail"></section>');
   const mv = h('section', 'msgview', `
-    <div class="mv-bar"><div class="mv-chips"></div><input class="mv-q" type="search" placeholder="Search id or text…" spellcheck="false" autocomplete="off"></div>
+    <div class="mv-bar"><div class="mv-chips"></div><input class="mv-q" type="search" placeholder="Search id or text…" spellcheck="false" autocomplete="off">
+      <span class="mv-rules"><button class="mv-btn" data-act="mv-export" title="Download your ★ and mute rules as a file to share">Export rules</button><button class="mv-btn" data-act="mv-import" title="Load a rules file from a teammate or another machine, with a preview first">Import rules…</button><input class="mv-file" type="file" accept=".json,application/json" hidden aria-label="Message rules file"></span></div>
     <div class="mv-hint" hidden></div>
     <div class="mv-list"></div>`);
   mv.hidden = true;
@@ -702,6 +716,27 @@ const TOP_ISSUES_SHOWN = 3;
 let issuesOpen = lsGet('vmon.issuesOpen') === '1';
 const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
 
+// Suggested actions: rule-based hints (flows.toml [[hints]]). Amber for warnings, accent for info; never red.
+let hintsOpen = lsGet('vmon.hintsOpen') === '1';
+const HINT_WORD = { warning: 'CHECK', info: 'TIP' };
+function hintHTML(h, withGoto) {
+  const acts = (h.actions || []).map((a) => `<li class="hact"><span class="hat">${esc(a.text)}</span>${a.doc_url ? docBtn(a.doc_url, `${h.title} documentation`) : ''}${a.command ? `<div class="hcmd"><code class="mono">${esc(a.command)}</code>${copyBtn(a.command, 'command')}</div>` : ''}</li>`).join('');
+  const go = withGoto && h.node_id ? `<button class="linkbtn hgo" data-act="goto" data-node="${esc(h.node_id)}">show stage →</button>` : '';
+  return `<div class="hint" data-sev="${esc(h.severity)}"><div class="hint-h"><span class="hpill">${HINT_WORD[h.severity] || 'TIP'}</span><b class="hint-t">${esc(h.title)}</b>${go}</div>${h.evidence ? `<div class="hint-ev mono">${esc(h.evidence)}</div>` : ''}<div class="hint-x">${esc(h.text)}</div>${acts ? `<ul class="hacts">${acts}</ul>` : ''}</div>`;
+}
+function hintsBarHTML(fw) {
+  const hs = fw.hints || [];
+  if (!hs.length) return '';
+  const first = hs[0];
+  const sum = hintsOpen ? '' : `<span class="ti-sum hsum" data-sev="${esc(first.severity)}" title="${esc(first.title)}">${esc(first.title)}</span>`;
+  const head = `<div class="ti-h"><button class="infotoggle" data-act="hints-toggle" aria-expanded="${hintsOpen}">Suggested actions<span class="hcount mono">${hs.length}</span>${CHEV}</button>${sum}</div>`;
+  return hintsOpen ? `${head}<div class="hintlist">${hs.map((h) => hintHTML(h, true)).join('')}</div>` : head;
+}
+function stageHintsHTML(fw, n) {
+  const hs = (fw.hints || []).filter((h) => h.node_id === n.id);
+  return hs.length ? `<div class="hintlist"><div class="hint-cap">Suggested actions</div>${hs.map((h) => hintHTML(h, false)).join('')}</div>` : '';
+}
+
 function etaParts(fw) {
   const e = fw.eta;
   if (fw.status !== 'running' || !e || e.expected_end == null) return null;
@@ -742,13 +777,16 @@ function renderHeader(fw) {
   const r = head._r;
   setText(r.name, fw.name);
   const oc = outcomeOf(fw);
-  setAttr(r.pill, 'data-status', oc.key);
-  setText(r.pill, oc.pill + (fw.kind === 'log' ? ' · log' : ''));
+  const stale = staleRemote(fw);
+  setAttr(r.pill, 'data-status', stale ? 'stale' : oc.key);
+  setText(r.pill, oc.pill + (fw.kind === 'log' ? ' · log' : '') + (stale ? ' · stale' : ''));
   setText(r.path, fw.path || '');
+  r.host.hidden = !fw.host; setAttr(r.host, 'data-stale', stale ? '1' : '0');
+  setText(r.host, fw.host ? (stale ? staleText(stale) : `on ${fw.host}`) : '');
   const at = fw.attempt && fw.attempt.n > 1 ? fw.attempt : null;
   r.att.hidden = !at;
   setHTML(r.att, at ? attemptLineHTML(at) : '');
-  const running = fw.status === 'running' && fw.started_at;
+  const running = fw.status === 'running' && fw.started_at && !stale;
   r.el.dataset.start = running ? fw.started_at : '';
   if (!running) delete r.el.dataset.start;
   setText(r.el, fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s));
@@ -779,6 +817,8 @@ function renderHeader(fw) {
   setHTML(r.uc, utilCardHTML(fw));
   const ti = topIssuesHTML(fw);
   r.top.hidden = !ti; setHTML(r.top, ti);
+  const hb = hintsBarHTML(fw);
+  r.hints.hidden = !hb; setHTML(r.hints, hb);
   r.exp.hidden = !['done', 'failed', 'stopped'].includes(fw.status) || fw.started_at == null;
   if (!r.exp.hidden) for (const c of r.exp.children) { const build = String(Math.floor(fw.started_at)); c.dataset.fw = fw.id; c.dataset.build = build; if (c.tagName === 'A') c.href = summaryUrl(fw.id, build, 'html', false); }
   const view = curView(fw);
@@ -907,8 +947,9 @@ function createDetail() {
   const fb = h('div', 'dfail');
   const at = h('div', 'dattempts');
   const al = h('div', 'dalerts');
-  for (const x of [fb, at, al]) $('.main', el).insertBefore(x, $('.body', el));
-  el._r.alerts = al; el._r.dfail = fb; el._r.dattempts = at;
+  const hn = h('div', 'dhints');
+  for (const x of [fb, at, hn, al]) $('.main', el).insertBefore(x, $('.body', el));
+  el._r.alerts = al; el._r.dfail = fb; el._r.dattempts = at; el._r.dhints = hn;
   return el;
 }
 
@@ -930,6 +971,8 @@ function renderDetail(el, n, fw) {
   if (el._r.dfail._h !== fbox) { setHTML(el._r.dfail, fbox); scrollExcerpts(el._r.dfail); }
   const atl = attemptsHTML(n, fw);
   if (el._r.dattempts._h !== atl) { setHTML(el._r.dattempts, atl); scrollExcerpts(el._r.dattempts); }
+  const hh = stageHintsHTML(fw, n);
+  if (el._r.dhints._h !== hh) setHTML(el._r.dhints, hh);
   setHTML(el._r.alerts, ''); // the firmware banner above already lists these; the stage card keeps its alert icon
 }
 
@@ -1409,6 +1452,7 @@ function renderMsgView(fw) {
     if (row) { setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 2200); }
     m.focus = null;
   }
+  if (hashRulesDemo && MOCK && data) { hashRulesDemo = false; rulesDemo(fw); }
 }
 
 /* ------------------------------------------------------------------ sticky summary bar */
@@ -1567,6 +1611,7 @@ function setState(s) {
   render();
   checkAlerts();
   updateMeters(s.system);
+  renderRemotes(s.remotes);
   syncIntervalSelect();
   tickUpdated();
 }
@@ -1582,6 +1627,7 @@ function revealFinder(act, t, nodeEl) {
   if (['toggle', 'dtab', 'rchip', 'rsel', 'att-toggle', 'fail-log'].includes(act) && nodeEl) return () => ({ ctrl: nodeCard(nodeEl) || nodeEl, region: nodeEl });
   if (act === 'info-toggle') return () => { const r = $('.fwinfo', mainEl); return r && { ctrl: r, region: r }; };
   if (act === 'issues-toggle') return () => { const r = $('.topissues', mainEl); return r && { ctrl: r, region: r }; };
+  if (act === 'hints-toggle') return () => { const r = $('.hintbar', mainEl); return r && { ctrl: r, region: r }; };
   const q = (sel) => mainEl.querySelector(sel);
   if (act === 'mv-row') return () => { const c = q(`[data-act="mv-row"][data-id="${css(d.id)}"]`); return c && { ctrl: c, region: c.closest('.mrow') || c }; };
   if (act === 'grp') return () => { const c = q(`[data-act="grp"][data-gid="${css(d.gid)}"]`); return c && { ctrl: c, region: c.parentElement }; };
@@ -1740,6 +1786,8 @@ document.addEventListener('click', async (ev) => {
     render();
   } else if (act === 'issues-toggle') {
     issuesOpen = !issuesOpen; lsSet('vmon.issuesOpen', issuesOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
+  } else if (act === 'hints-toggle') {
+    hintsOpen = !hintsOpen; lsSet('vmon.hintsOpen', hintsOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'info-toggle') {
     infoOpen = !infoOpen; lsSet('vmon.infoOpen', infoOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'sumstage') {
@@ -1786,10 +1834,170 @@ function mvAction(act, t) {
     renderMsgView(fw);
   } else if (act === 'mv-line') { const g = grp(); if (g) loadExcerpt(fw, g, +t.dataset.line); }
   else if (act === 'mv-step') gotoNode(fw, t.dataset.node);
+  else if (act === 'mv-export') exportRules(fw);
+  else if (act === 'mv-import') { if (fw.host) toast(`Message rules are per machine: import them on ${fw.host}`); else $('.mv-file', mainEl).click(); }
   else if (act === 'mv-rule') {
     apiMsgRule(fw, id, t.dataset.pri || null).then(() => { m.rev++; if (MOCK) { fw.top_messages = mockTop(fw); render(); } else ensureTriage(fw); })
       .catch((e) => toast('Could not save rule: ' + e.message));
   }
+}
+
+/* ---- message rules: export, and import with a preview (merge / replace) */
+const RULE_PRIORITIES = ['critical', 'high', 'medium', 'low', 'mute'];
+const MAX_RULES_FILE = 2e6;
+const rd = { fw: null, data: null, mode: 'merge', keep: false, sum: null, err: null, busy: false, seq: 0, ret: null, el: null };
+const priLabel = (p) => (p === 'high' ? '★ high' : p);
+
+const mockRulesCurrent = (fw) => Object.fromEntries(Object.entries(mock.rules).filter(([k, v]) => v && k.startsWith(`${fw.id}|`)).map(([k, v]) => [k.slice(fw.id.length + 1), v]));
+function mockRulesImport(fw, data, mode, keep, dry) {
+  const legacy = data && typeof data === 'object' && !Array.isArray(data) && !('format' in data);
+  if (!legacy && !(data && data.format === 'vmon-message-rules' && data.version === 1 && data.rules && typeof data.rules === 'object')) throw new Error('not a vmon message rules file (format vmon-message-rules, version 1)');
+  const rules = {}, invalid = [];
+  for (const [id, spec] of Object.entries(legacy ? data : data.rules)) {
+    const pri = legacy && typeof spec === 'string' ? spec : spec && spec.priority;
+    if (!id.trim() || id.length > 200) invalid.push({ id, error: 'bad id' });
+    else if (!RULE_PRIORITIES.includes(pri)) invalid.push({ id, error: `priority must be one of ${RULE_PRIORITIES.join(', ')}` });
+    else rules[id] = pri;
+  }
+  const cur = mockRulesCurrent(fw);
+  const s = { mode, dry_run: dry, applied: false, added: [], changed: [], removed: [], unchanged: 0, kept_mine: 0, invalid };
+  for (const [id, pri] of Object.entries(rules).sort()) {
+    if (!(id in cur)) s.added.push({ id, priority: pri });
+    else if (cur[id] === pri) s.unchanged++;
+    else if (keep && mode === 'merge') s.kept_mine++;
+    else s.changed.push({ id, from: cur[id], to: pri });
+  }
+  if (mode === 'replace') s.removed = Object.entries(cur).filter(([id]) => !(id in rules)).map(([id, priority]) => ({ id, priority })).sort((a, b) => a.id.localeCompare(b.id));
+  if (!dry && !invalid.length) {
+    s.applied = true;
+    for (const x of s.added) mock.rules[`${fw.id}|${x.id}`] = x.priority;
+    for (const x of s.changed) mock.rules[`${fw.id}|${x.id}`] = x.to;
+    for (const x of s.removed) delete mock.rules[`${fw.id}|${x.id}`];
+  }
+  return s;
+}
+async function apiRulesImport(fw, data, mode, keep, dry) {
+  if (MOCK) return mockRulesImport(fw, data, mode, keep, dry);
+  const r = await fetch('/api/msgrules/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, dry_run: dry, keep_mine: keep, data }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.status);
+  return j;
+}
+
+async function exportRules(fw) {
+  if (fw.host) { toast(`Message rules are per machine: export them on ${fw.host}`); return; }
+  try {
+    if (MOCK) {
+      const rules = Object.fromEntries(Object.entries(mockRulesCurrent(fw)).map(([k, v]) => [k, { priority: v }]));
+      const doc = { format: 'vmon-message-rules', version: 1, exported_at: Math.round(nowS()), exported_by: '', rules };
+      saveBlob(new Blob([JSON.stringify(doc, null, 1)], { type: 'application/json' }), `vmon_message_rules_${new Date().toISOString().slice(0, 10)}.json`);
+      toast('Mock mode: saved the mock rules file');
+      return;
+    }
+    const r = await fetch('/api/msgrules/export', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'vmon_message_rules.json';
+    saveBlob(await r.blob(), name);
+    toast(`Saved ${name}`);
+  } catch (e) { toast(`Could not export the rules: ${e.message}`); }
+}
+
+function rdList(title, items, line) {
+  if (!items.length) return '';
+  const shown = items.slice(0, 200).map((x) => `<li>${line(x)}</li>`).join('');
+  return `<section class="rd-sec"><h3>${title} <b>${items.length}</b></h3><ul class="rd-list">${shown}${items.length > 200 ? `<li class="rd-more">and ${items.length - 200} more</li>` : ''}</ul></section>`;
+}
+function rulesDialogHTML() {
+  const s = rd.sum, replace = rd.mode === 'replace';
+  const pri = (p) => `<span class="rd-pri ${p === 'mute' ? 'mute' : p === 'high' ? 'star' : ''}">${esc(priLabel(p))}</span>`;
+  let body;
+  if (rd.err) body = `<div class="rd-err" role="alert">${esc(rd.err)}</div>`;
+  else if (!s) body = '<div class="none">Checking the file…</div>';
+  else {
+    const change = s.added.length + s.changed.length + s.removed.length;
+    body = `<p class="rd-sum" aria-live="polite">${s.added.length} added · ${s.changed.length} changed${replace ? ` · ${s.removed.length} removed` : ''} · ${s.unchanged} unchanged${s.kept_mine ? ` · ${s.kept_mine} kept as yours` : ''}${s.invalid.length ? ` · <span class="bad">${s.invalid.length} invalid</span>` : ''}</p>`
+      + (replace ? `<p class="rd-warn">Replace discards your current rules that are not in this file${s.removed.length ? ` (${s.removed.length} below)` : ''}. Export first if you want a backup.</p>` : '')
+      + (s.invalid.length ? '<p class="rd-warn">The file has invalid entries. Fix them (or ask the sender) before importing; nothing is applied until it is clean.</p>' : '')
+      + rdList('Invalid', s.invalid, (x) => `<span class="mono">${esc(x.id || '(empty id)')}</span> <span class="rd-why">${esc(x.error)}</span>`)
+      + rdList('Added', s.added, (x) => `<span class="mono">${esc(x.id)}</span> ${pri(x.priority)}`)
+      + rdList('Changed', s.changed, (x) => `<span class="mono">${esc(x.id)}</span> ${pri(x.from)} <span aria-label="to">→</span> ${pri(x.to)}`)
+      + rdList('Removed', s.removed, (x) => `<span class="mono">${esc(x.id)}</span> ${pri(x.priority)}`)
+      + (change || s.invalid.length ? '' : '<div class="none">Nothing to change: this file matches your rules.</div>');
+  }
+  const can = rd.sum && !rd.err && !rd.sum.invalid.length && (rd.sum.added.length + rd.sum.changed.length + rd.sum.removed.length) > 0 && !rd.busy;
+  return `<div class="mbox rbox" role="dialog" aria-modal="true" aria-labelledby="rd-title">
+    <div class="mhead"><b id="rd-title">Import message rules</b><button class="icon-btn" data-rd="cancel" aria-label="Close">✕</button></div>
+    <div class="rd-opts"><label><input type="radio" name="rd-mode" value="merge" ${replace ? '' : 'checked'}> Merge <small>keep your other rules; the file wins on conflicts</small></label>
+      <label class="${replace ? 'sel-replace' : ''}"><input type="radio" name="rd-mode" value="replace" ${replace ? 'checked' : ''}> Replace <small>discard your current rules, use only this file</small></label>
+      <label class="rd-keep"><input type="checkbox" data-rd="keep" ${rd.keep ? 'checked' : ''} ${replace ? 'disabled' : ''}> Keep my priority when both define a message</label></div>
+    <div class="rd-body">${body}</div>
+    <div class="rd-foot"><button class="mv-btn" data-rd="cancel">Cancel</button><button class="mv-btn primary${replace ? ' danger' : ''}" data-rd="apply" ${can ? '' : 'disabled'}>${rd.busy ? 'Applying…' : replace ? 'Replace my rules' : 'Apply'}</button></div></div>`;
+}
+function renderRules() {
+  const el = rd.el; if (!el) return;
+  const key = document.activeElement && el.contains(document.activeElement) ? document.activeElement.dataset.rd || document.activeElement.value : null;
+  el.innerHTML = rulesDialogHTML();
+  if (key) { const t = [...el.querySelectorAll('[data-rd],[name="rd-mode"]')].find((x) => (x.dataset.rd || x.value) === key && !x.disabled); if (t) t.focus(); }
+}
+async function previewRules() {
+  const seq = ++rd.seq; rd.sum = null; rd.err = null; renderRules();
+  try {
+    const s = await apiRulesImport(rd.fw, rd.data, rd.mode, rd.keep, true);
+    if (seq === rd.seq) { rd.sum = s; renderRules(); }
+  } catch (e) { if (seq === rd.seq) { rd.err = e.message; renderRules(); } }
+}
+function openRules(fw, data) {
+  if (!rd.el) {
+    const el = rd.el = h('div', 'modal'); el.id = 'rules-dialog'; document.body.appendChild(el);
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-rd]'); if (e.target === el || (b && b.dataset.rd === 'cancel')) closeRules(); else if (b && b.dataset.rd === 'apply') applyRules(); });
+    el.addEventListener('change', (e) => {
+      if (e.target.name === 'rd-mode') { rd.mode = e.target.value; previewRules(); }
+      else if (e.target.dataset.rd === 'keep') { rd.keep = e.target.checked; previewRules(); }
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const f = [...el.querySelectorAll('button:not([disabled]),input:not([disabled])')];
+      if (!f.length) return;
+      const i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    });
+  }
+  Object.assign(rd, { fw, data, mode: 'merge', keep: false, busy: false, ret: document.activeElement });
+  rd.el.hidden = false;
+  previewRules();
+  $('[data-rd="cancel"]', rd.el).focus();
+}
+function closeRules() {
+  if (!rd.el || rd.el.hidden) return false;
+  rd.el.hidden = true; rd.seq++;
+  if (rd.ret && rd.ret.isConnected) rd.ret.focus();
+  return true;
+}
+async function applyRules() {
+  if (rd.busy || !rd.sum) return;
+  const { fw, mode } = rd;
+  rd.busy = true; renderRules();
+  try {
+    const s = await apiRulesImport(fw, rd.data, mode, rd.keep, false);
+    closeRules();
+    toast(`Rules imported: ${s.added.length} added, ${s.changed.length} changed${mode === 'replace' ? `, ${s.removed.length} removed` : ''}`);
+    for (const m of ui.mv.values()) m.rev++;
+    if (MOCK) { for (const f of state.firmwares) f.top_messages = mockTop(f); render(); } else ensureTriage(fw);
+  } catch (e) { rd.busy = false; renderRules(); toast(`Import failed: ${e.message}`); }
+}
+document.addEventListener('change', async (ev) => {
+  if (!ev.target.classList.contains('mv-file')) return;
+  const file = ev.target.files[0]; ev.target.value = '';
+  const fw = curFw(); if (!file || !fw) return;
+  if (file.size > MAX_RULES_FILE) { toast('That file is too large to be a rules file (over 2 MB)'); return; }
+  try { openRules(fw, JSON.parse(await file.text())); } catch { toast('That file is not valid JSON'); }
+});
+function rulesDemo(fw) {       // mock + #rulesdemo=1: current rules and a canned file that shows every kind of line
+  const ids = mockTriage(fw, { sev: SEV_ALL }).groups.map((g) => g.id);
+  [[0, 'high'], [1, 'mute'], [2, 'high'], [3, 'mute']].forEach(([i, p]) => { if (ids[i]) mock.rules[`${fw.id}|${ids[i]}`] = p; });
+  const rules = { [ids[0]]: { priority: 'high' }, [ids[1]]: { priority: 'high', note: 'now matters' }, [ids[2]]: { priority: 'mute' },
+    [ids[4] || 'Synth 8-6014']: { priority: 'mute' }, [ids[5] || 'Place 30-574']: { priority: 'high' }, 'Bad 1-1': { priority: 'pin' } };
+  openRules(fw, { format: 'vmon-message-rules', version: 1, exported_at: 1760000000, exported_by: '', rules });
 }
 
 for (const [type, on] of [['mouseover', true], ['mouseout', false], ['focusin', true], ['focusout', false]]) document.addEventListener(type, (ev) => pathHover(ev, on));
@@ -1837,7 +2045,7 @@ document.addEventListener('keydown', (ev) => {
     ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
     return;
   }
-  if (ev.key === 'Escape') { if (closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) { if (hist.cmp) { hist.cmp = null; renderHistory(); } else setHistory(false); } return; }
+  if (ev.key === 'Escape') { if (closeRules() || closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) { if (hist.cmp) { hist.cmp = null; renderHistory(); } else setHistory(false); } return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
   const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
@@ -2105,8 +2313,10 @@ async function watchAndOpen(path) {
 // A history row opens its project in the standard view: its tab if loaded, else the project is watched again.
 // The view always shows the project's current (latest) build, since the run directory is reused by every build.
 async function openFromHistory(fwId, project, name) {
-  const loaded = state.firmwares.find((f) => f.id === fwId) || (project && fwForPath(project));
+  const remote = fwId.includes('~'); // its project path is on another machine: never match it against local paths
+  const loaded = state.firmwares.find((f) => f.id === fwId) || (!remote && project && fwForPath(project));
   if (loaded) { openFirmware(loaded.id); return; }
+  if (remote) { toast(`${name} is not loaded on ${fwId.split('~')[0]}: open it there`); return; }
   if (!project) { toast(`No project path recorded for ${name}`); return; }
   if (MOCK) { toast(`Mock mode: would open ${project}`); return; }
   await watchAndOpen(project);
@@ -2261,6 +2471,22 @@ function updateMeters(sys) {
   }
 }
 
+/* ---- remote vmon instances: one dot per host, only when some are configured */
+const remEl = $('#remotes');
+const fmtClockS = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+function remoteTip(r) {
+  const lines = [`${r.name} · ${r.url}`, r.online ? `online · updated ${fmtClockS(r.last_ok)}` : `${r.error || 'unreachable'}${r.last_ok ? ` · last update ${fmtClockS(r.last_ok)}` : ''}`,
+    `${r.firmwares} firmware${r.firmwares === 1 ? '' : 's'}`];
+  const sys = r.system;
+  if (sys && sys.cpu_pct != null) lines.push(`CPU ${Math.round(sys.cpu_pct)}% · RAM ${gb(sys.mem_used_mb)}/${gb(sys.mem_total_mb)} GB${r.online ? '' : ' (last known)'}`);
+  return lines.join('\n');
+}
+function renderRemotes(list) {
+  list = list || [];
+  remEl.hidden = !list.length;
+  setHTML(remEl, list.map((r) => { const tip = remoteTip(r); return `<span class="rdot" tabindex="0" role="img" data-state="${r.online ? 'online' : 'offline'}" title="${esc(tip)}" aria-label="${esc(tip.replace(/\n/g, ', '))}"><i></i><span>${esc(r.name)}</span></span>`; }).join(''));
+}
+
 const updatedEl = $('#updated');
 const ivlEl = $('#ivl');
 const curInterval = () => (state.settings && state.settings.interval) || 1;
@@ -2383,7 +2609,14 @@ function startMock() {
   setConn('mock', 'mock data');
   const s = syncJson('mock/state.json');
   shiftTimes(s, nowS() - s.generated_at);
+  // Remote demo firmwares are copies of local ones under a host (keeps mock/state.json small).
+  for (const c of s.mock_remote_clones || []) {
+    const src = s.firmwares.find((f) => f.id === c.from);
+    if (src) { const { from, ...over } = c; s.firmwares.push({ ...JSON.parse(JSON.stringify(src)), ...over }); }
+  }
+  delete s.mock_remote_clones;
   for (const f of s.firmwares) f.top_messages = mockTop(f);
+  if (params.get('remote') === 'off') for (const r of s.remotes) { r.online = false; r.error = 'connection refused'; r.last_ok -= 720; } // ?remote=off demos the unreachable state
   mock.logs.lockin = syncJson('mock/log_lockin.json');
   setState(s);
   setInterval(mockAdvance, 1000);
@@ -2874,14 +3107,17 @@ async function summaryText(fw, build) {
   if (!r.ok) throw new Error('no recorded build to summarise');
   return r.text();
 }
+function saveBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 async function exportMarkdown(fw, build) {
   try {
     const r = await fetch(MOCK ? mockSummaryUrl(fw, build, 'md') : summaryUrl(fw, build, 'md', true), { cache: 'no-store' });
     if (!r.ok) throw new Error('no recorded build to summarise yet');
     const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || `${fw}_${build}_summary.md`;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    saveBlob(await r.blob(), name);
     toast(`Saved ${name}`);
   } catch (e) { toast(`Could not export the summary: ${e.message}`); }
 }
@@ -2897,7 +3133,7 @@ function hxRow(b, loaded, hasPrev) {
   return `<tr class="go${picked ? ' picked' : ''}" data-act="hrow" ${ds} title="${esc(tip)}">
     <td class="pick" data-label="Compare">${ck}</td>
     <td class="when" data-label="Date">${fmtWhen(b.started_at)}${prev}</td>
-    <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
+    <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${b.host ? `<span class="hbadge" title="Built on ${esc(b.host)}">${esc(b.host)}</span>` : ''}${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
     <td class="dur" data-label="Duration">${fmtDur(b.duration_s)}</td>
     <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
     <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
@@ -2910,8 +3146,8 @@ function renderHistory() {
   if (hist.cmp) { renderCompare(); return; }
   if (!d && !hist.error) { setHTML(hist.root, '<div class="hx-empty">Loading…</div>'); return; }
   const fws = [...(d ? d.firmwares : [])];
-  for (const f of state.firmwares) if (!fws.some((x) => x.id === f.id)) fws.push({ id: f.id, name: f.name });
-  const opts = `<option value=""${hist.fw ? '' : ' selected'}>All firmwares</option>` + fws.map((f) => `<option value="${esc(f.id)}"${f.id === hist.fw ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
+  for (const f of state.firmwares) if (!fws.some((x) => x.id === f.id)) fws.push({ id: f.id, name: f.name, host: f.host });
+  const opts = `<option value=""${hist.fw ? '' : ' selected'}>All firmwares</option>` + fws.map((f) => `<option value="${esc(f.id)}"${f.id === hist.fw ? ' selected' : ''}>${esc(fwLabel(f))}</option>`).join('');
   const builds = d ? [...d.builds].sort((a, b) => (hist.asc ? 1 : -1) * ((a.started_at || 0) - (b.started_at || 0))) : [];
   const loaded = new Set(state.firmwares.map((f) => f.id));
   const arrow = hist.asc ? '↑' : '↓';
@@ -2926,7 +3162,7 @@ function renderHistory() {
   const act = document.activeElement, keep = act && hist.root.contains(act) && act.dataset.act && act.dataset.build ? `[data-act="${act.dataset.act}"][data-build="${act.dataset.build}"][data-fw="${act.dataset.fw}"]` : null;
   setHTML(hist.root, `<div class="hx-head"><h1>Build history</h1><span class="hx-n">${builds.length} build${builds.length === 1 ? '' : 's'}</span>
     <div class="hx-tools"><span class="hx-hint" aria-live="polite">${hint}</span>${n ? '<button type="button" class="hx-back" data-act="hclear">Clear</button>' : ''}<button type="button" class="hx-go" data-act="hcompare"${n === 2 ? '' : ' disabled'} title="Compare the two selected builds">Compare</button><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
-    <div class="hx-wrap">${body}</div>`);
+    ${d && d.unreachable && d.unreachable.length ? `<div class="hx-note">Not included: ${esc(d.unreachable.join(', '))} unreachable</div>` : ''}<div class="hx-wrap">${body}</div>`);
   if (focusSel) $('select', hist.root).focus();
   else if (keep) { const k = $(keep, hist.root); if (k) k.focus(); }
 }

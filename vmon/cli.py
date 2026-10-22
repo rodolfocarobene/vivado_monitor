@@ -1,12 +1,16 @@
 import argparse
 import json
 import os
+import re
+import socket
+import subprocess
 import sys
 import urllib.request
 import threading
 import webbrowser
 
 from .config import load_config
+from . import remote as remote_mod
 from .monitor import Monitor
 from .server import make_server
 
@@ -19,12 +23,26 @@ def main(argv=None):
     parser.add_argument("--interval", type=float, default=1.0)
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--config", help="extra flows.toml merged over the defaults")
+    parser.add_argument("--remote", action="append", default=[], metavar="NAME=URL",
+                        help="aggregate another vmon, e.g. one reached through an SSH tunnel (repeatable)")
+    parser.add_argument("--ssh", action="append", default=[], metavar="USER@HOST[:PORT]",
+                        help="start an ssh tunnel to the vmon on that host and aggregate it (repeatable)")
     args = parser.parse_args(argv)
 
     if _is_vmon(args.host, args.port):
+        if args.remote or args.ssh:
+            print("vmon: --remote/--ssh ignored, a vmon is already running on this port", file=sys.stderr)
         return _reuse_running(args)
 
-    monitor = Monitor(load_config(args.config), interval=args.interval)
+    try:
+        remotes = [remote_mod.parse_spec(spec) for spec in args.remote]
+        monitor = Monitor(load_config(args.config), interval=args.interval, remotes=remotes)
+    except ValueError as exc:
+        print("vmon: %s" % exc, file=sys.stderr)
+        return 2
+    tunnels = _open_tunnels(args.ssh, monitor)
+    if tunnels is None:
+        return 2
     for path in args.paths:
         if monitor.add_path(path) is None:
             print("vmon: ignoring %s (not a .runs dir, .xpr or log file)" % path, file=sys.stderr)
@@ -37,6 +55,8 @@ def main(argv=None):
             print("vmon: port %d busy (%s), trying %d" % (port, exc.strerror, port + 1), file=sys.stderr)
     if server is None:
         print("vmon: no free port in %d-%d" % (args.port, args.port + PORT_TRIES - 1), file=sys.stderr)
+        for tunnel in tunnels:
+            tunnel.terminate()
         return 1
     monitor.start()
     url = "http://%s:%d" % (args.host, server.server_address[1])
@@ -50,10 +70,36 @@ def main(argv=None):
     finally:
         monitor.stop()
         server.server_close()
+        for tunnel in tunnels:
+            tunnel.terminate()
     return 0
 
 
 PORT_TRIES = 10
+
+
+def _free_port():
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+def _open_tunnels(targets, monitor):
+    """Start one `ssh -N -L` child per --ssh target and register it as a remote; None on a bad target."""
+    tunnels = []
+    for target in targets:
+        port = _free_port()
+        try:
+            argv = remote_mod.ssh_argv(target, port)
+            name = re.sub(r"[^A-Za-z0-9_-]", "-", argv[-1].rpartition("@")[2])[:32]
+            monitor.remotes.add(name, "http://127.0.0.1:%d" % port)
+            tunnels.append(subprocess.Popen(argv, stdin=subprocess.DEVNULL))
+        except (ValueError, OSError) as exc:
+            print("vmon: --ssh %s: %s" % (target, exc), file=sys.stderr)
+            for tunnel in tunnels:
+                tunnel.terminate()
+            return None
+    return tunnels
 
 
 def _is_vmon(host, port):

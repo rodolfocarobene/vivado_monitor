@@ -226,7 +226,25 @@ GET  /api/messages?fw=&node=&id=<msg id>&limit=   (new optional `id` filter; nod
 GET  /api/log?fw=&log=<path>&around=<line>&context=30   (log excerpt around a line; path must be a known log)
 POST /api/msgrule {"id": "Synth 8-327", "priority": "high"|"mute"|null(=remove)}
 POST /api/settings {"interval": 0.5..60}
+GET  /api/msgrules/export[?by=<free text>]   -> the rules file below, Content-Disposition attachment "vmon_message_rules_<YYYY-MM-DD>.json"
+POST /api/msgrules/import {"mode": "merge"|"replace", "dry_run": true (default)|false, "keep_mine": false, "data": <file>}
+     -> {"mode","dry_run","applied": bool, "added": [{id, priority}], "changed": [{id, from, to}],
+         "removed": [{id, priority}] (replace only), "unchanged": n, "kept_mine": n, "invalid": [{id, error}]}
 ```
+Rules file (message rule sharing), also what `GET /api/msgrules/export` returns:
+```
+{"format": "vmon-message-rules", "version": 1, "exported_at": <epoch>, "exported_by": "" (free text, never filled in automatically),
+ "rules": {"<msg id>": {"priority": "critical"|"high"|"medium"|"low"|"mute", "note": optional str <= 200}}}
+```
+- The reader also accepts the raw `message_rules.json` shape `{"<id>": "<priority>"}` (no `format` key), so a teammate can send that file as is.
+- Strict: unknown `format` or a `version` other than 1, a non-object `rules`, more than 5000 rules, or a body over 2 MB (413) is a
+  400 with a message. Per-entry problems (id empty or over 200 characters, priority not in the set above, note not a string or over
+  200 characters) are listed in `invalid`; a dry run returns them with 200, applying a file with any invalid entry is a 422 and
+  imports nothing. Notes are validated but not stored (vmon keeps one priority per id).
+- Merge: imported rules win on conflicts; `keep_mine` keeps your priority for ids you already have (counted in `kept_mine`);
+  ids not in the file are untouched. Replace: your rules become exactly the file (`removed` lists what is dropped).
+  Applying writes `message_rules.json` atomically (temp file + rename) and rescores immediately. Local only, like `/api/msgrule`.
+- No shared read-only team file: a team shares a rules file (git, chat) and each member imports it (merge, optionally `keep_mine`).
 
 ### v2 implementation notes (deviations / detail)
 - `[messages.keywords]` is an array of tables: `[[messages.keywords]]` (TOML cannot mix table and array under one name).
@@ -516,6 +534,26 @@ GET /api/history/artifact?fw=&build=&path=  -> application/octet-stream, Content
   shows "Export summary" (Markdown of its latest recorded build) and "HTML" next to the view switch. Mock: static/mock/summary_<fw>_<build>.md|html.
 - UI: top-bar History button / `h` / `#page=history`; table of builds with firmware filter (default: current firmware).
 
+## Remote vmon instances
+
+Config `[remote]` / `--remote NAME=URL` / `--ssh USER@HOST[:PORT]` (docs/configuration.md); nothing is contacted by default.
+```
+State.remotes = [{"name": str,                  # [A-Za-z0-9_-]{1,32}
+                  "url": str,                   # scheme://host:port only
+                  "online": bool, "last_ok": epoch|null, "error": str|null,   # error never contains a URL
+                  "version": int|null,          # the remote's State.version
+                  "system": State.system|null,  # last known meters of the remote
+                  "firmwares": int}]            # [] when no remote is configured
+Firmware.host = str|null                        # null for local firmwares
+Firmware.id   = "<host>~<remote id>" for remote firmwares (local ids are unchanged and never contain "~")
+```
+`State.firmwares` is the local list followed by the remote ones. An offline remote keeps its last snapshot (the UI marks it stale).
+Every route with `fw=` accepts a namespaced id and is answered by that remote with the original id; unknown host 404, unreachable or
+redirecting remote 502 `{"error"}`. `/api/history`, `/api/history/build` and `/api/history/compare` answers carry the namespaced `fw_id`
+(history builds also `host`; firmware entries `host`). `GET /api/history` without `fw` merges in the builds of online remotes
+and adds `"unreachable": [name]`. `POST /api/watch`, `/api/browse`, `/api/msgrule`, `/api/msgrules/*`, `/api/notify`, `/api/settings` are local.
+UI: host badge on tabs and history rows, "on <host>" in the header, a dot per remote in the top bar; mock: `?mock=1` has a remote `buildsrv`, `&remote=off` shows it unreachable.
+
 ## Notifications outside the browser
 
 Config `[notify]` (see docs/configuration.md); all channels disabled by default. Only live events are sent (never those present at startup).
@@ -537,3 +575,23 @@ Generic webhook body (`POST`, `application/json`):
  "body": "<step>: <message>", "t": epoch, "project": "<runs dir>"}
 ```
 `kind` is `test` for the test button and `summary` for the "N more events" rate-limit message.
+
+## Recommended actions (hints)
+```
+Firmware.hints = [Hint]            # [] when nothing applies; warnings first, then flows.toml order
+Hint = {"id", "title", "severity": "info"|"warning", "text",    # text = why this matters (static)
+        "evidence": "WHS -0.034 ns after Route Design (final)",  # what fired it (computed from the model)
+        "actions": [{"text", "command"?, "doc_url"?}], "node_id": step node id | null}
+```
+- Declared as `[[hints]]` in flows.toml (`id`, `title`, `severity`, `text`, `actions`, optional `step`, `when`); `when` is a
+  table of conditions combined with AND, plus an optional `any` list of condition tables (OR). Conditions: `alert_codes`,
+  `message_ids` (glob), `message_re`, `min_severity` (modifier for the two message conditions), `failure_re`, `status`,
+  `timing = {final, stage, wns_lt, tns_lt, whs_lt, ths_lt}`, `worst_path = {type, top, route_pct_ge, logic_pct_ge,
+  levels_ge, fanout_ge}`, `congestion_level_ge`, `convergence_trend`, `util_pct_ge = {any|<resource>: pct}`, `step_done`.
+  Unknown condition keys make config loading fail with the hint id.
+- `node_id` is the step node named by `step` (null when absent in this flow); the UI shows a hint in that stage's detail.
+  Hints without `step` only appear in the recap card.
+- Evaluated every tick over the model by `vmon/hints.py`; `worst_path` reads the compact paths of the report that `timing`
+  picked (else the latest, final first), `message_*` the aggregated warning+ groups of the firmware (cached per message
+  generation). Carried (stale) timing values and non-final timing with `final = true` never fire. A user hint with the same
+  id as a built-in replaces it; `[hints_config] disabled = [ids]` switches built-ins off.

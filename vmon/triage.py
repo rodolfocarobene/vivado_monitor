@@ -9,6 +9,8 @@ import re
 import threading
 from pathlib import Path
 
+from . import rules_io
+
 PRIORITIES = ("critical", "high", "medium", "low", "mute")
 SEV_ORDER = {"info": 0, "warning": 1, "critical": 2, "error": 3}
 
@@ -60,7 +62,7 @@ class UserRules:
 
     def set(self, msg_id, priority):
         """priority None removes the override. Raises ValueError on bad input."""
-        if not isinstance(msg_id, str) or not msg_id.strip() or len(msg_id) > 200:
+        if not rules_io.valid_id(msg_id):
             raise ValueError("bad id")
         if priority is not None and priority not in PRIORITIES:
             raise ValueError("priority must be one of %s or null" % ", ".join(PRIORITIES))
@@ -71,12 +73,25 @@ class UserRules:
             else:
                 self.rules[msg_id] = priority
             self.version += 1
-            if not self.rules and not self.path.exists():
-                return
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_name(self.path.name + ".tmp")
-            tmp.write_text(json.dumps(self.rules, indent=1, sort_keys=True))
-            os.replace(tmp, self.path)
+            self._write()
+
+    def import_rules(self, incoming, mode, keep_mine=False, dry_run=True):
+        """Diff (and, unless dry_run, atomically apply) validated incoming rules; returns the summary."""
+        with self.lock:
+            result, summary = rules_io.plan(self.rules, incoming, mode, keep_mine)
+            if not dry_run and (summary["added"] or summary["changed"] or summary["removed"]):
+                self.rules = result
+                self.version += 1
+                self._write()
+        return summary
+
+    def _write(self):
+        if not self.rules and not self.path.exists():
+            return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_name(self.path.name + ".tmp")
+        tmp.write_text(json.dumps(self.rules, indent=1, sort_keys=True))
+        os.replace(tmp, self.path)
 
 
 class BaselineStore:

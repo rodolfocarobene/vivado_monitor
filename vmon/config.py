@@ -3,6 +3,8 @@ import re
 import tomllib
 from pathlib import Path
 
+from . import hints as hints_mod
+
 PACKAGE_DIR = Path(__file__).parent
 DEFAULT_FLOWS = PACKAGE_DIR / "flows.toml"
 USER_FLOWS = Path.home() / ".config" / "vmon" / "flows.toml"
@@ -197,6 +199,7 @@ class Config:
         self.artifacts = ArtifactConfig(data.get("artifacts", {}))
         self.convergence = ConvergenceConfig(data.get("convergence", {}))
         self.congestion = CongestionConfig(data.get("congestion", {}))
+        self.hints = hints_mod.compile_hints(data)
         self._rules_by_char = {}
 
     def rules_for(self, first_char):
@@ -219,10 +222,24 @@ class Config:
 
 
 def load_config(extra_path=None):
+    """Defaults + ~/.config/vmon/flows.toml + --config file. Tables deep-merge, lists and scalars are replaced,
+    except [[hints]] (merged by id) and hints_config.disabled (united across files)."""
     with open(DEFAULT_FLOWS, "rb") as fh:
         data = tomllib.load(fh)
+    disabled = list(data.get("hints_config", {}).get("disabled", []))
     for path in (USER_FLOWS, Path(extra_path) if extra_path else None):
         if path and path.is_file():
             with open(path, "rb") as fh:
-                data = deep_merge(data, tomllib.load(fh))
+                layer = tomllib.load(fh)
+            hints = layer.pop("hints", None)
+            if hints is not None and not isinstance(hints, list):
+                raise hints_mod.ConfigError("hints must be an array of tables ([[hints]]), not a single table")
+            more = layer.get("hints_config", {}).get("disabled", [])
+            disabled += more if isinstance(more, list) else [more]
+            merged_hints = hints_mod.merge_hint_lists(data.get("hints", []), hints) if hints is not None else data.get("hints", [])
+            data = deep_merge(data, layer)
+            data["hints"] = merged_hints
+    if disabled:
+        data.setdefault("hints_config", {})["disabled"] = disabled
+        data["hints"] = hints_mod.apply_disabled(data.get("hints", []), disabled)
     return Config(data)

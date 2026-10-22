@@ -1056,3 +1056,159 @@ access_token_env = ""
 enabled = false
 url = ""                           # receives the event as JSON (or url_env)
 url_env = ""
+
+# ---------------------------------------------------------------- remote vmon instances
+# Aggregate other vmons (usually behind an SSH tunnel: ssh -N -L 9001:127.0.0.1:8765 user@server).
+[remote]
+hosts = []                         # [{name = "buildsrv", url = "http://127.0.0.1:9001"}]; name: [A-Za-z0-9_-]{1,32}
+interval_s = 3                    # seconds between polls of each remote
+timeout_s = 5                      # per request to a remote
+
+# ---------------------------------------------------------------- recommended actions
+# Rule-based hints (see docs/configuration.md#recommended-actions). A hint fires when every condition of `when`
+# holds (and one of the `when.any` tables, if present); `evidence` is built from the matching model values.
+# Advice follows UG906 (design analysis and closure), UG949 (methodology) and UG904 (implementation).
+# Only final timing triggers timing hints, so an estimate never produces advice (never cry wolf).
+[hints_config]
+disabled = []                                     # built-in hint ids to switch off (united across config files)
+util_any_resources = ["LUT", "FF", "BRAM", "URAM", "DSP"]   # what util_pct_ge = {any = N} looks at (IO and clocks are not closure risks)
+
+[[hints]]
+id = "hold_after_route"
+title = "Fix hold violations after route"
+severity = "warning"
+step = "route_design"
+text = "Final hold slack is negative. The router normally fixes hold, so remaining violations usually come from large clock skew or an unconstrained or mis-constrained clock crossing."
+actions = [
+  {text = "Run a post-route physical optimization that targets hold", command = "phys_opt_design -directive ExploreWithHoldFix", doc_url = "phys_opt_design"},
+  {text = "Check clock skew and the clock-crossing (CDC) constraints on the failing paths", command = "report_clock_interaction -delay_type min_max"},
+]
+when = {timing = {final = true, whs_lt = 0}}
+
+[[hints]]
+id = "setup_route_dominated"
+title = "Setup paths are dominated by routing delay"
+severity = "warning"
+step = "route_design"
+text = "The worst setup path spends most of its delay in routing, which points to placement spread or congestion rather than logic depth."
+actions = [
+  {text = "Retry the router with a more aggressive directive", command = "route_design -directive AggressiveExplore", doc_url = "route_design"},
+  {text = "Run post-route physical optimization", command = "phys_opt_design -directive AggressiveExplore", doc_url = "phys_opt_design"},
+  {text = "Look at congestion and placement of the failing paths", command = "report_design_analysis -congestion", doc_url = "report_design_analysis"},
+]
+when = {timing = {final = true, wns_lt = 0}, worst_path = {type = "setup", route_pct_ge = 60}}
+
+[[hints]]
+id = "setup_logic_dominated"
+title = "Setup paths have too much logic"
+severity = "warning"
+step = "route_design"
+text = "The worst setup path is dominated by cell delay or has many logic levels, so placement and routing options will not help much; the design needs fewer levels between registers."
+actions = [
+  {text = "Add pipeline registers on the failing paths, or enable retiming in synthesis", command = "synth_design -retiming", doc_url = "synth_design"},
+  {text = "Review the distribution of logic levels", command = "report_design_analysis -logic_level_distribution", doc_url = "report_design_analysis"},
+]
+when = {timing = {final = true, wns_lt = 0}, any = [{worst_path = {type = "setup", logic_pct_ge = 60}}, {worst_path = {type = "setup", levels_ge = 10}}]}
+
+[[hints]]
+id = "high_fanout_worst_path"
+title = "High-fanout net on a failing path"
+severity = "warning"
+step = "route_design"
+text = "A net with a very large fanout sits on one of the worst setup paths. Replicating its driver shortens the loads each copy has to reach."
+actions = [
+  {text = "Replicate the driver of that net after placement", command = "phys_opt_design -force_replication_on_nets [get_nets <net>]", doc_url = "phys_opt_design"},
+  {text = "Or limit the fanout in the RTL or constraints", command = "set_property MAX_FANOUT 50 [get_nets <net>]"},
+]
+when = {timing = {final = true, wns_lt = 0}, worst_path = {type = "setup", top = 3, fanout_ge = 100}}
+
+[[hints]]
+id = "congestion_high"
+title = "Routing congestion may hurt timing"
+severity = "warning"
+step = "place_design"
+text = "Vivado reports congestion at level 5 or higher, which can make routing slow and timing hard to close."
+actions = [
+  {text = "Place with a directive that spreads logic", command = "place_design -directive AltSpreadLogic_high", doc_url = "place_design"},
+  {text = "Find the congested areas and the modules in them", command = "report_design_analysis -congestion", doc_url = "report_design_analysis"},
+  {text = "Reduce local utilization or wide-bus logic in those areas"},
+]
+when = {congestion_level_ge = 5}
+
+[[hints]]
+id = "router_not_converging"
+title = "Router is not converging"
+severity = "warning"
+step = "route_design"
+text = "The router's overlap count is not dropping across iterations. More iterations rarely fix this; the cause is usually congestion or an over-constrained design."
+actions = [
+  {text = "Consider stopping this run and fixing congestion first", command = "report_design_analysis -congestion", doc_url = "report_design_analysis"},
+  {text = "Place with a spreading directive", command = "place_design -directive AltSpreadLogic_high", doc_url = "place_design"},
+]
+when = {status = ["running"], convergence_trend = ["stalled", "diverging"]}
+
+[[hints]]
+id = "oom_jobs"
+title = "Run ran out of memory"
+severity = "warning"
+text = "The run crashed with an out-of-memory error or was killed with signal 9 (often the Linux OOM killer)."
+actions = [
+  {text = "Run fewer jobs in parallel", command = "launch_runs impl_1 -jobs 2", doc_url = "launch_runs"},
+  {text = "Lower the thread count of each Vivado session", command = "set_param general.maxThreads 4", doc_url = "set_param"},
+  {text = "Free RAM or add swap before relaunching, and check that no other Vivado session is running"},
+]
+when = {status = ["failed", "stopped"], failure_re = '(?i)out of memory|bad_alloc|failed to allocate|signal 9|^killed'}
+
+[[hints]]
+id = "license_lost"
+title = "License problem"
+severity = "warning"
+text = "A step failed because Vivado lost or could not get its license."
+actions = [
+  {text = "Check that the license server is reachable and the feature is available", command = "lmutil lmstat -a -c <port@server>"},
+  {text = "Check the license environment variables (XILINXD_LICENSE_FILE, LM_LICENSE_FILE) and the network or VPN"},
+]
+when = {status = ["failed", "stopped"], failure_re = '(?i)licen[cs]e|flexnet'}
+
+[[hints]]
+id = "latch_inferred"
+title = "Latch inferred in the RTL"
+severity = "warning"
+step = "synth_design"
+text = "Synthesis inferred a latch, which is almost always a missing assignment in a combinational process."
+actions = [
+  {text = "Assign every signal in every branch of the combinational process (or give it a default at the top), then re-synthesize"},
+]
+when = {message_ids = ["Synth 8-327"]}
+
+[[hints]]
+id = "high_utilization"
+title = "Very high resource utilization"
+severity = "info"
+text = "Very full devices make placement and routing harder, so expect longer runs and tougher timing closure."
+actions = [
+  {text = "Reduce use of the resource that is nearly full, or consider a larger device"},
+  {text = "Review utilization by hierarchy", command = "report_utilization -hierarchical", doc_url = "report_utilization"},
+]
+when = {util_pct_ge = {any = 90}}
+
+[[hints]]
+id = "dsp_pipeline_registers"
+title = "DSP or block RAM pipeline registers are not used"
+severity = "info"
+text = "DRC reports DSP blocks with unused input or output registers (DPIP / DPOP checks). Using the internal registers gives the best DSP and block RAM timing."
+actions = [
+  {text = "Enable the DSP input (AREG, BREG) and output (MREG, PREG) registers, and the block RAM output register, where the latency allows"},
+]
+when = {message_ids = ["DRC DPIP-*", "DRC DPOP-*"], timing = {final = true, wns_lt = 0}}   # a timing-closure measure: only when setup fails
+
+[[hints]]
+id = "constraint_problem"
+title = "Clock or constraint mismatch"
+severity = "info"
+text = "Vivado reported a clock period mismatch in an out-of-context module, or a constraint that matched no object. Wrong constraints make timing results unreliable."
+actions = [
+  {text = "Fix the XDC: make the clock period used for the out-of-context run match the top-level constraint, and check the objects that did not match"},
+  {text = "Review the constraints in the methodology report", command = "report_methodology", doc_url = "report_methodology"},
+]
+when = {message_ids = ["Timing 38-316", "Vivado 12-4739"]}

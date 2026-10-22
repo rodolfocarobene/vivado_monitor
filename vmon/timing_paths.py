@@ -87,6 +87,9 @@ def parse_paths(lines, max_paths=200):
         found = block["table"].result() if block["table"] is not None else None
         item["launch"], item["steps"], item["capture"] = found or (None, [], None)
         item["truncated"] = block["table"] is not None and block["table"].truncated
+        nets = [e for e in item["steps"] if e["kind"] == "net"]
+        top = max(nets, key=lambda e: e["fanout"], default=None)
+        item["max_fanout"], item["fanout_net"] = (top["fanout"], top.get("name")) if top else (None, None)
         kind = item["type"]
         counts["total"] += 1
         counts[kind] += 1
@@ -204,5 +207,5 @@ def parse_file(path, max_paths=200):
 def compact(path):
     """Short form of a path for report summaries (state JSON): drops the verbose fields."""
     keep = ("id", "type", "slack", "status", "source", "destination", "source_clock", "dest_clock",
-            "levels", "logic_pct", "route_pct", "skew")
+            "levels", "logic_pct", "route_pct", "skew", "max_fanout", "fanout_net")
     return {k: path[k] for k in keep}

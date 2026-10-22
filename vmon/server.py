@@ -9,7 +9,11 @@ from urllib.parse import parse_qs, urlparse
 
 from . import browse as browse_mod
 from . import history as history_mod
+from . import remote as remote_mod
+from . import rules_io
 from . import summary as summary_mod
+
+DRAIN_CAP_BYTES = 16 * 1024 * 1024   # oversized request bodies up to this size are read and discarded before a 413
 
 STATIC_DIR = Path(__file__).parent / "static"
 HEARTBEAT_S = 15
@@ -52,6 +56,8 @@ def make_server(monitor, host, port):
             url = urlparse(self.path)
             query = parse_qs(url.query)
             route = url.path
+            if route in remote_mod.PROXY_GET and remote_mod.split_id(query.get("fw", [""])[0])[0]:
+                return monitor.remotes.forward(self, route, query)
             if route == "/api/state":
                 return self._send(200, monitor.state_json())
             if route == "/api/events":
@@ -66,6 +72,10 @@ def make_server(monitor, host, port):
                     return self._error(exc.status, str(exc))
             if route == "/api/notify":
                 return self._json(monitor.notifier.status())
+            if route == "/api/msgrules/export":
+                doc = rules_io.export_doc(monitor.user_rules.rules, query.get("by", [""])[0])
+                return self._send(200, json.dumps(doc, indent=1) + "\n", "application/json", {
+                    "Content-Disposition": 'attachment; filename="%s"' % rules_io.export_filename()})
             if route in ("/api/history", "/api/history/report", "/api/history/artifact",
                          "/api/history/build", "/api/history/compare", "/api/history/summary"):
                 return self._history(route, query)
@@ -126,10 +136,21 @@ def make_server(monitor, host, port):
 
         def do_POST(self):
             route = urlparse(self.path).path
+            length = int(self.headers.get("Content-Length") or 0)
+            if route == "/api/msgrules/import" and length > rules_io.MAX_BODY_BYTES:
+                # Drain (not parse) a moderately oversized body first: replying while the client is still
+                # uploading makes it see a broken pipe instead of the 413. Beyond the cap, just hang up.
+                while 0 < length <= DRAIN_CAP_BYTES:
+                    chunk = self.rfile.read(min(65536, length))
+                    if not chunk:
+                        break
+                    length -= len(chunk)
+                self.close_connection = True
+                return self._error(413, "rules file too large (at most %d bytes)" % rules_io.MAX_BODY_BYTES)
             body = self._body()
             if route == "/api/notify/test":
                 return self._json({"results": monitor.notifier.test()})
-            if route not in ("/api/watch", "/api/msgrule", "/api/settings"):
+            if route not in ("/api/watch", "/api/msgrule", "/api/msgrules/import", "/api/settings"):
                 return self._error(404, "not found")
             if body is None:
                 return self._error(400, "bad body")
@@ -139,6 +160,8 @@ def make_server(monitor, host, port):
                 except ValueError as exc:
                     return self._error(400, str(exc))
                 return self._json({"interval": monitor.interval})
+            if route == "/api/msgrules/import":
+                return self._import_rules(body)
             if route == "/api/msgrule":
                 try:
                     monitor.set_msgrule(body.get("id"), body.get("priority"))
@@ -152,11 +175,26 @@ def make_server(monitor, host, port):
             monitor.tick()
             self._json({"id": fw_id})
 
+        def _import_rules(self, body):
+            dry_run, keep_mine = body.get("dry_run", True), body.get("keep_mine", False)
+            if not isinstance(dry_run, bool) or not isinstance(keep_mine, bool):
+                return self._error(400, "dry_run and keep_mine must be booleans")
+            try:
+                summary = monitor.import_msgrules(body.get("data"), body.get("mode"), keep_mine, dry_run)
+            except ValueError as exc:                   # includes RulesFileError
+                return self._error(400, str(exc))
+            if summary["invalid"] and not dry_run:
+                return self._json(dict(summary, error="%d invalid entries, nothing was imported" % len(summary["invalid"])), 422)
+            self._json(summary)
+
         def do_DELETE(self):
             url = urlparse(self.path)
             if url.path != "/api/firmware":
                 return self._error(404, "not found")
-            fw_id = parse_qs(url.query).get("fw", [""])[0]
+            query = parse_qs(url.query)
+            fw_id = query.get("fw", [""])[0]
+            if remote_mod.split_id(fw_id)[0]:
+                return monitor.remotes.forward(self, url.path, query, "DELETE")
             if monitor.forget(fw_id):
                 monitor.tick()
                 return self._json({"ok": True})
@@ -168,7 +206,9 @@ def make_server(monitor, host, port):
             if route == "/api/history":
                 if fw_id and not history_mod.ID_RE.match(fw_id):
                     return self._error(404, "unknown firmware")
-                return self._json(store.listing(fw_id or None, _int(query, "limit", store.cap)))
+                limit = _int(query, "limit", store.cap)
+                listing = store.listing(fw_id or None, limit)
+                return self._json(self._with_remotes(listing, limit) if not fw_id and monitor.remotes else listing)
             if route in ("/api/history/build", "/api/history/compare"):
                 if route == "/api/history/build":
                     record = store.build(fw_id, query.get("build", [""])[0])
@@ -198,6 +238,14 @@ def make_server(monitor, host, port):
                         self.wfile.write(chunk)
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     self.close_connection = True
+
+        @staticmethod
+        def _with_remotes(listing, limit):
+            """The global history also lists the builds of every reachable remote (ids namespaced)."""
+            builds, firmwares, down = monitor.remotes.history(max(1, min(limit, history_mod.BUILD_LIMIT_MAX)))
+            merged = sorted(listing["builds"] + builds, key=lambda b: b.get("started_at") or 0, reverse=True)
+            return {"builds": merged[:max(1, min(limit, history_mod.BUILD_LIMIT_MAX))],
+                    "firmwares": listing["firmwares"] + firmwares, "unreachable": down}
 
         def _summary(self, store, fw_id, query):
             fmt = query.get("format", ["md"])[0]

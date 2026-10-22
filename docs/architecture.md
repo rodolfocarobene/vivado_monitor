@@ -21,6 +21,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `history.py` | Build history store and records (`~/.cache/vmon/history/`), artifact validation for the history API. |
 | `alerts.py`, `triage.py`, `eta.py`, `info.py`, `docs.py` | Alerts, message scoring and baselines, ETA, build info, documentation links. |
 | `sysstats.py`, `browse.py` | System CPU/RAM/swap from `/proc`; read-only directory listing for the folder explorer. |
+| `remote.py` | Remote vmon instances: config/CLI validation, one poller thread per remote, id namespacing, request forwarding. |
 | `monitor.py` | Background thread: each tick discover, update parsers, publish state. |
 | `server.py` | `ThreadingHTTPServer`: static files, JSON API and Server-Sent Events. |
 | `static/` | `index.html`, `app.js`, `style.css` (no build step). `static/mock/` holds the demo data used by `?mock=1`. |
@@ -92,10 +93,25 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 | `GET /api/browse?path=` | Read-only directory listing for the explorer (skips `/proc`, `/sys`, `/dev`). |
 | `POST /api/watch` `{"path": ...}` | Add a `.runs` dir, `.xpr` or log to watch. |
 | `POST /api/msgrule` `{"id": ..., "priority": ...}` | Set or clear a message priority override. |
+| `GET /api/msgrules/export?by=` | Your message rules as a `vmon-message-rules` v1 file (attachment `vmon_message_rules_<YYYY-MM-DD>.json`); `exported_by` is empty unless `by` is given. |
+| `POST /api/msgrules/import` `{"mode": "merge"\|"replace", "dry_run": true, "keep_mine": false, "data": <file>}` | Preview (default) or apply a rules file; returns `{added, changed, removed, unchanged, kept_mine, invalid, applied}`. 400 bad file or options, 413 over 2 MB, 422 when applying a file with invalid entries (nothing is imported). Format in [`SPEC.md`](../SPEC.md). |
 | `POST /api/settings` `{"interval": 0.5..60}` | Change the poll interval. |
 | `DELETE /api/firmware?fw=` | Forget a finished firmware (nothing is deleted on disk). |
 
+Routes that take `fw=` accept `<host>~<id>` for a firmware of a [remote](#remote-vmon-instances) and are forwarded to that host; the table above describes them as the remote answers.
+
 Top-level model: `State` contains `Firmware` objects; each has `flows` of `Node` trees (`group`, `run`, `step`, `command`, `phase`, `task`) with `status`, `counts`, `timing`, `reports`, `alerts`, `expected`/`optional` flags and predicted phase numbers. The full field-level contract is in [`SPEC.md`](../SPEC.md).
+
+## Remote vmon instances
+
+On each build server a normal vmon runs (bound to `127.0.0.1`); its port is forwarded by SSH (`ssh -N -L 9001:127.0.0.1:8765 user@server`) and the local vmon aggregates it (`[remote]`, `--remote`, `--ssh`; see [configuration.md](configuration.md#remote-vmon-instances)). `remote.py` holds the logic; the local monitor tick never waits for the network.
+
+- **Polling**: one daemon thread per remote fetches `GET /api/state` every `interval_s` (timeout `timeout_s`). It keeps the last good snapshot and a status `{name, url (scheme://host:port), online, last_ok, error, version, system, firmwares}`. A failed poll keeps the snapshot and flips `online` to false; `error` is a short reason that never contains a URL. The merged state (and so SSE) is published only when a snapshot or online/error changes.
+- **Merge**: `state.firmwares` is the local list (ids unchanged, `host: null`) followed by each remote's firmwares with `id = "<host>~<remote id>"` and `host = "<host>"`; `state.remotes` holds the statuses. Events and alerts travel inside the firmware objects, so browser notifications cover remote builds. A firmware that already has a `host` (a remote that itself aggregates) is skipped, so chains and loops cannot form. `system` stays local; a remote's last meters are in its status.
+- **Proxy**: for `/api/messages`, `/api/triage`, `/api/log`, `/api/report`, `/api/paths` and every `/api/history/*` route, and `DELETE /api/firmware`, a `fw` of the form `<host>~<id>` is sent to that remote with the original id and all other parameters untouched (the remote validates paths and builds). The status, `Content-Type`, `Content-Length` and `Content-Disposition` are relayed and the body is streamed in 64 KiB chunks, so artifact downloads work. History answers that carry firmware ids (`/api/history`, `/build`, `/compare`) are rewritten to the namespaced id and builds get a `host` field. An unreachable or timed-out remote gives `502 {"error": "remote <host> unreachable: <reason>"}`, a redirect from a remote gives 502, an unknown host prefix gives 404 without any network access.
+- **Global history**: `GET /api/history` without `fw` also lists the builds and firmwares of every online remote (ids namespaced, newest first, same `limit`); `unreachable` lists the remotes that were skipped.
+- **Local only**: `POST /api/watch`, `GET /api/browse`, `/api/msgrule`, `/api/msgrules/*`, `/api/notify` and `/api/settings` act on the machine the UI is served from.
+- **UI**: remote tabs carry the host badge and the header says "on <host>". When a remote is offline its firmwares stay, marked stale ("<host> unreachable · last update HH:MM", hollow ochre dot, frozen clocks), never red. The top bar shows one dot per remote (only when remotes are configured).
 
 ## Message triage
 
@@ -111,6 +127,10 @@ Each completed build is stored (last `[eta] history_builds`, default 20, per fir
 - **Per-clock history**: per-clock values come from the Intra Clock Table of each timing report (`Firmware.clock_history.stages`). When a build finishes, its final values are stored in `~/.cache/vmon/timing/<fw_id>.json` (last 20 builds, keyed by start time; finished builds not yet stored are recorded at startup).
 - **Router convergence**: the parser records every `Number of Nodes with overlaps` value and the following Intermediate Timing Summary per router iteration (`Node.convergence`). The trend (converging / stalled / diverging) and the `route_not_converging` alert use `[convergence]`; the alert is raised for live attempts only.
 - **Congestion**: the parser reads the placer's `Post-Placement Estimated Congestion` table, the router's `Initial Estimated Congestion` table (with or without `% Tiles`) and the final `Congestion Report` (max % and effective level per direction) into `Node.congestion` as it streams (rules `congestion_*`). Region size `NxN` becomes level log2(N). `congestion.summarize` adds the worst level and `ok`/`warn`/`crit` from `[congestion]`; the amber `congestion` alert fires from `warn_level` and is never an error. The UI shows it in a Congestion tab and a `CONG Ln` chip on the stage card.
+
+## Recommended actions
+
+`hints.py` compiles `[[hints]]` at config load (`config.load_config` merges hint lists by id and applies `[hints_config] disabled`; a bad rule raises `ConfigError`, a `ValueError`, naming the hint). `Monitor._hints` evaluates them every tick after the firmware snapshot and stores the result in `Firmware.hints`. A `Facts` object flattens the last flow once (step and run nodes, IP out-of-context runs excluded); conditions only read model fields: alerts, step timing, congestion, convergence, failures, utilization, the compact worst paths of the latest timing report and the aggregated warning-or-worse message groups. Nothing is parsed per tick: paths (including each path's largest net fanout) are produced once per report (mtime, size) by `ReportCache`, and message groups are cached per source message generation. Each hint yields `{id, title, severity, text, evidence, actions, node_id}`; `evidence` is built by the conditions that matched. See [configuration.md](configuration.md#recommended-actions).
 
 ## Build history
 

@@ -27,10 +27,15 @@ def summarize(raw, cfg):
             "warn_level": settings.warn_level, "crit_level": settings.crit_level}
 
 
+def worst(congestion):
+    """(level, source label, direction, slot) of the worst value of a Node.congestion, or None."""
+    return max(_levels(congestion), default=None) if congestion else None
+
+
 def alert_message(congestion, cfg):
     """Warning text when the worst level reaches warn_level, else None."""
     if not congestion or not cfg.congestion.alert or congestion["level"] == "ok":
         return None
-    level, label, direction, slot = max(_levels(congestion))
+    level, label, direction, slot = worst(congestion)
     return ("Congestion level %d during %s (%s %s, threshold %d): may impact timing closure"
             % (level, label, direction, slot, cfg.congestion.warn_level))
