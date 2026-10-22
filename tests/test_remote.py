@@ -109,7 +109,8 @@ def test_command_line_remote_wins_over_config(tmp_path):
     assert {n: r.url for n, r in monitor.remotes.remotes.items()} == {"b": "http://127.0.0.1:2", "a": "http://127.0.0.1:3"}
 
 
-def test_ssh_argv():
+def test_ssh_argv(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "linux")             # the client name differs on Windows (see test_windows_compat)
     assert remote_mod.ssh_argv("me@build.example.org:9000", 9101) == [
         "ssh", "-N", "-o", "ExitOnForwardFailure=yes", "-o", "ServerAliveInterval=30",
         "-L", "9101:127.0.0.1:9000", "--", "me@build.example.org"]

@@ -223,6 +223,7 @@ def test_file_identity_fallbacks(monkeypatch):
     st = lambda **kw: SimpleNamespace(**{"st_ino": 0, "st_ctime_ns": 5, **kw})
     assert file_identity(st(st_ino=7)) == 7
     assert file_identity(st(st_birthtime=1.5)) == "born:1.5"
+    monkeypatch.setattr(sys, "platform", "linux")
     assert file_identity(st()) == 0                                              # no inode, not Windows: size shrink only
     windows(monkeypatch)
     assert file_identity(st()) == "born:5"
@@ -312,6 +313,7 @@ def test_write_atomic_retries_a_locked_target(tmp_path, monkeypatch):
 
 def test_ssh_argv_uses_the_windows_client(monkeypatch):
     from vmon.remote import ssh_argv
+    monkeypatch.setattr(sys, "platform", "linux")
     assert ssh_argv("me@host", 9000)[0] == "ssh"
     windows(monkeypatch)
     argv = ssh_argv("me@host:8800", 9000)
