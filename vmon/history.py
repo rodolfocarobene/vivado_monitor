@@ -1,4 +1,4 @@
-"""Build history: one record per finished build in ~/.cache/vmon/history/<fw_id>.json (read-only on build dirs).
+"""Build history: one record per finished build in <cache dir>/history/<fw_id>.json (read-only on build dirs).
 
 Report files are overwritten by every Vivado run, so an artifact only belongs to a recorded build while its
 current (mtime, size) still equal what was recorded; `current` is computed on read, never stored.
@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 from .eta import phase_durations, step_durations
+from .paths import write_atomic
 
 DEFAULTS = {"max_builds": 100, "bitstream": True, "max_messages": 500,
             "kinds": ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]}
@@ -184,12 +185,9 @@ class HistoryStore:
         else:
             builds[same] = record
         path = self.dir / (fw_id + ".json")
-        tmp = path.with_name(path.name + ".tmp")
         try:
-            self.dir.mkdir(parents=True, exist_ok=True)
-            tmp.write_text(json.dumps({"firmware": {"id": fw_id, "name": record["firmware"]},
-                                       "builds": builds[-self.cap:]}))
-            os.replace(tmp, path)
+            write_atomic(path, json.dumps({"firmware": {"id": fw_id, "name": record["firmware"]},
+                                           "builds": builds[-self.cap:]}))
         except OSError:
             return False
         self.version += 1

@@ -1,15 +1,16 @@
-"""Small persisted summary of earlier attempts per firmware: ~/.cache/vmon/attempts/<fw_id>.json.
+"""Small persisted summary of earlier attempts per firmware: <cache dir>/attempts/<fw_id>.json.
 
 Schema: {"runs": {run_id: {"sig": {...}, "launches": int, "last": {step: [attempt]},
                            "archive": {step: [attempt]}, "sessions": [session]}}}
 """
 import json
-import os
 from pathlib import Path
+
+from .paths import cache_dir, write_atomic
 
 
 def default_dir():
-    return Path.home() / ".cache" / "vmon" / "attempts"
+    return cache_dir() / "attempts"
 
 
 class AttemptStore:
@@ -41,10 +42,7 @@ class AttemptStore:
         if text == self._saved:
             return
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(text)
-            os.replace(tmp, self.path)
+            write_atomic(self.path, text)
             self._saved = text
         except OSError:
             pass

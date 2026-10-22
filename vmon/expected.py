@@ -11,8 +11,13 @@ from pathlib import Path
 
 from .logparse import slug
 from .model import Node
+from .paths import config_dir
 
-CATALOG_DIRS = (Path(__file__).parent / "catalog", Path.home() / ".config" / "vmon" / "catalog")
+
+def catalog_dirs():
+    return (Path(__file__).parent / "catalog", config_dir() / "catalog")
+
+
 _LEADING = re.compile(r"^[\d.]+\s+")
 _REAL_NUMBER = re.compile(r"^\d+(\.\d+)*$")
 
@@ -85,7 +90,8 @@ def _version_key(text):
 
 
 class CatalogSet:
-    def __init__(self, directories=CATALOG_DIRS):
+    def __init__(self, directories=None):
+        directories = catalog_dirs() if directories is None else directories
         self.catalogs = {}
         for directory in directories:
             if not directory.is_dir():

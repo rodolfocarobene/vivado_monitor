@@ -6,6 +6,7 @@ environment proxies ignored, so a remote cannot send us anywhere else.
 import http.client
 import json
 import re
+import sys
 import threading
 import time
 import urllib.error
@@ -323,5 +324,5 @@ def ssh_argv(target, local_port):
     remote_port = int(port) if port else 8765
     if not 0 < remote_port < 65536:
         raise ValueError("bad remote port in %r" % target)
-    return ["ssh", "-N", "-o", "ExitOnForwardFailure=yes", "-o", "ServerAliveInterval=30",
+    return ["ssh.exe" if sys.platform == "win32" else "ssh", "-N", "-o", "ExitOnForwardFailure=yes", "-o", "ServerAliveInterval=30",
             "-L", "%d:127.0.0.1:%d" % (local_port, remote_port), "--", user_host]

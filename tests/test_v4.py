@@ -3,7 +3,9 @@ import os
 import sys
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
+from pathlib import Path
 
 import pytest
 from conftest import FIXTURES, build_runs
@@ -11,6 +13,7 @@ from test_project import lockin, qick, stage_map
 from test_v2 import make_monitor
 from vmon.browse import browse, live_paths
 from vmon.discovery import Group
+from vmon.paths import canon
 from vmon.project import ProjectSource
 from vmon.server import make_server
 
@@ -113,7 +116,7 @@ def test_browse_kinds_hidden_sorting(tmp_path):
     (tmp_path / "b.log").write_text("")
     (tmp_path / "c.xpr").write_text("")
     (tmp_path / "notes.txt").write_text("")
-    out = browse(str(tmp_path), "/h", {str(proj)}, ["/r"])
+    out = browse(str(tmp_path), "/h", {os.path.realpath(proj)}, ["/r"])
     assert out["path"] == os.path.realpath(tmp_path) and out["home"] == "/h" and out["recent"] == ["/r"]
     names = [(e["name"], e["type"], e["kind"], e["live"]) for e in out["entries"]]
     assert names == [("impl_1", "dir", "run", False), ("plain", "dir", None, False),
@@ -122,16 +125,26 @@ def test_browse_kinds_hidden_sorting(tmp_path):
     assert out["parent"] == os.path.dirname(os.path.realpath(tmp_path))
 
 
-@posix_only
 def test_browse_errors_and_limits(tmp_path, monkeypatch):
     from vmon import browse as mod
-    import pytest
-    with pytest.raises(mod.BrowseError) as exc:
-        browse("/proc/self", "/h", set(), [])
-    assert exc.value.status == 403
     with pytest.raises(mod.BrowseError) as exc:
         browse(str(tmp_path / "missing"), "/h", set(), [])
     assert exc.value.status == 404
+    monkeypatch.setattr(mod, "MAX_ENTRIES", 5)
+    for i in range(10):
+        (tmp_path / ("f%d.log" % i)).write_text("")
+    assert len(browse(str(tmp_path), "/h", set(), [])["entries"]) == 5
+    root = os.path.abspath(os.sep)
+    expected_parent = mod.DRIVES if sys.platform == "win32" else None
+    assert browse(root, "/h", set(), [])["parent"] == expected_parent
+
+
+@posix_only
+def test_browse_special_fs_and_permissions(tmp_path):
+    from vmon import browse as mod
+    with pytest.raises(mod.BrowseError) as exc:
+        browse("/proc/self", "/h", set(), [])
+    assert exc.value.status == 403
     locked = tmp_path / "locked"
     locked.mkdir()
     locked.chmod(0)
@@ -142,38 +155,56 @@ def test_browse_errors_and_limits(tmp_path, monkeypatch):
             assert exc.value.status == 403
     finally:
         locked.chmod(0o700)
-    monkeypatch.setattr(mod, "MAX_ENTRIES", 5)
-    for i in range(10):
-        (tmp_path / ("f%d.log" % i)).write_text("")
-    assert len(browse(str(tmp_path), "/h", set(), [])["entries"]) == 5
-    assert browse("/", "/h", set(), [])["parent"] is None
 
 
-@posix_only
-def test_live_paths_and_http_browse(tmp_path, cfg, monkeypatch):
-    home = tmp_path / "home"
-    home.mkdir()
-    monkeypatch.setenv("HOME", str(home))
-    runs = lockin(tmp_path / "w", impl_pid=os.getpid()) if (tmp_path / "w").mkdir() is None else None
+def test_browse_windows_drives_and_device_paths(tmp_path, monkeypatch):
+    from vmon import browse as mod
+    monkeypatch.setattr(mod, "_windows", lambda: True)
+    monkeypatch.setattr(mod, "list_drives", lambda: ["C:\\", "D:\\"])
+    out = browse(mod.DRIVES, "C:\\Users\\me", set(), ["r"])
+    assert out["path"] == mod.DRIVES and out["parent"] is None and out["drives"] is True
+    assert [(e["name"], e["path"], e["type"]) for e in out["entries"]] == [("C:\\", "C:\\", "dir"), ("D:\\", "D:\\", "dir")]
+    for device in ("\\\\.\\PhysicalDrive0", "\\\\?\\GLOBALROOT\\Device"):
+        with pytest.raises(mod.BrowseError) as exc:
+            browse(device, "/h", set(), [])
+        assert exc.value.status == 403
+    assert mod.is_special("\\\\.\\COM1") and not mod.is_special("/proc")        # nothing else refused on Windows
+    root = os.path.abspath(os.sep)
+    assert browse(root, "/h", set(), [])["parent"] == mod.DRIVES                   # a drive root goes up to the drive list
+
+
+def test_list_drives_probes_without_listdrives(monkeypatch):
+    from vmon import browse as mod
+    monkeypatch.delattr(os, "listdrives", raising=False)
+    monkeypatch.setattr(os.path, "exists", lambda p: p in ("C:\\", "E:\\"))
+    assert mod.list_drives() == ["C:\\", "E:\\"]
+
+
+def test_live_paths_and_http_browse(tmp_path, cfg):
+    (tmp_path / "w").mkdir()
+    runs = lockin(tmp_path / "w", impl_pid=os.getpid())
+    resolved = canon(runs.resolve())
+    home = Path.home()                                # redirected into tmp by the autouse isolation
     monitor = make_monitor(tmp_path, cfg)
     monitor.add_path(str(runs))
     monitor.tick()
     fw = next(iter(monitor.firmwares.values()))
     fw.live = True                                  # tracked as live regardless of process scan
-    assert str(runs) in live_paths([fw]) and str(runs.parent) in live_paths([fw])
+    assert resolved in live_paths([fw]) and str(Path(resolved).parent) in live_paths([fw])
     server = make_server(monitor, "127.0.0.1", 0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = "http://127.0.0.1:%d" % server.server_address[1]
     try:
         out = json.load(urllib.request.urlopen(base + "/api/browse"))
         assert out["path"] == os.path.realpath(home) and out["home"] == str(home)
-        assert str(runs) in out["recent"]
-        out = json.load(urllib.request.urlopen("%s/api/browse?path=%s" % (base, runs.parent)))
+        assert resolved in out["recent"]
+        out = json.load(urllib.request.urlopen("%s/api/browse?path=%s" % (base, urllib.parse.quote(str(runs.parent)))))
         entry = next(e for e in out["entries"] if e["name"] == runs.name)
         assert entry["kind"] == "runs" and entry["live"] is True
-        for bad, code in (("/proc", 403), (str(tmp_path / "nope"), 404)):
+        bad_paths = [(str(tmp_path / "nope"), 404)] + ([("/proc", 403)] if sys.platform != "win32" else [])
+        for bad, code in bad_paths:
             try:
-                urllib.request.urlopen("%s/api/browse?path=%s" % (base, bad))
+                urllib.request.urlopen("%s/api/browse?path=%s" % (base, urllib.parse.quote(bad)))
                 assert False
             except urllib.error.HTTPError as err:
                 assert err.code == code

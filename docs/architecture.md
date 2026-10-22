@@ -7,20 +7,22 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | Module | Role |
 |---|---|
 | `cli.py` | argparse entry point. Picks a free port, or hands paths to an already running vmon. |
-| `config.py` | Loads `flows.toml` plus the optional `~/.config/vmon/flows.toml` (deep merge, user wins) and compiles regexes. |
+| `config.py` | Loads `flows.toml` plus the optional user `flows.toml` in the config dir (`~/.config/vmon/` on Linux, `%APPDATA%\vmon\` on Windows; deep merge, user wins) and compiles regexes. |
 | `flows.toml` | All Vivado-specific knowledge: line rules, timing patterns, steps, report registry, alerts, docs links, message triage rules. |
 | `catalog/` | One TOML per Vivado version describing every step, phase and task (see [catalog.md](catalog.md)). |
-| `discovery.py` | Finds Vivado processes via `/proc` and groups them into firmwares. |
-| `logtail.py` | Incremental file reader (offset + inode, handles truncation and rotation). |
+| `paths.py` | Per-platform data directories, the path contract (`canon`, `path_key`) and atomic JSON writes. |
+| `textio.py` | Decoding of Vivado text files (UTF-8, CRLF folded to LF). |
+| `discovery.py` | Finds Vivado processes through the platform backend and groups them into firmwares. |
+| `logtail.py` | Incremental file reader (byte offset + file identity, handles truncation and replacement). |
 | `logparse.py` | Streaming parser: log lines to sections, phases, tasks, messages and timing. |
 | `project.py` | Builds a firmware's flow from a `.runs` directory (marker files, run tcl, logs, reports). |
 | `expected.py` | Merges catalog placeholders (upcoming steps/phases, predicted numbers, weights) into the seen nodes. |
 | `timing_paths.py`, `path_table.py`, `clocks.py`, `convergence.py`, `congestion.py` | Worst-path parser for timing reports (streamed), per-clock history across stages and builds, router overlap trend, congestion level summary. |
 | `reports.py` | Parses utilization, timing summary, DRC/methodology, power, route status and other reports. |
 | `summary.py` | Renders a recorded build to Markdown or a self-contained HTML page. |
-| `history.py` | Build history store and records (`~/.cache/vmon/history/`), artifact validation for the history API. |
+| `history.py` | Build history store and records (`<cache dir>/history/`), artifact validation for the history API. |
 | `alerts.py`, `triage.py`, `eta.py`, `info.py`, `docs.py` | Alerts, message scoring and baselines, ETA, build info, documentation links. |
-| `sysstats.py`, `browse.py` | System CPU/RAM/swap from `/proc`; read-only directory listing for the folder explorer. |
+| `sysstats.py`, `browse.py` | System CPU/RAM/swap through the platform backend; read-only directory listing for the folder explorer. |
 | `remote.py` | Remote vmon instances: config/CLI validation, one poller thread per remote, id namespacing, request forwarding. |
 | `monitor.py` | Background thread: each tick discover, update parsers, publish state. |
 | `server.py` | `ThreadingHTTPServer`: static files, JSON API and Server-Sent Events. |
@@ -39,7 +41,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
                                       monitor tick -> State JSON -> server -> SSE -> UI
 ```
 
-Everything read is read-only. The only files vmon writes are under `~/.cache/vmon/` and `~/.config/vmon/message_rules.json` (your message priority overrides).
+Everything read is read-only. The only files vmon writes are under the cache dir and `message_rules.json` in the config dir (your message priority overrides). The dirs are `~/.cache/vmon/` and `~/.config/vmon/` on Linux, `%LOCALAPPDATA%\vmon\` and `%APPDATA%\vmon\` on Windows (fallbacks `~\AppData\Local\vmon` and `~\AppData\Roaming\vmon`); `paths.py` is the only place that knows them. Every JSON store is written to a temp file and moved over with `os.replace`, retried briefly because Windows refuses to replace a file another process has open.
 
 ## Discovery
 
@@ -50,7 +52,17 @@ Everything read is read-only. The only files vmon writes are under `~/.cache/vmo
 - If the cwd is `<X>.runs/<run>/` (matched case-insensitively, with either slash style on Windows), the process belongs to project `<X>.runs`.
 - Otherwise it looks for `-log <file>` (or `vivado.log` in the cwd) and scans it for `open_project <path>.xpr`. A launcher process is tied to a project through its Vivado descendants.
 - With no project found, the log becomes a standalone "log" firmware (non-project flow).
-- Paths given on the command line or through the UI are watched too, and the last 20 are remembered in `~/.cache/vmon/recent.json` so finished runs reappear after a restart.
+- Paths given on the command line or through the UI are watched too, and the last 20 are remembered in `<cache dir>/recent.json` so finished runs reappear after a restart.
+
+## Windows notes
+
+- **Data dirs**: see above; tests redirect `HOME`, `USERPROFILE`, `LOCALAPPDATA`, `APPDATA` and `XDG_*` to a temp dir, so nothing touches a real profile on any OS.
+- **Path contract**: parsing keeps the syntax of its input (Vivado writes both `C:/work/x.runs` and `C:\work\x.runs`). `discovery.runs_location` is purely syntactic: drive/UNC input comes back with backslashes, anything else as POSIX, on every OS. What becomes a key or is shown (group paths, watched and recent paths, `/api/*` paths) goes through `paths.canon`: native form on Windows (backslashes, upper-case drive letter), untouched on Linux. Firmware ids and group keys use `paths.path_key`, which is case-insensitive on Windows, so `c:/W/x.runs` and `C:\w\X.runs` are one firmware. Node ids such as `impl_1/route_design` always use `/`.
+- **CRLF**: Vivado on Windows writes `\r\n`. Binary readers decode with `textio.decode` (CRLF folded to LF) and `LogTail` strips the `\r` of every complete line; a `\r\n` split across two reads stays in the partial buffer until the `\n` arrives. Text-mode readers already fold it.
+- **Paths inside Vivado files**: `open_project`, `cd` and `open_checkpoint` lines, `-log` arguments and checkpoint names are split with either separator; `ntpath` is used for drive/UNC paths even when vmon runs elsewhere (tests).
+- **Explorer**: the UI breadcrumb understands `C:\`, `\\server\share` and a "This PC" root that lists the drives.
+- **Desktop notifications**: the default is a PowerShell toast (`powershell.exe -NoProfile -NonInteractive -EncodedCommand ...`); an explicit `command` replaces it.
+- **Not available**: no load average (`load1` is `null`), and no POSIX signal handling anywhere (`Ctrl-C` is the only stop signal used, and the tool never signals other processes).
 
 ## Project-mode sources
 
@@ -66,7 +78,7 @@ Flow layout: a "Synthesis" stage (out-of-context IP runs collapsed into a sub-gr
 
 ## Incremental parsing
 
-Each log is parsed once; later ticks read only the appended bytes. A changed inode or a shrinking file restarts from offset 0 (run reset). Logs of 100k+ lines are never re-read per tick. The state JSON excludes message lists, which are served on demand.
+Each log is parsed once; later ticks read only the appended bytes. A changed file identity or a shrinking file restarts from offset 0 (run reset). The identity is the inode, or the creation time on Windows filesystems that report inode 0. Offsets are byte offsets of the raw file, so `\r\n` files index and re-read exactly; the reader opens read-only and never keeps the file open between ticks, and a transient `PermissionError` (Vivado writing) just means "nothing new yet". Logs of 100k+ lines are never re-read per tick. The state JSON excludes message lists, which are served on demand.
 
 Parsing is driven by regex rules in `flows.toml` (`[rules.*]`), with cheap prefix/substring pre-filters. Phases are matched to the catalog by name, not number, because numbers shift with directive and device.
 
@@ -93,7 +105,7 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 | `GET /api/history/artifact?fw=&build=&path=` | Streams a recorded artifact (the bitstream) as `application/octet-stream` with `Content-Disposition: attachment`; same validation as the report route. |
 | `GET /api/notify` | Server-side notification status: `{enabled, channels: [{name, label, enabled, configured, target, error}], kinds, codes, min_level, last_error}`. `target` is scheme://host only; errors never contain URLs or tokens. |
 | `POST /api/notify/test` | Sends a test message to every enabled channel (synchronously) and returns `{"results": [{name, ok, error?}]}`; `[]` when nothing is enabled. |
-| `GET /api/browse?path=` | Read-only directory listing for the explorer (skips `/proc`, `/sys`, `/dev`). |
+| `GET /api/browse?path=` | Read-only directory listing for the explorer. Refuses `/proc`, `/sys`, `/dev` on Linux and `\\.\` / `\\?\` device paths on Windows, where `path=::drives` lists the drive roots (the parent of a drive root) and `C:\` or `C:/` are both accepted. |
 | `POST /api/watch` `{"path": ...}` | Add a `.runs` dir, `.xpr` or log to watch. |
 | `POST /api/msgrule` `{"id": ..., "priority": ...}` | Set or clear a message priority override. |
 | `GET /api/msgrules/export?by=` | Your message rules as a `vmon-message-rules` v1 file (attachment `vmon_message_rules_<YYYY-MM-DD>.json`); `exported_by` is empty unless `by` is given. |
@@ -118,16 +130,16 @@ On each build server a normal vmon runs (bound to `127.0.0.1`); its port is forw
 
 ## Message triage
 
-`score = severity base + priority bonus + keyword bonus + rarity bonus + novelty bonus` (weights in `[messages.scoring]`). Rules and keywords come from `flows.toml`; per-id overrides from `~/.config/vmon/message_rules.json`. When a build finishes, its `{id: count}` map is stored in `~/.cache/vmon/msgs/<fw_id>.json` and becomes the baseline for the next build's "new since last build".
+`score = severity base + priority bonus + keyword bonus + rarity bonus + novelty bonus` (weights in `[messages.scoring]`). Rules and keywords come from `flows.toml`; per-id overrides from `<config dir>/message_rules.json`. When a build finishes, its `{id: count}` map is stored in `<cache dir>/msgs/<fw_id>.json` and becomes the baseline for the next build's "new since last build".
 
 ## ETA
 
-Each completed build is stored (last `[eta] history_builds`, default 20, per firmware) in `~/.cache/vmon/durations/<fw_id>.json` as `{"builds": [{"build", "total_s", "steps": {step: s}, "phases": {step: {phase name without number: s}}}]}`; the older single-build file is read as one build and upgraded on the next write. For a running build the remaining time is the sum of the median duration of each pending step plus the current step: the medians of its phases not yet finished (the running phase keeps `max(median - elapsed, current_floor * median)`), or the step median minus elapsed when no phase history exists. The same sum is computed per past build; its p10/p90 (min/max widened by `small_sample_margin` with fewer than 3 builds) give the band. Confidence: at least 5 builds with every remaining step known is high, at least 2 medium, else low; a step never seen in history lowers it one level. When the running step is unknown, or there is no history, it falls back to catalog weights scaled by progress (low confidence, wide band).
+Each completed build is stored (last `[eta] history_builds`, default 20, per firmware) in `<cache dir>/durations/<fw_id>.json` as `{"builds": [{"build", "total_s", "steps": {step: s}, "phases": {step: {phase name without number: s}}}]}`; the older single-build file is read as one build and upgraded on the next write. For a running build the remaining time is the sum of the median duration of each pending step plus the current step: the medians of its phases not yet finished (the running phase keeps `max(median - elapsed, current_floor * median)`), or the step median minus elapsed when no phase history exists. The same sum is computed per past build; its p10/p90 (min/max widened by `small_sample_margin` with fewer than 3 builds) give the band. Confidence: at least 5 builds with every remaining step known is high, at least 2 medium, else low; a step never seen in history lowers it one level. When the running step is unknown, or there is no history, it falls back to catalog weights scaled by progress (low confidence, wide band).
 
 ## Timing insights
 
 - **Worst paths**: the path sections of a `timing_summary` report are streamed line by line once per (mtime, size) change; only the worst 100 setup + 100 hold paths are kept (`[timing_paths]`). The report summary carries the 8 worst plus `path_counts`; the full list comes from `/api/paths`. Each kept path also carries its parsed "Location / Delay type" table (`launch`, data-path `steps`, `capture`; `path_table.py`, max 200 steps) which the UI draws as a block chain; the summary omits it.
-- **Per-clock history**: per-clock values come from the Intra Clock Table of each timing report (`Firmware.clock_history.stages`). When a build finishes, its final values are stored in `~/.cache/vmon/timing/<fw_id>.json` (last 20 builds, keyed by start time; finished builds not yet stored are recorded at startup).
+- **Per-clock history**: per-clock values come from the Intra Clock Table of each timing report (`Firmware.clock_history.stages`). When a build finishes, its final values are stored in `<cache dir>/timing/<fw_id>.json` (last 20 builds, keyed by start time; finished builds not yet stored are recorded at startup).
 - **Router convergence**: the parser records every `Number of Nodes with overlaps` value and the following Intermediate Timing Summary per router iteration (`Node.convergence`). The trend (converging / stalled / diverging) and the `route_not_converging` alert use `[convergence]`; the alert is raised for live attempts only.
 - **Congestion**: the parser reads the placer's `Post-Placement Estimated Congestion` table, the router's `Initial Estimated Congestion` table (with or without `% Tiles`) and the final `Congestion Report` (max % and effective level per direction) into `Node.congestion` as it streams (rules `congestion_*`). Region size `NxN` becomes level log2(N). `congestion.summarize` adds the worst level and `ok`/`warn`/`crit` from `[congestion]`; the amber `congestion` alert fires from `warn_level` and is never an error. The UI shows it in a Congestion tab and a `CONG Ln` chip on the stage card.
 
@@ -137,9 +149,9 @@ Each completed build is stored (last `[eta] history_builds`, default 20, per fir
 
 ## Build history
 
-When a build ends (`done`, `failed` or `stopped`) the monitor stores one record in `~/.cache/vmon/history/<fw_id>.json` (`{"firmware": {id, name}, "builds": [...]}`, oldest first, last `[history] max_builds` kept). Records are keyed by the same build key as the baselines (start time), so a build is stored once; builds already finished at startup are backfilled on the first tick, and a stored build is replaced only when its result changed (for example `stopped` then `done` after a resume).
+When a build ends (`done`, `failed` or `stopped`) the monitor stores one record in `<cache dir>/history/<fw_id>.json` (`{"firmware": {id, name}, "builds": [...]}`, oldest first, last `[history] max_builds` kept). Records are keyed by the same build key as the baselines (start time), so a build is stored once; builds already finished at startup are backfilled on the first tick, and a stored build is replaced only when its result changed (for example `stopped` then `done` after a resume).
 
-Result: `met` / `timing_not_met` (final timing only), `failed`, `stopped`, or `done` when there is no final timing. Artifacts are the non-stale reports of the last flow whose kind is in `[history] kinds`, plus `<runs>/<impl run>/<top>.bit` when it was written by this build (mtime not older than the build start). Vivado overwrites report files on every run, so an artifact is served only while its current mtime and size equal the recorded ones; `current` is computed on every read and never stored. The history routes only ever open a path found in the recorded artifacts of the requested build (firmware ids must match `[A-Za-z0-9_-]+`), never a path taken from the query. Nothing is written outside `~/.cache/vmon/`.
+Result: `met` / `timing_not_met` (final timing only), `failed`, `stopped`, or `done` when there is no final timing. Artifacts are the non-stale reports of the last flow whose kind is in `[history] kinds`, plus `<runs>/<impl run>/<top>.bit` when it was written by this build (mtime not older than the build start). Vivado overwrites report files on every run, so an artifact is served only while its current mtime and size equal the recorded ones; `current` is computed on every read and never stored. The history routes only ever open a path found in the recorded artifacts of the requested build (firmware ids must match `[A-Za-z0-9_-]+`), never a path taken from the query. Nothing is written outside the cache dir.
 
 ### Comparing builds
 
@@ -151,4 +163,4 @@ A record also stores `steps` and `phases` (the durations `eta.py` keeps, same no
 
 ## Notifications outside the browser
 
-`notify.py` delivers events with no browser open. `Monitor._observe` hands every event it logs to `Notifier.submit`; because `_observe` returns on the first observation of a firmware, builds that were already finished or running at startup (and history backfill) never notify, and `submit` also ignores events older than the notifier. Events are filtered like the browser does: `kinds` for step/run events, `codes` plus `min_level` for alerts. A key of (firmware, time, kind, node, code, title) dedupes. Accepted events go to a bounded queue (200) served by one daemon thread, so a slow endpoint never delays the tick. At most `max_per_minute` messages are sent per rolling minute; the rest are counted and sent as one "N more events" message once the window frees. Channels: `notify-send` (argv, no shell), ntfy, Slack, Matrix (a unique transaction id per message) and a generic JSON webhook, all with `timeout_s`. A failing channel is logged once per distinct error with scheme://host only and never raises into the monitor. Configuration is in [`docs/configuration.md`](configuration.md#notifications-outside-the-browser).
+`notify.py` delivers events with no browser open. `Monitor._observe` hands every event it logs to `Notifier.submit`; because `_observe` returns on the first observation of a firmware, builds that were already finished or running at startup (and history backfill) never notify, and `submit` also ignores events older than the notifier. Events are filtered like the browser does: `kinds` for step/run events, `codes` plus `min_level` for alerts. A key of (firmware, time, kind, node, code, title) dedupes. Accepted events go to a bounded queue (200) served by one daemon thread, so a slow endpoint never delays the tick. At most `max_per_minute` messages are sent per rolling minute; the rest are counted and sent as one "N more events" message once the window frees. Channels: desktop (`notify-send` argv with no shell, or on Windows a fixed PowerShell toast script passed as `-EncodedCommand`, with title and body in environment variables, never in the code), ntfy, Slack, Matrix (a unique transaction id per message) and a generic JSON webhook, all with `timeout_s`. A failing channel is logged once per distinct error with scheme://host only and never raises into the monitor. Configuration is in [`docs/configuration.md`](configuration.md#notifications-outside-the-browser).

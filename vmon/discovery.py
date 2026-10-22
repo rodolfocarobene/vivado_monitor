@@ -1,11 +1,12 @@
 """Find running Vivado processes (read-only, via the platform backend) and group them into firmwares."""
 import os
-import re
-import sys
 from dataclasses import dataclass, field
-from pathlib import Path, PurePath, PureWindowsPath
+from pathlib import Path
 
+from . import paths
+from .paths import basename as _basename, canon, syntax_path
 from .procinfo import get_backend
+from .textio import decode
 from .resume import scan_session
 
 LOG_SCAN_BYTES = 2_000_000
@@ -32,22 +33,9 @@ def _read(path):
         return b""
 
 
-def _windows_style(path):
-    """Drive-letter or UNC paths are split the Windows way even when vmon runs elsewhere (tests)."""
-    return sys.platform == "win32" or bool(re.match(r"^([A-Za-z]:[\\/]|\\\\)", path))
-
-
-def _pure_path(path):
-    return PureWindowsPath(path) if _windows_style(path) else PurePath(path)
-
-
-def _basename(path):
-    return _pure_path(path).name
-
-
 def runs_location(cwd):
     """('/x/foo.runs', 'impl_1') when cwd is inside a *.runs dir (any case, any slash), else None."""
-    pure = _pure_path(cwd)
+    pure = syntax_path(cwd)
     parts = pure.parts
     for i, part in enumerate(parts):
         if part.lower().endswith(".runs") and len(part) > 5:
@@ -75,8 +63,8 @@ def _arg_after(args, flag):
 def _log_of(proc):
     args, cwd = proc["args"], proc["cwd"]
     log = _arg_after(args, "-log") or (os.path.join(cwd, "vivado.log") if cwd else None)
-    if log and not os.path.isabs(log) and cwd:
-        log = os.path.join(cwd, log)
+    if log and not paths.is_abs(log) and cwd:
+        log = paths.join(cwd, log)
     return log
 
 
@@ -85,8 +73,8 @@ def is_run_worker(proc, run_dir):
     log = _log_of(proc)
     if not log:
         return False
-    name = os.path.basename(log)
-    return (os.path.normcase(os.path.dirname(os.path.normpath(log))) == os.path.normcase(os.path.normpath(run_dir))
+    name = _basename(log)
+    return (paths.same_path(paths.dirname(paths.normpath(log)), paths.normpath(run_dir))
             and (name.endswith((".vdi", ".vds")) or name == "runme.log"))
 
 
@@ -113,14 +101,14 @@ class Discovery:
         cached = self._log_cache.get(log_path)
         if cached and (cached[1] is not None or cached[0] == size):
             return cached[1]
-        text = _read(log_path)[:LOG_SCAN_BYTES].decode("utf-8", "replace")
+        text = decode(_read(log_path)[:LOG_SCAN_BYTES])
         runs_dir = None
         for match in self.cfg.open_project_re.finditer(text):
             xpr = next(g for g in match.groups() if g)
             if not xpr.endswith(".xpr"):
                 continue
-            xpr_path = Path(xpr) if os.path.isabs(xpr) else Path(cwd or ".") / xpr
-            runs_dir = str(xpr_path.parent / (xpr_path.stem + ".runs"))
+            full = xpr if paths.is_abs(xpr) else paths.join(cwd or ".", xpr)
+            runs_dir = paths.join(paths.dirname(full), _basename(full)[:-len(".xpr")] + ".runs")
         self._log_cache[log_path] = (size, runs_dir)
         return runs_dir
 
@@ -149,7 +137,8 @@ class Discovery:
         groups = {}
 
         def group_for(kind, path, name):
-            key = (kind, path)
+            path = canon(path)
+            key = (kind, paths.path_key(path))
             if key not in groups:
                 groups[key] = Group(kind, path, name)
             return groups[key]
@@ -189,7 +178,7 @@ class Discovery:
                 group.pids.add(proc["pid"])
                 self._add_resume(group, proc, ckpt[1])
             elif log and os.path.exists(log):
-                group = group_for("log", log, Path(log).stem)
+                group = group_for("log", log, Path(_basename(log)).stem)
                 group.pids.add(proc["pid"])
                 group.launcher = launcher
         return list(groups.values())

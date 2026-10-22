@@ -9,6 +9,8 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from .textio import decode
+
 COMMAND_RE = re.compile(r"^Command: (\w+)(.*)$")
 DIRECTIVE_RE = re.compile(r"-directive\s+(\S+)")
 PART_RE = re.compile(r"-part\s+(\S+)")
@@ -39,7 +41,7 @@ def _stat(path):
 
 def _read(path, limit=2_000_000):
     try:
-        with open(path, "r", errors="replace") as fh:
+        with open(path, "r", encoding="utf-8", errors="replace") as fh:
             return fh.read(limit)
     except OSError:
         return ""
@@ -129,7 +131,7 @@ class InfoReader:
                 return scan["directives"], scan["part"]
             end = data.rfind(b"\n") + 1            # never act on a half-written line
             scan["offset"] += end
-            for line in data[:end].decode("utf-8", "replace").split("\n"):
+            for line in decode(data[:end]).split("\n"):
                 if not line.startswith("Command: "):
                     continue
                 match = COMMAND_RE.match(line)

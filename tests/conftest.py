@@ -87,7 +87,26 @@ def build_runs(tmp_path, name, top, impl_vdi, impl_tcl, synth_vds, impl_markers,
     return runs
 
 
+def redirect_profile(monkeypatch, home):
+    """Point every variable vmon.paths (and Path.home) reads at `home`, for POSIX and Windows alike."""
+    home = Path(home)
+    for name, value in (("HOME", home), ("USERPROFILE", home), ("LOCALAPPDATA", home / "AppData" / "Local"),
+                        ("APPDATA", home / "AppData" / "Roaming"), ("XDG_CACHE_HOME", home / ".cache"),
+                        ("XDG_CONFIG_HOME", home / ".config")):
+        monkeypatch.setenv(name, str(value))
+    monkeypatch.delenv("HOMEDRIVE", raising=False)
+    monkeypatch.delenv("HOMEPATH", raising=False)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def isolated_session_home(tmp_path_factory):
+    """Session-scoped fixtures (catalogs) must not read the real config either."""
+    with pytest.MonkeyPatch.context() as patch:
+        redirect_profile(patch, tmp_path_factory.mktemp("session_home"))
+        yield
+
+
 @pytest.fixture(autouse=True)
 def isolated_home(tmp_path_factory, monkeypatch):
-    """Nothing in the tests may touch the real ~/.cache or ~/.config."""
-    monkeypatch.setenv("HOME", str(tmp_path_factory.mktemp("home")))
+    """Nothing in the tests may touch the real profile: ~/.cache, ~/.config, %LOCALAPPDATA%, %APPDATA%."""
+    redirect_profile(monkeypatch, tmp_path_factory.mktemp("home"))

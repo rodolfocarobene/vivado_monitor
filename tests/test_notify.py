@@ -1,5 +1,6 @@
+import base64
 import json
-import stat
+import os
 import sys
 import threading
 import time
@@ -10,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 from conftest import FIXTURES
+from vmon import notify as notify_mod
 from vmon.config import load_config
 from vmon.monitor import Monitor
 from vmon.notify import Notifier, _latin1, describe_error, redact_url
@@ -74,16 +76,17 @@ def ev(kind="step_failed", level="error", code=None, t=None, node="n/route", tit
             "node_id": node, "title": title, "message": message}
 
 
-posix_only = pytest.mark.skipif(sys.platform == "win32", reason="fake notify command is a /bin/sh script")
-
-
 def fake_command(tmp_path, exit_code=0):
+    """argv list of a fake notifier (a Python script, runs on any OS) and the file it appends its arguments to."""
     out = tmp_path / "argv.txt"
-    script = tmp_path / "fake-notify"
-    script.write_text('#!/bin/sh\nfor a in "$@"; do printf "%%s\\n" "$a"; done >> %s\nprintf "%%s\\n" "---" >> %s\nexit %d\n'
-                      % (out, out, exit_code))
-    script.chmod(script.stat().st_mode | stat.S_IXUSR)
-    return script, out
+    script = tmp_path / "fake_notify.py"
+    script.write_text("import sys\nwith open(%r, 'a', encoding='utf-8', newline='\\n') as f:\n"
+                      "    f.write(''.join(a + '\\n' for a in sys.argv[1:]) + '---\\n')\nsys.exit(%d)\n" % (str(out), exit_code))
+    return [sys.executable, str(script)], out
+
+
+def read_out(out):
+    return out.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------- config
@@ -234,24 +237,67 @@ def test_matrix_request_and_unique_txn(rx):
     assert body["msgtype"] == "m.text" and "lockin: Route failed" in body["body"] and "/proj/lockin.runs" in body["body"]
 
 
-@posix_only
 def test_desktop_argv_no_shell(tmp_path):
-    script, out = fake_command(tmp_path)
-    n = Notifier(spec(desktop={"enabled": True, "command": str(script), "urgency_error": "critical"}))
+    command, out = fake_command(tmp_path)
+    n = Notifier(spec(desktop={"enabled": True, "command": command, "urgency_error": "critical"}))
     n.handle(message(n))
     n.handle(message(n, kind="run_done", level="info", title="x; touch /tmp/pwned"))
-    lines = out.read_text().split("\n")
+    lines = read_out(out).split("\n")
     assert lines[:6] == ["-u", "critical", "-a", "vmon", "--", "vmon · lockin: Route failed"]
     assert lines[6] == "route_design: WNS -0.123" and lines[7] == "/proj/lockin.runs"
-    assert "-u\nnormal" in out.read_text() and "vmon · x; touch /tmp/pwned" in lines
+    assert "-u\nnormal" in read_out(out) and "vmon · x; touch /tmp/pwned" in lines
 
 
-@posix_only
 def test_desktop_command_list(tmp_path):
-    script, out = fake_command(tmp_path)
-    n = Notifier(spec(desktop={"enabled": True, "command": [str(script), "--extra"]}))
+    command, out = fake_command(tmp_path)
+    n = Notifier(spec(desktop={"enabled": True, "command": command + ["--extra"]}))
     n.handle(message(n))
-    assert out.read_text().split("\n")[0] == "--extra"
+    assert read_out(out).split("\n")[0] == "--extra"
+
+
+# ---------------------------------------------------------------- desktop defaults per platform
+def test_desktop_default_command_per_platform(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "linux")
+    n = Notifier(spec(desktop={"enabled": True, "command": ""}))
+    desktop = [c for c in n.channels if c.name == "desktop"][0]
+    assert desktop.argv() == ["notify-send"] and not desktop.uses_toast()
+    monkeypatch.setattr(sys, "platform", "win32")
+    assert desktop.uses_toast() and desktop.argv()[:4] == ["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand"]
+    assert desktop.target() == "powershell.exe"
+    explicit = [c for c in Notifier(spec(desktop={"enabled": True, "command": "C:\\tools\\toast.exe"})).channels
+                if c.name == "desktop"][0]
+    assert not explicit.uses_toast() and explicit.argv() == ["C:\\tools\\toast.exe"]        # override wins on Windows
+
+
+def test_toast_script_is_fixed_and_text_travels_in_the_environment(tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, "platform", "win32")
+    argv = notify_mod.toast_argv()
+    assert base64.b64decode(argv[-1]).decode("utf-16-le") == notify_mod.TOAST_SCRIPT
+    nasty = "it's \"quoted\" $(calc) `x` ; & | <b>&amp;</b>\x00 end"
+    env = notify_mod.toast_env(nasty, "line1\nline2 " + "x" * 5000, base={"PATH": "p"})
+    assert env["VMON_TITLE"] == nasty.replace("\x00", "") and env["VMON_BODY"].startswith("line1\nline2 ")
+    assert len(env["VMON_BODY"]) == notify_mod.TOAST_LIMITS[1] and env["PATH"] == "p"
+    assert "VMON_TITLE" in notify_mod.TOAST_SCRIPT and "VMON_BODY" in notify_mod.TOAST_SCRIPT
+    assert "InnerText" in notify_mod.TOAST_SCRIPT and "calc" not in notify_mod.TOAST_SCRIPT
+    calls = []
+
+    def fake_run(argv, **kwargs):
+        calls.append((argv, kwargs))
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(notify_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(notify_mod.shutil, "which", lambda name: "C:\\Windows\\powershell.exe")
+    n = Notifier(spec(desktop={"enabled": True, "command": ""}))
+    n.handle(message(n, title=nasty))
+    (sent, kwargs), = calls
+    assert sent[:4] == ["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand"] and kwargs["shell"] is False
+    assert not any("quoted" in a or "lockin" in a for a in sent)               # no message text on the command line
+    assert "quoted" in kwargs["env"]["VMON_TITLE"] and "lockin" in kwargs["env"]["VMON_BODY"]
+    assert desktop_configured(n)
+
+
+def desktop_configured(n):
+    return [c for c in n.channels if c.name == "desktop"][0].configured()
 
 
 # ---------------------------------------------------------------- failures
@@ -287,10 +333,9 @@ def test_error_strings_hide_details():
     assert redact_url("not a url") == "invalid URL" and redact_url("file:///etc/passwd") == "invalid URL"
 
 
-@posix_only
 def test_desktop_failure_and_missing_command(tmp_path):
-    script, _ = fake_command(tmp_path, exit_code=3)
-    n = Notifier(spec(desktop={"enabled": True, "command": str(script)}))
+    command, _ = fake_command(tmp_path, exit_code=3)
+    n = Notifier(spec(desktop={"enabled": True, "command": command}))
     assert n._deliver(message(n)) == [{"name": "desktop", "ok": False, "error": "exit 3"}]
     n = Notifier(spec(desktop={"enabled": True, "command": str(tmp_path / "nope")}))
     assert n._deliver(message(n)) == [{"name": "desktop", "ok": False, "error": "not configured"}]
@@ -310,13 +355,12 @@ def serve(tmp_path, cfg):
     return server, "http://127.0.0.1:%d" % server.server_address[1]
 
 
-@posix_only
 def test_api_status_and_test(tmp_path, cfg, rx):
-    script, out = fake_command(tmp_path)
+    command, out = fake_command(tmp_path)
     secret_url = rx.base + "/" + PATH_SECRET
     cfg.data["notify"].update(enabled=True)
     cfg.data["notify"]["webhook"].update(enabled=True, url=secret_url)
-    cfg.data["notify"]["desktop"].update(enabled=True, command=str(script))
+    cfg.data["notify"]["desktop"].update(enabled=True, command=command)
     cfg.data["notify"]["slack"].update(enabled=True)           # enabled but not configured
     server, base = serve(tmp_path, cfg)
     try:
@@ -326,14 +370,14 @@ def test_api_status_and_test(tmp_path, cfg, rx):
         names = {c["name"]: c for c in status["channels"]}
         assert names["webhook"]["target"] == rx.base and names["webhook"]["configured"]
         assert names["slack"]["enabled"] and not names["slack"]["configured"]
-        assert names["desktop"]["target"] == "fake-notify" and not names["ntfy"]["enabled"]
+        assert names["desktop"]["target"] == os.path.basename(sys.executable) and not names["ntfy"]["enabled"]
         req = urllib.request.Request(base + "/api/notify/test", data=b"{}", method="POST")
         raw = urllib.request.urlopen(req).read().decode()
         results = {r["name"]: r for r in json.loads(raw)["results"]}
         assert PATH_SECRET not in raw
         assert results["webhook"]["ok"] and results["desktop"]["ok"]
         assert results["slack"] == {"name": "slack", "ok": False, "error": "not configured"}
-        assert json.loads(rx.got[0]["body"])["kind"] == "test" and "Test notification" in out.read_text()
+        assert json.loads(rx.got[0]["body"])["kind"] == "test" and "Test notification" in read_out(out)
     finally:
         server.shutdown()
         server.server_close()

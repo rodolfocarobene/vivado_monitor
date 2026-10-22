@@ -1,10 +1,11 @@
-"""Notifications outside the browser: desktop (notify-send), ntfy, Slack, Matrix, generic webhook.
+"""Notifications outside the browser: desktop (notify-send, or a PowerShell toast on Windows), ntfy, Slack, Matrix, generic webhook.
 
 Settings come from [notify] in flows.toml. Delivery runs on its own thread so a slow or dead
 endpoint never stalls the monitor tick. URLs and tokens never appear in logs, errors or API
 output: only scheme://host is shown, and error texts are built from the failure kind, not from
 the exception text.
 """
+import base64
 import collections
 import json
 import os
@@ -112,11 +113,44 @@ def _text(msg):
     return "\n".join(x for x in (msg["head"], msg["body"], msg["project"]) if x)
 
 
+# Fixed script, never built from message text: the title and body arrive in environment variables and are
+# assigned through InnerText, which XML-escapes them. The AUMID is Windows PowerShell's, so the toast is shown.
+TOAST_SCRIPT = r"""$ErrorActionPreference = 'Stop'
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+$xml.LoadXml('<toast><visual><binding template="ToastGeneric"><text/><text/></binding></visual></toast>')
+$texts = $xml.GetElementsByTagName('text')
+$texts.Item(0).InnerText = $env:VMON_TITLE
+$texts.Item(1).InnerText = $env:VMON_BODY
+$aumid = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
+[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($aumid).Show([Windows.UI.Notifications.ToastNotification]::new($xml))
+"""
+TOAST_LIMITS = (256, 2000)       # title / body characters: the environment block is small on Windows
+
+
+def toast_argv():
+    encoded = base64.b64encode(TOAST_SCRIPT.encode("utf-16-le")).decode("ascii")
+    return ["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded]
+
+
+def toast_env(title, body, base=None):
+    clean = lambda text, limit: str(text).replace("\0", "")[:limit]
+    return {**(os.environ if base is None else base),
+            "VMON_TITLE": clean(title, TOAST_LIMITS[0]), "VMON_BODY": clean(body, TOAST_LIMITS[1])}
+
+
 class Desktop(Channel):
+    """notify-send on Linux; on Windows a PowerShell toast. An explicit `command` replaces either."""
     name, label = "desktop", "Desktop"
 
+    def uses_toast(self):
+        return not self.spec.get("command") and sys.platform == "win32"
+
     def argv(self):
-        cmd = self.spec.get("command") or "notify-send"
+        cmd = self.spec.get("command")
+        if not cmd:
+            return toast_argv() if sys.platform == "win32" else ["notify-send"]
         return [str(c) for c in cmd] if isinstance(cmd, list) else [str(cmd)]
 
     def configured(self):
@@ -127,10 +161,14 @@ class Desktop(Channel):
         return os.path.basename(self.argv()[0]) if self.argv() else ""
 
     def send(self, msg):
-        urgency = self.spec.get("urgency_error", "critical") if msg["level"] == "error" else "normal"
         body = "\n".join(x for x in (msg["body"], msg["project"]) if x)
-        argv = self.argv() + ["-u", urgency, "-a", "vmon", "--", msg["head"], body]
-        done = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, timeout=self.n.timeout, shell=False)
+        if self.uses_toast():
+            run = dict(env=toast_env(msg["head"], body), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            argv = self.argv()
+        else:
+            urgency = self.spec.get("urgency_error", "critical") if msg["level"] == "error" else "normal"
+            run, argv = {}, self.argv() + ["-u", urgency, "-a", "vmon", "--", msg["head"], body]
+        done = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, timeout=self.n.timeout, shell=False, **run)
         if done.returncode:
             raise RuntimeError("exit %d" % done.returncode)
 

@@ -3,7 +3,10 @@ import glob
 import os
 import re
 
+from .textio import decode
+
 _scan_cache = {}        # path -> ((size, mtime_ns), hits)
+_FRAME_START = re.compile(r"/|[A-Za-z]:[\\/]")      # POSIX path, or drive path (Windows)
 _ADDR = re.compile(r"\+0x[0-9a-f]+\)?\s*\[0x[0-9a-f]+\]|\[0x[0-9a-f]+\]")
 
 
@@ -45,7 +48,7 @@ def scan_log(path, cfg):
         base = _count_lines_before(path, offset)
     except OSError:
         return []
-    lines = data.decode("utf-8", "replace").split("\n")
+    lines = decode(data).split("\n")
     if offset:
         lines = lines[1:]             # first line is probably cut
         base += 1
@@ -90,7 +93,7 @@ def read_hs_err(path, cfg):
             match = fc.hs_err_title_re.match(line)
             if match:
                 title = match.group(1)
-        if frame is None and line.startswith("/") and not (
+        if frame is None and _FRAME_START.match(line) and not (
                 fc.hs_err_skip_frames and fc.hs_err_skip_frames.search(line)):
             frame = _ADDR.sub("", line).strip()[:fc.max_line_chars]
     return title, frame

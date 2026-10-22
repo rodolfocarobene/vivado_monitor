@@ -9,6 +9,7 @@ from conftest import FIXTURES, build_runs, marker, touch
 from vmon import alerts as alert_rules
 from vmon import discovery, failure
 from vmon.config import load_config
+from vmon.paths import cache_dir
 from vmon.discovery import Discovery, Group, is_run_worker
 from vmon.logparse import LogParser
 from vmon.model import Node
@@ -192,8 +193,8 @@ def test_resume_finished_survives_restart_and_completes(tmp_path, cfg, report_ca
     log = tmp_path / "resume.log"
     shutil.copy(CRASH / "resume.log", log)
     snap(runs, cfg, report_cache, catalogs, resume_group(runs, log))            # while it was alive
-    # vmon restarts after the process ended: the session is remembered in ~/.cache/vmon/attempts
-    stored = list((Path.home() / ".cache" / "vmon" / "attempts").glob("*.json"))
+    # vmon restarts after the process ended: the session is remembered in <cache dir>/attempts
+    stored = list((cache_dir() / "attempts").glob("*.json"))
     assert len(stored) == 1 and "resume.log" in stored[0].read_text()
     fw = snap(runs, cfg, report_cache, catalogs, None)
     stages = stage_map(fw)

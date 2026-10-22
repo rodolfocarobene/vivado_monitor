@@ -8,6 +8,7 @@ import os
 import re
 
 from . import timing_paths
+from .textio import decode
 
 HEAD_BYTES = 3_000_000          # tables of interest are near the top of big reports
 _NUM = re.compile(r"^<?-?\d+(\.\d+)?$")
@@ -253,7 +254,7 @@ class ReportCache:
             return hit[1]
         try:
             with open(path, "rb") as fh:
-                text = fh.read(HEAD_BYTES).decode("utf-8", "replace")
+                text = decode(fh.read(HEAD_BYTES))
         except OSError:
             return None
         try:

@@ -1,7 +1,19 @@
 """Incremental, read-only log reader: yields only appended complete lines."""
 import os
+import sys
 
 INDEX_STEP = 1000  # remember the byte offset of every 1000th line for range reads
+
+
+def file_identity(st):
+    """Which file a path points at: the inode, else the creation time (Windows filesystems with st_ino 0).
+    A scalar so it survives JSON; 0 elsewhere, where only a shrinking size reveals a replacement."""
+    if st.st_ino:
+        return st.st_ino
+    born = getattr(st, "st_birthtime", None)
+    if born is not None:
+        return "born:%s" % born
+    return "born:%d" % st.st_ctime_ns if sys.platform == "win32" else 0     # ctime is creation time on Windows only
 
 
 class LogTail:
@@ -25,11 +37,12 @@ class LogTail:
         except OSError:
             return [], False
         reset = False
-        if self.inode is not None and (st.st_ino != self.inode or st.st_size < self.offset):
+        identity = file_identity(st)
+        if self.inode is not None and (identity != self.inode or st.st_size < self.offset):
             self._reset_state()
             reset = True
         first_sight = self.inode is None
-        self.inode = st.st_ino
+        self.inode = identity
         if first_sight or reset:
             self.last_growth = st.st_mtime
         if st.st_size == self.offset:

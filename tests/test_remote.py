@@ -1,4 +1,5 @@
 import json
+import sys
 import threading
 import urllib.error
 import urllib.request
@@ -192,7 +193,10 @@ def test_poll_error_kinds(tmp_path):
             remotes.poll(remote)
         bad, gone = remotes.statuses()
         assert not bad["online"] and bad["error"] == "not a vmon state"
-        assert not gone["online"] and "refused" in gone["error"] and gone["last_ok"] is None
+        assert not gone["online"] and gone["last_ok"] is None
+        # Windows retries the SYN after an RST, so a closed port may only time out within the poll timeout
+        allowed = ("refused", "timed out") if sys.platform == "win32" else ("refused",)
+        assert any(word in gone["error"] for word in allowed)
         assert remotes.firmwares_json() == ""
     finally:
         server.shutdown()

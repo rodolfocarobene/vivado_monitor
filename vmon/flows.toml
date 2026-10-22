@@ -1,5 +1,5 @@
 # All Vivado-specific knowledge for vmon lives here. Override or extend by creating
-# ~/.config/vmon/flows.toml (tables are deep-merged, lists/scalars replaced).
+# <config dir>/flows.toml (tables are deep-merged, lists/scalars replaced).
 # Every [x.<name>] table with an `order` is sorted by it, so you can add new entries
 # (a step, a rule, a timing pattern, a report type) without touching Python.
 
@@ -472,7 +472,7 @@ small_sample_margin = 0.15
 current_floor = 0.10         # a running step/phase keeps at least this fraction of its typical duration
 high_confidence_builds = 5   # builds needed (with every step known) for "high" confidence
 
-# ---------------------------------------------------------------- build history (~/.cache/vmon/history/<fw_id>.json)
+# ---------------------------------------------------------------- build history (<cache dir>/history/<fw_id>.json)
 [history]
 max_builds = 100      # finished builds kept per firmware (oldest dropped)
 max_messages = 500    # warning-or-worse message ids stored per build (for the build comparison)
@@ -590,7 +590,7 @@ tolerance_s = 1
 '^{top}_routed\.dcp$' = "route_design"
 
 # ---------------------------------------------------------------- documentation links
-# Templates only; edit freely in ~/.config/vmon/flows.toml. A value that is a bare Tcl command name is expanded
+# Templates only; edit freely in <config dir>/flows.toml. A value that is a bare Tcl command name is expanded
 # with tcl_command; a value containing "://" is used as is. {query} is URL-encoded.
 [docs]
 tcl_command = "https://docs.amd.com/r/en-US/ug835-vivado-tcl-commands/{command}"   # UG835, one page per command
@@ -1027,7 +1027,7 @@ title_prefix = "vmon"
 
 [notify.desktop]
 enabled = false
-command = "notify-send"            # program, or an argv list; the title and body are appended
+command = ""                       # empty: notify-send on Linux, a PowerShell toast on Windows; else a program or an argv list (title and body are appended)
 urgency_error = "critical"         # urgency for errors, "normal" otherwise
 
 [notify.ntfy]
