@@ -33,7 +33,7 @@ IMPORTANT: match phases by NAME, not number. Numbers shift with directive and de
 ## Adding a version or override
 
 - New version: copy `vivado_2023.2.toml` to `vivado_<ver>.toml`, change `[catalog] vivado`, run a few logs through the validation idea below, and edit only what differs. The loader should pick the file by the `# Vivado v<ver>` header of the log, falling back to the closest older one.
-- User override: put a file with the same name in the user config dir (proposed `~/.config/vmon/catalog/`). Merge rule: `[[step]]` entries merge by `id`, `phases`/`tasks`/`sections`/`stages`/`reports` entries merge by `name` (or `file`), `[[pattern]]` by `id`; scalar keys in the override win. To remove an entry set `disabled = true` on it.
+- User override: put a file with the same name in the user config dir (proposed `<config dir>/catalog/`). Merge rule: `[[step]]` entries merge by `id`, `phases`/`tasks`/`sections`/`stages`/`reports` entries merge by `name` (or `file`), `[[pattern]]` by `id`; scalar keys in the override win. To remove an entry set `disabled = true` on it.
 - Checking a catalog: parse it with `tomllib`, compile every `regex`, apply them to real logs, and diff the set of `Phase`/`Task` names found in the logs against the catalog (unknown names should be shown in the UI anyway, just as unplanned).
 
 ## Caveats

@@ -1,10 +1,10 @@
 """Build-time estimate learned from past completed builds, with a confidence band; else catalog weights."""
 import json
-import os
 import statistics
 from pathlib import Path
 
 from .expected import normalize
+from .paths import write_atomic
 
 DEFAULTS = {"history_builds": 20, "low_quantile": 0.10, "high_quantile": 0.90,
             "small_sample_margin": 0.15, "current_floor": 0.10, "quantile_min_builds": 3, "high_confidence_builds": 5}
@@ -55,7 +55,7 @@ def phase_durations(fw):
 
 
 class DurationStore:
-    """~/.cache/vmon/durations/<fw_id>.json = {"builds": [{"build", "total_s", "steps", "phases"}]}, oldest first.
+    """<cache dir>/durations/<fw_id>.json = {"builds": [{"build", "total_s", "steps", "phases"}]}, oldest first.
 
     The older single-build file {"build", "total_s", "steps"} is read as one build and upgraded on the next write."""
 
@@ -85,11 +85,8 @@ class DurationStore:
         else:
             builds[same] = entry
         path = self.dir / (fw_id + ".json")
-        tmp = path.with_name(path.name + ".tmp")
         try:
-            self.dir.mkdir(parents=True, exist_ok=True)
-            tmp.write_text(json.dumps({"builds": builds[-self.limit:]}))
-            os.replace(tmp, path)
+            write_atomic(path, json.dumps({"builds": builds[-self.limit:]}))
         except OSError:
             return False
         self.version += 1

@@ -2,6 +2,9 @@
 import os
 import time
 
+from . import paths
+from .textio import decode
+
 _cache = {}     # log path -> (size, result)
 
 
@@ -17,7 +20,7 @@ def scan_session(log_path, cwd, cfg):
         return hit[1]
     try:
         with open(log_path, "rb") as fh:
-            text = fh.read(rc.scan_bytes).decode("utf-8", "replace")
+            text = decode(fh.read(rc.scan_bytes))
     except OSError:
         return {"checkpoint": None, "started_at": None}
     started_at, checkpoint, here = None, None, cwd
@@ -33,14 +36,14 @@ def scan_session(log_path, cwd, cfg):
             match = rc.cd_re.match(line)
             if match:
                 target = rc.first_group(match)
-                here = target if os.path.isabs(target) or not here else os.path.join(here, target)
+                here = target if paths.is_abs(target) or not here else paths.join(here, target)
         if checkpoint is None and rc.checkpoint_re:
             match = rc.checkpoint_re.match(line)
             if match:
                 path = rc.first_group(match)
-                if not os.path.isabs(path) and here:
-                    path = os.path.join(here, path)
-                checkpoint = os.path.normpath(path)
+                if not paths.is_abs(path) and here:
+                    path = paths.join(here, path)
+                checkpoint = paths.normpath(path)
         if checkpoint and started_at is not None:
             break
     result = {"checkpoint": checkpoint, "started_at": started_at}

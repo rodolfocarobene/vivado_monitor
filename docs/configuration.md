@@ -1,15 +1,17 @@
 # Configuration
 
-vmon ships with `vmon/flows.toml`. To change anything, create `~/.config/vmon/flows.toml` (or pass `--config FILE`). Your file is deep-merged over the defaults: tables merge key by key, lists and scalars are replaced. Tables with an `order` key are sorted by it, so you can add entries without touching Python.
+vmon ships with `vmon/flows.toml`. To change anything, create `flows.toml` in the config dir (`~/.config/vmon/flows.toml` on Linux, `%APPDATA%\vmon\flows.toml` on Windows) or pass `--config FILE`. Your file is deep-merged over the defaults: tables merge key by key, lists and scalars are replaced. Tables with an `order` key are sorted by it, so you can add entries without touching Python.
 
 Other files:
 
 | Path | Purpose |
 |---|---|
-| `~/.config/vmon/flows.toml` | Overrides for `flows.toml` |
-| `~/.config/vmon/catalog/` | Overrides for the phase catalog ([catalog.md](catalog.md)) |
-| `~/.config/vmon/message_rules.json` | Your per-message priority overrides (written by the UI star/mute buttons) |
-| `~/.cache/vmon/` | Recent paths, previous-build message baselines, step durations for ETA |
+| `~/.config/vmon/flows.toml` (Windows: `%APPDATA%\vmon\flows.toml`) | Overrides for `flows.toml` |
+| `~/.config/vmon/catalog/` (Windows: `%APPDATA%\vmon\catalog\`) | Overrides for the phase catalog ([catalog.md](catalog.md)) |
+| `~/.config/vmon/message_rules.json` (Windows: `%APPDATA%\vmon\message_rules.json`) | Your per-message priority overrides (written by the UI star/mute buttons) |
+| `~/.cache/vmon/` (Windows: `%LOCALAPPDATA%\vmon\`) | Recent paths, previous-build message baselines, step durations for ETA, history |
+
+On Windows, if `%APPDATA%` or `%LOCALAPPDATA%` is unset vmon uses `~\AppData\Roaming\vmon` and `~\AppData\Local\vmon`. In the rest of this page `~/.config/vmon/` means the config dir of your platform.
 
 ## Sections
 
@@ -84,7 +86,7 @@ bonus = 15
 reason = "CDC"
 ```
 
-Because lists replace, copy the whole `[[messages.rules]]` list into your override file if you add rules there. The scoring weights live in `[messages.scoring]`. Individual messages can also be starred or muted in the UI; those overrides go to `~/.config/vmon/message_rules.json`, e.g. `{"Synth 8-327": "high", "Synth 8-7080": "mute"}`.
+Because lists replace, copy the whole `[[messages.rules]]` list into your override file if you add rules there. The scoring weights live in `[messages.scoring]`. Individual messages can also be starred or muted in the UI; those overrides go to `message_rules.json` in the config dir, e.g. `{"Synth 8-327": "high", "Synth 8-7080": "mute"}`.
 
 ### Sharing message rules
 
@@ -260,7 +262,7 @@ alert_min_iterations = 4   # ...once this many iterations were seen
 
 ## Notifications outside the browser
 
-vmon can notify you with no browser open: desktop (`notify-send`), ntfy, Slack, Matrix or a generic webhook. Everything is off by default. Put it in `~/.config/vmon/flows.toml`; the UI only shows the status (bell, "Outside the browser").
+vmon can notify you with no browser open: desktop (`notify-send` on Linux, a PowerShell toast on Windows), ntfy, Slack, Matrix or a generic webhook. Everything is off by default. Put it in `~/.config/vmon/flows.toml`; the UI only shows the status (bell, "Outside the browser").
 
 Keep secrets out of files: every secret has an `*_env` twin that names an environment variable read when vmon starts sending (`url_env`, `token_env`, `webhook_url_env`, `access_token_env`). Start vmon with those variables set.
 
@@ -276,7 +278,7 @@ title_prefix = "vmon"
 
 [notify.desktop]
 enabled = true
-command = "notify-send"    # or an argv list; "-u <urgency> -a vmon -- <title> <body>" is appended
+command = ""               # empty = notify-send (Linux) or a PowerShell toast (Windows); or a program / argv list that gets "-u <urgency> -a vmon -- <title> <body>" appended
 urgency_error = "critical"
 
 [notify.ntfy]
@@ -298,7 +300,7 @@ vmon
 
 | Channel | Settings | Request |
 |---|---|---|
-| `desktop` | `command`, `urgency_error` | runs the program with an argv list, no shell |
+| `desktop` | `command`, `urgency_error` | runs the program with an argv list, no shell. Windows default: `powershell.exe -NoProfile -NonInteractive -EncodedCommand <fixed toast script>`; the title and body go in the environment (`VMON_TITLE`, `VMON_BODY`, cut to 256 and 2000 characters), never into the script text. An explicit `command` replaces it and gets the `notify-send`-style arguments |
 | `ntfy` | `url`/`url_env`, `token`/`token_env`, `priority_*` | `POST` of the text, headers `Title`, `Priority`, `Tags`, optional `Authorization: Bearer` |
 | `slack` | `webhook_url`/`webhook_url_env` | `POST` `{"text": "*title*\nbody"}` |
 | `matrix` | `homeserver`, `room_id`, `access_token`/`access_token_env` | `PUT /_matrix/client/v3/rooms/<room>/send/m.room.message/<unique txn>` with `{"msgtype": "m.text", "body": ...}` |

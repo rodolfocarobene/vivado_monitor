@@ -1,12 +1,14 @@
 """Per-clock timing history: per report stage within a build, and across builds.
 
 Per-clock numbers come only from timing_summary reports (Intra Clock Table). Finished builds
-are stored in ~/.cache/vmon/timing/<fw_id>.json (last KEEP builds, keyed by build start time).
+are stored in <cache dir>/timing/<fw_id>.json (last KEEP builds, keyed by build start time).
 """
 import json
 import re
 import time
 from pathlib import Path
+
+from .paths import write_atomic
 
 KEEP = 20
 MAX_CLOCKS = 30
@@ -55,7 +57,7 @@ def stages_of(fw, cfg):
 
 
 class ClockStore:
-    """~/.cache/vmon/timing/<fw_id>.json = {"builds": [{"started_at", "label", "per_clock"}]} (oldest first)."""
+    """<cache dir>/timing/<fw_id>.json = {"builds": [{"started_at", "label", "per_clock"}]} (oldest first)."""
 
     def __init__(self, directory):
         self.dir = Path(directory)
@@ -87,8 +89,7 @@ class ClockStore:
             builds.append(entry)
             builds.sort(key=lambda b: b.get("started_at") or 0)
         try:
-            self.dir.mkdir(parents=True, exist_ok=True)
-            (self.dir / (fw_id + ".json")).write_text(json.dumps({"builds": builds[-KEEP:]}))
+            write_atomic(self.dir / (fw_id + ".json"), json.dumps({"builds": builds[-KEEP:]}))
         except OSError:
             return False
         self.version += 1

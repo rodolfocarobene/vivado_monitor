@@ -373,7 +373,7 @@ function attemptsHTML(n, fw) {
     return `<div class="arow${isCur ? ' cur' : ' old'}" data-status="${esc(a.status)}"><div class="a-ic">${(ATT_ICON[a.status] || ICON.pending)}</div>
       <div class="a-main"><div class="a-h"><b>Attempt ${a.n}</b><span class="a-mode">${a.mode === 'resume' ? 'resumed' : a.mode === 'external' ? 'outside project flow (inferred from files)' : 'project run'}</span>${isCur ? '<span class="a-now">latest</span>' : ''}<span class="a-time num">${when}${dur ? ` · ${dur}` : ''}</span></div>
       ${a.log_missing ? '<div class="a-sum a-muted">log no longer available</div>' : a.summary ? `<div class="a-sum">${esc(a.summary)}</div>` : ''}
-      ${a.checkpoint ? `<div class="a-cp mono" title="${esc(a.checkpoint)}">from ${esc(a.checkpoint.split('/').pop())}</div>` : ''}
+      ${a.checkpoint ? `<div class="a-cp mono" title="${esc(a.checkpoint)}">from ${esc(a.checkpoint.split(/[\\/]/).pop())}</div>` : ''}
       ${f ? `<div class="a-fail"><b>${failKind(f)}:</b> ${esc(f.reason || 'Error')}${(f.details || f.hs_err) ? ` <button class="fbtn sm" data-act="att-toggle" data-key="open|${esc(fw.id)}|${esc(n.id)}|${a.n}">${open ? 'hide details' : 'details'}</button>` : ''}</div>${open ? failureHTML(f, fw, n, `a${a.n}`, '') : ''}` : ''}
       </div></div>`;
   }).join('');
@@ -2150,7 +2150,7 @@ const XKIND = {
 };
 const WATCHABLE = new Set(['runs', 'run', 'xpr', 'project_dir', 'log']);
 const xIcon = (e) => { const k = XKIND[e.kind]; return `<svg class="xi ${k ? k.cls : e.type === 'dir' ? 'k-dir' : 'k-file'}" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">${k ? k.icon : e.type === 'dir' ? XI.folder : XI.file}</svg>`; };
-const xp = { el: null, path: null, parent: null, home: null, entries: [], recent: [], sel: null, filter: '', editing: false, busy: false, error: null, curKind: null, pendingSel: null, reqId: 0 };
+const xp = { el: null, path: null, parent: null, home: null, drives: false, entries: [], recent: [], sel: null, filter: '', editing: false, busy: false, error: null, curKind: null, pendingSel: null, reqId: 0 };
 
 async function apiBrowse(path) {
   if (!MOCK) {
@@ -2253,8 +2253,10 @@ function exploreOpen(path) {
 
 function exploreRecent(path) {
   // show the recent entry inside its parent, selected, as a file manager would
-  const i = path.replace(/\/+$/, '').lastIndexOf('/');
-  exploreGo(i > 0 ? path.slice(0, i) : '/', null, path);
+  const trimmed = path.replace(/[\\/]+$/, '');
+  const i = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
+  const parent = i > 0 ? trimmed.slice(0, i) : '/';
+  exploreGo(/^[A-Za-z]:$/.test(parent) ? parent + '\\' : parent, null, path);
 }
 
 async function exploreGo(path, kind = null, selectPath = null) {
@@ -2263,7 +2265,7 @@ async function exploreGo(path, kind = null, selectPath = null) {
   try {
     const d = await apiBrowse(path);
     if (id !== xp.reqId) return;
-    Object.assign(xp, { path: d.path, parent: d.parent, home: d.home, entries: d.entries || [], recent: d.recent || xp.recent, error: null, curKind: kind, sel: selectPath, filter: '' });
+    Object.assign(xp, { path: d.path, parent: d.parent, home: d.home, drives: !!d.drives, entries: d.entries || [], recent: d.recent || xp.recent, error: null, curKind: kind, sel: selectPath, filter: '' });
     xp.r.filter.value = '';
     lsSet('vmon.browse', d.path);
   } catch (e) {
@@ -2287,7 +2289,9 @@ async function exploreWatch() {
   await watchAndOpen(t.path);
 }
 
-const normPath = (x) => String(x || '').replace(/\/+$/, '');
+// Windows paths (C:\x, C:/x, \\server\share) compare case-insensitively and with one separator
+const isWinPath = (x) => /^([A-Za-z]:|\\\\)/.test(x);
+const normPath = (x) => { const s = String(x || '').replace(/[\\/]+$/, ''); return isWinPath(s) ? s.replace(/\//g, '\\').toLowerCase() : s; };
 const fwForPath = (path) => {
   const base = normPath(path).replace(/\.(xpr|log)$/, '');
   return state.firmwares.find((f) => normPath(f.path) === normPath(path) || normPath(f.path).startsWith(base) || normPath(path).startsWith(normPath(f.path)));
@@ -2322,20 +2326,32 @@ async function openFromHistory(fwId, project, name) {
   await watchAndOpen(project);
 }
 
+// Breadcrumb segments [{label, path}] for /posix/paths, C:\drive\paths and \\server\share\paths (the drive list is "::drives")
+const X_DRIVES = '::drives';
+function xCrumbs(path) {
+  const p = path || '/';
+  if (p === X_DRIVES) return [{ label: 'This PC', path: X_DRIVES }];
+  if (!isWinPath(p)) { let acc = ''; return [{ label: '/', path: '/' }].concat(p.split('/').filter(Boolean).map((s) => ({ label: s, path: (acc += '/' + s) }))); }
+  const m = p.match(/^[A-Za-z]:|^\\\\[^\\/]+[\\/][^\\/]+/);
+  const root = m[0].replace(/\//g, '\\') + '\\';
+  let acc = root;
+  const out = (xp.drives ? [{ label: 'This PC', path: X_DRIVES }] : []).concat([{ label: root, path: root }]);
+  for (const s of p.slice(m[0].length).split(/[\\/]/).filter(Boolean)) { acc += (acc.endsWith('\\') ? '' : '\\') + s; out.push({ label: s, path: acc }); }
+  return out;
+}
+
 function renderExplore() {
   const r = xp.r;
   // breadcrumb
-  const parts = (xp.path || '/').split('/').filter(Boolean);
-  let acc = '';
-  const segs = [`<button class="xseg" data-xact="go" data-path="/" title="/">/</button>`].concat(parts.map((p) => { acc += '/' + p; return `<span class="xsep">›</span><button class="xseg" data-xact="go" data-path="${esc(acc)}" title="${esc(acc)}">${esc(p)}</button>`; }));
+  const segs = xCrumbs(xp.path).map((c, i) => `${i ? '<span class="xsep">›</span>' : ''}<button class="xseg" data-xact="go" data-path="${esc(c.path)}" title="${esc(c.path)}">${esc(c.label)}</button>`);
   setHTML(r.crumbs, segs.join(''));
   r.crumbs.scrollLeft = r.crumbs.scrollWidth;
   // sidebar
   const home = xp.home;
   const place = (icon, label, path, act = 'go') => `<button class="xplace${xp.path === path ? ' on' : ''}" data-xact="${act}" data-path="${esc(path)}" title="${esc(path)}">${icon}<span>${esc(label)}</span></button>`;
   const IC = (d) => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const rec = (xp.recent || []).map((p) => `<button class="xplace recent${xp.sel === p ? ' on' : ''}" data-xact="recent" data-path="${esc(p)}" title="${esc(p)}">${IC(XI.folder)}<span>${esc(p.split('/').filter(Boolean).slice(-2).join('/'))}</span></button>`).join('');
-  setHTML(r.side, `<div class="xsh">Places</div>${home ? place(IC('<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>'), 'Home', home) : ''}${place(IC('<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'), 'Root', '/')}<div class="xsh">Recent</div>${rec || '<div class="xnone">Nothing watched yet</div>'}`);
+  const rec = (xp.recent || []).map((p) => `<button class="xplace recent${xp.sel === p ? ' on' : ''}" data-xact="recent" data-path="${esc(p)}" title="${esc(p)}">${IC(XI.folder)}<span>${esc(p.split(/[\\/]/).filter(Boolean).slice(-2).join('/'))}</span></button>`).join('');
+  setHTML(r.side, `<div class="xsh">Places</div>${home ? place(IC('<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>'), 'Home', home) : ''}${xp.drives ? place(IC('<rect x="3" y="5" width="18" height="11" rx="2"/><path d="M8 20h8M12 16v4"/>'), 'This PC', X_DRIVES) : place(IC('<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'), 'Root', '/')}<div class="xsh">Recent</div>${rec || '<div class="xnone">Nothing watched yet</div>'}`);
   // list
   const vis = exploreVisible();
   let body;
@@ -2352,7 +2368,7 @@ function renderExplore() {
   const tgt = exploreTarget();
   r.watch.disabled = !tgt;
   const selE = xp.entries.find((x) => x.path === xp.sel);
-  setText(r.sel, tgt ? tgt.path : selE ? `${selE.path} — not watchable (open it, or pick a .runs / run / .xpr / log)` : xp.path || '');
+  setText(r.sel, tgt ? tgt.path : selE ? `${selE.path} — not watchable (open it, or pick a .runs / run / .xpr / log)` : xp.path === X_DRIVES ? 'This PC' : xp.path || '');
   r.sel.classList.toggle('ok', !!tgt);
   r.watch.title = tgt ? `Watch ${tgt.path}` : 'Select a .runs dir, run, .xpr, project folder or log';
 }
@@ -2458,7 +2474,7 @@ function updateMeters(sys) {
   meterEl.hidden = !sys;
   if (!sys) return;
   const rows = {
-    cpu: { pct: sys.cpu_pct, txt: `${Math.round(sys.cpu_pct)}%`, tip: `CPU ${sys.cpu_pct.toFixed(1)}% busy across ${sys.cpu_count} logical CPUs\nLoad average (1 min): ${sys.load1.toFixed(2)}` },
+    cpu: { pct: sys.cpu_pct, txt: `${Math.round(sys.cpu_pct)}%`, tip: `CPU ${sys.cpu_pct.toFixed(1)}% busy across ${sys.cpu_count} logical CPUs${sys.load1 == null ? '' : `\nLoad average (1 min): ${sys.load1.toFixed(2)}`}` },
     ram: { pct: sys.mem_total_mb ? (sys.mem_used_mb / sys.mem_total_mb) * 100 : 0, txt: `${gb(sys.mem_used_mb)}/${gb(sys.mem_total_mb)} GB`, tip: `RAM: ${(sys.mem_used_mb / 1024).toFixed(2)} GB used of ${(sys.mem_total_mb / 1024).toFixed(2)} GB (MemTotal − MemAvailable)` },
     swap: { pct: sys.swap_total_mb ? (sys.swap_used_mb / sys.swap_total_mb) * 100 : 0, txt: sys.swap_total_mb ? `${gb(sys.swap_used_mb)}/${gb(sys.swap_total_mb)} GB` : 'off', tip: sys.swap_total_mb ? `Swap: ${(sys.swap_used_mb / 1024).toFixed(2)} GB used of ${(sys.swap_total_mb / 1024).toFixed(2)} GB` : 'No swap configured' },
   };

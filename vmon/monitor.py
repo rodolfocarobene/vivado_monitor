@@ -14,6 +14,7 @@ from . import remote as remote_mod
 from . import rules_io
 from .docs import DocLinks
 from .notify import Notifier
+from .paths import cache_dir, canon, write_atomic
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
 from .expected import CatalogSet
 from .discovery import Discovery
@@ -22,7 +23,6 @@ from .reports import ReportCache
 from .sysstats import Sampler
 from .triage import PRIORITIES, BaselineStore, TriageConfig, UserRules, score_groups
 
-RECENT_FILE = Path.home() / ".cache" / "vmon" / "recent.json"
 RECENT_MAX = 20
 STATUS_RANK = {"running": 0, "queued": 1, "stopped": 2, "failed": 3}
 INTERVAL_MIN, INTERVAL_MAX = 0.5, 60.0
@@ -41,27 +41,27 @@ def resolve_path(text):
         return None
     if path.is_dir():
         if path.name.endswith(".runs"):
-            return "project", str(path)
+            return "project", canon(path)
         if path.parent.name.endswith(".runs"):
-            return "project", str(path.parent)
+            return "project", canon(path.parent)
         runs = sorted(p for p in path.glob("*.runs") if p.is_dir())
         if runs:
-            return "project", str(runs[0])
+            return "project", canon(runs[0])
         return None
     if path.is_file():
         if path.suffix == ".xpr":
-            return "project", str(path.parent / (path.stem + ".runs"))
+            return "project", canon(path.parent / (path.stem + ".runs"))
         if path.parent.parent.name.endswith(".runs"):
-            return "project", str(path.parent.parent)
-        return "log", str(path)
+            return "project", canon(path.parent.parent)
+        return "log", canon(path)
     return None
 
 
 class Monitor:
-    def __init__(self, config, interval=1.0, recent_file=RECENT_FILE, rules_file=None, remotes=()):
+    def __init__(self, config, interval=1.0, recent_file=None, rules_file=None, remotes=()):
         self.cfg = config
         self.interval = interval
-        self.recent_file = Path(recent_file)
+        self.recent_file = Path(recent_file or cache_dir() / "recent.json")
         self.tcfg = TriageConfig(config.data)
         self.user_rules = UserRules(rules_file)
         self.baselines = BaselineStore(self.recent_file.parent / "msgs")
@@ -116,6 +116,7 @@ class Monitor:
             return self._watch(*resolved)
 
     def _watch(self, kind, path):
+        path = canon(path)
         source = self._make_source(kind, path)
         self.ignored.discard(source.id)
         if source.id not in self.sources:
@@ -152,6 +153,7 @@ class Monitor:
                 self._watch_quiet(kind, path)
 
     def _watch_quiet(self, kind, path):
+        path = canon(path)
         source = self._make_source(kind, path)
         self.sources.setdefault(source.id, source)
         self.watched[source.id] = (kind, path)
@@ -159,8 +161,7 @@ class Monitor:
     def _save_recent(self):
         entries = [{"kind": k, "path": p} for k, p in self.watched.values()][-RECENT_MAX:]
         try:
-            self.recent_file.parent.mkdir(parents=True, exist_ok=True)
-            self.recent_file.write_text(json.dumps(entries))
+            write_atomic(self.recent_file, json.dumps(entries))
         except OSError:
             pass
 

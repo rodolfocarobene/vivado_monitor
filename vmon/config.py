@@ -4,10 +4,10 @@ import tomllib
 from pathlib import Path
 
 from . import hints as hints_mod
+from .paths import config_dir, split_name
 
 PACKAGE_DIR = Path(__file__).parent
 DEFAULT_FLOWS = PACKAGE_DIR / "flows.toml"
-USER_FLOWS = Path.home() / ".config" / "vmon" / "flows.toml"
 
 
 def deep_merge(base, override):
@@ -111,7 +111,7 @@ class ResumeConfig:
 
     def step_for_checkpoint(self, path):
         """Step a checkpoint file was written after (by its name suffix), or None."""
-        stem = re.sub(r"\.dcp$", "", str(path).rsplit("/", 1)[-1])
+        stem = re.sub(r"\.dcp$", "", split_name(path))
         for suffix, step in self.checkpoints:
             if stem.endswith(suffix):
                 return step
@@ -222,12 +222,12 @@ class Config:
 
 
 def load_config(extra_path=None):
-    """Defaults + ~/.config/vmon/flows.toml + --config file. Tables deep-merge, lists and scalars are replaced,
+    """Defaults + <config dir>/flows.toml (see paths.py) + --config file. Tables deep-merge, lists and scalars are replaced,
     except [[hints]] (merged by id) and hints_config.disabled (united across files)."""
     with open(DEFAULT_FLOWS, "rb") as fh:
         data = tomllib.load(fh)
     disabled = list(data.get("hints_config", {}).get("disabled", []))
-    for path in (USER_FLOWS, Path(extra_path) if extra_path else None):
+    for path in (config_dir() / "flows.toml", Path(extra_path) if extra_path else None):
         if path and path.is_file():
             with open(path, "rb") as fh:
                 layer = tomllib.load(fh)

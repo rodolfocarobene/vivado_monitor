@@ -23,7 +23,8 @@ from .resume import scan_session
 from .docs import DocLinks
 from . import info as info_mod
 from .logparse import LogParser, SEVERITIES
-from .logtail import LogTail
+from .logtail import LogTail, file_identity
+from .paths import path_key
 from .model import Firmware, Flow, Node, Timing, compute_met, counts_dict
 
 PID_RE = re.compile(r'Pid="(\d+)"')
@@ -35,7 +36,7 @@ _CARRIED = ("whs", "ths")      # setup values (wns/tns) from another pass would 
 
 
 def fw_id(path):
-    return hashlib.sha1(str(path).encode()).hexdigest()[:10]
+    return hashlib.sha1(path_key(path).encode()).hexdigest()[:10]
 
 
 class ParsedLog:
@@ -671,7 +672,7 @@ class ProjectSource(Source):
         if hit and hit[0] == mtime:
             return hit[1]
         try:
-            match = PID_RE.search(Path(path).read_text(errors="replace"))
+            match = PID_RE.search(Path(path).read_text(encoding="utf-8", errors="replace"))
         except OSError:
             match = None
         pid = int(match.group(1)) if match else None
@@ -731,7 +732,7 @@ class ProjectSource(Source):
             hit = self._tcl_cache.get(str(tcl))
             if not hit or hit[0] != mtime:
                 try:
-                    hit = (mtime, self.cfg.tcl_start_step_re.findall(tcl.read_text(errors="replace")))
+                    hit = (mtime, self.cfg.tcl_start_step_re.findall(tcl.read_text(encoding="utf-8", errors="replace")))
                 except OSError:
                     hit = (mtime, [])
                 self._tcl_cache[str(tcl)] = hit
@@ -830,7 +831,7 @@ class ProjectSource(Source):
         if run.log_path:
             try:
                 st = os.stat(run.log_path)
-                sig["ino"], sig["size"] = st.st_ino, st.st_size
+                sig["ino"], sig["size"] = file_identity(st), st.st_size
             except OSError:
                 pass
         prev, state["sig"] = state.get("sig"), sig
@@ -887,7 +888,7 @@ class ProjectSource(Source):
         if not script:
             return []
         try:
-            text = Path(script).read_text(errors="replace")
+            text = Path(script).read_text(encoding="utf-8", errors="replace")
         except OSError:
             return []
         out = []

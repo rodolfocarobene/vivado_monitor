@@ -117,7 +117,7 @@ def test_missing_and_duplicate_id():
 def load_with(tmp_path, monkeypatch, text):
     user = tmp_path / "flows.toml"
     user.write_text(textwrap.dedent(text))
-    monkeypatch.setattr(config_mod, "USER_FLOWS", tmp_path / "none.toml")
+    monkeypatch.setattr(config_mod, "config_dir", lambda: tmp_path / "no_config_dir")
     return config_mod.load_config(user)
 
 

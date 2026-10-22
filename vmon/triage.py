@@ -1,7 +1,7 @@
 """Message triage: score aggregated log messages so the ones worth reading come first.
 
 Rules, keywords and weights live in flows.toml ([messages]); user overrides in
-~/.config/vmon/message_rules.json; the novelty baseline in ~/.cache/vmon/msgs/<fw_id>.json.
+<config dir>/message_rules.json; the novelty baseline in <cache dir>/msgs/<fw_id>.json (dirs: paths.py).
 """
 import json
 import os
@@ -10,13 +10,14 @@ import threading
 from pathlib import Path
 
 from . import rules_io
+from .paths import config_dir, write_atomic
 
 PRIORITIES = ("critical", "high", "medium", "low", "mute")
 SEV_ORDER = {"info": 0, "warning": 1, "critical": 2, "error": 3}
 
 
 def default_rules_file():
-    return Path.home() / ".config" / "vmon" / "message_rules.json"
+    return config_dir() / "message_rules.json"
 
 
 class TriageConfig:
@@ -46,7 +47,7 @@ class TriageConfig:
 
 
 class UserRules:
-    """{"<id>": priority} persisted as JSON; the only file vmon writes outside ~/.cache/vmon."""
+    """{"<id>": priority} persisted as JSON; the only file vmon writes outside the cache dir."""
 
     def __init__(self, path=None):
         self.path = Path(path) if path else default_rules_file()
@@ -88,10 +89,7 @@ class UserRules:
     def _write(self):
         if not self.rules and not self.path.exists():
             return
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.path.with_name(self.path.name + ".tmp")
-        tmp.write_text(json.dumps(self.rules, indent=1, sort_keys=True))
-        os.replace(tmp, self.path)
+        write_atomic(self.path, json.dumps(self.rules, indent=1, sort_keys=True))
 
 
 class BaselineStore:
@@ -133,8 +131,7 @@ class BaselineStore:
                 del data["previous"]
         self._cache[fw_id] = data
         try:
-            self.dir.mkdir(parents=True, exist_ok=True)
-            (self.dir / (fw_id + ".json")).write_text(json.dumps(data))
+            write_atomic(self.dir / (fw_id + ".json"), json.dumps(data))
         except OSError:
             return False
         self.version += 1
