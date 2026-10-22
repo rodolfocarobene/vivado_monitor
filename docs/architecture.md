@@ -25,6 +25,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `sysstats.py`, `browse.py` | System CPU/RAM/swap through the platform backend; read-only directory listing for the folder explorer. |
 | `remote.py` | Remote vmon instances: config/CLI validation, one poller thread per remote, id namespacing, request forwarding. |
 | `monitor.py` | Background thread: each tick discover, update parsers, publish state. |
+| `term.py`, `source.py`, `status.py`, `tui.py` | Terminal mode: pure formatting over the state dict (`term`), the data source (`source`), `vmon status` and the curses `--tui`. |
 | `server.py` | `ThreadingHTTPServer`: static files, JSON API and Server-Sent Events. |
 | `static/` | `index.html`, `app.js`, `style.css` (no build step). `static/mock/` holds the demo data used by `?mock=1`. |
 
@@ -116,6 +117,12 @@ Timing lines are matched by `[timing.patterns.*]`. A value of `N/A` becomes null
 Routes that take `fw=` accept `<host>~<id>` for a firmware of a [remote](#remote-vmon-instances) and are forwarded to that host; the table above describes them as the remote answers.
 
 Top-level model: `State` contains `Firmware` objects; each has `flows` of `Node` trees (`group`, `run`, `step`, `command`, `phase`, `task`) with `status`, `counts`, `timing`, `reports`, `alerts`, `expected`/`optional` flags and predicted phase numbers. The full field-level contract is in [`SPEC.md`](../SPEC.md).
+
+## Terminal mode
+
+`vmon status` and `vmon --tui` consume the same state dict as the web UI. `source.Source` first asks `GET /api/state` on `--host:--port`; a vmon that answers is the source (remotes included, `paths` only filter its firmwares). Otherwise it builds a `Monitor(read_only=True)` with the normal config, adds the given paths (the remembered ones load as usual) and ticks once synchronously in a worker thread with a 120 s bound; `--tui` starts the monitor thread instead and a poller thread hands snapshots to the UI, so rendering never blocks a tick. `read_only` only suppresses writes to `recent.json`; a tick still writes its normal cache files. No server is started and no browser opened.
+
+`term.py` is pure: a rendered line is a list of `(text, tone)` segments painted as ANSI (status) or curses attributes (tui). Outcome words and tones follow the UI (red only for failed or final timing not met; stale, non-final and estimated values are amber). `tui.Model` holds selection, expansion and scroll and renders to a list of lines for a given size, so it is tested without a terminal; `curses` is imported optionally and Windows falls back to `status --watch`. Exit codes of `status` are in the README.
 
 ## Remote vmon instances
 

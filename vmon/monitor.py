@@ -58,8 +58,9 @@ def resolve_path(text):
 
 
 class Monitor:
-    def __init__(self, config, interval=1.0, recent_file=None, rules_file=None, remotes=()):
+    def __init__(self, config, interval=1.0, recent_file=None, rules_file=None, remotes=(), read_only=False):
         self.cfg = config
+        self.read_only = read_only     # terminal views: never update the recent-paths list
         self.interval = interval
         self.recent_file = Path(recent_file or cache_dir() / "recent.json")
         self.tcfg = TriageConfig(config.data)
@@ -159,6 +160,8 @@ class Monitor:
         self.watched[source.id] = (kind, path)
 
     def _save_recent(self):
+        if self.read_only:
+            return
         entries = [{"kind": k, "path": p} for k, p in self.watched.values()][-RECENT_MAX:]
         try:
             write_atomic(self.recent_file, json.dumps(entries))
