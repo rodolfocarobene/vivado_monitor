@@ -411,7 +411,9 @@ class Notifier:
         return text
 
     def _fail(self, channel, text):
-        if self._errors.get(channel.name) != text:      # once per distinct failure, not per event
+        # Logged once per outage, not per event or per error text (the text can alternate, e.g. refused vs timed
+        # out on Windows); a successful send clears the channel's error and re-arms the log line.
+        if channel.name not in self._errors:
             print("vmon: notify %s failed: %s" % (channel.name, text), file=sys.stderr)
         self._errors[channel.name] = text
         self._last_error = {"channel": channel.name, "error": text, "t": self.clock()}

@@ -327,6 +327,22 @@ def test_failure_logged_once_per_channel(capsys):
     assert err.count("notify webhook failed") == 1 and PATH_SECRET not in err
 
 
+def test_failure_log_rearms_after_a_success(capsys):
+    """One log line per outage even when the error text alternates; a successful send re-arms it."""
+    n = Notifier(spec(webhook={"enabled": True, "url": "http://127.0.0.1:9/" + PATH_SECRET}))
+    hook = next(c for c in n.channels if c.name == "webhook")
+    outcomes = iter([OSError("refused"), TimeoutError(), None, OSError("refused")])
+
+    def send(msg):
+        exc = next(outcomes)
+        if exc:
+            raise exc
+    hook.send = send
+    for _ in range(4):
+        n.handle(message(n))
+    assert capsys.readouterr().err.count("notify webhook failed") == 2
+
+
 def test_error_strings_hide_details():
     assert describe_error(ValueError("unknown url type: 'x'/secret")) == "invalid URL"
     assert redact_url("https://user:pw@h.example.org:8443/a/b?c=d") == "https://h.example.org:8443"
