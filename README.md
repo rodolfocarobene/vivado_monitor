@@ -43,11 +43,17 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 
 ## Requirements
 
-- Linux (reads `/proc`)
-- Python 3.11 or newer (tests pass on 3.11 and 3.14)
+- Linux, or Windows (experimental, see below)
+- Python 3.11 or newer
 - Vivado project-mode or non-project logs
 
-Tested with Vivado 2023.2 on UltraScale+ RFSoC. Other versions or device families may need catalog entries (see [docs/catalog.md](docs/catalog.md)).
+> [!IMPORTANT]
+> **Testing is limited.** vmon has been used and checked on one Linux machine, with Vivado 2023.2 on UltraScale+ RFSoC, plus the automated tests and the mock data in this repository. Other Vivado versions, device families and flows have not been tested and may need catalog entries (see [docs/catalog.md](docs/catalog.md)).
+>
+> **Windows support has not been tested with a real Vivado build.** It runs only in CI (unit tests and a smoke test on GitHub's `windows-latest`, without Vivado). Process discovery, log and path handling, the folder explorer and desktop notifications on Windows are implemented but unverified in practice. Reports from Windows users are welcome.
+
+> [!NOTE]
+> **About this code.** All the code in this repository was written by Claude (Anthropic's AI model). A human checked it only functionally, by using it and reviewing its behaviour, not by reviewing the code line by line.
 
 ## Install
 
@@ -56,6 +62,14 @@ git clone <repo-url> vivado-monitor
 cd vivado-monitor
 python -m venv .venv
 .venv/bin/pip install -e .      # provides the `vmon` command
+```
+
+On Windows (PowerShell):
+
+```powershell
+py -m venv .venv
+.venv\Scripts\pip install -e .
+.venv\Scripts\vmon            # or: py -m vmon
 ```
 
 Or run without installing: `python -m vmon`.
@@ -98,16 +112,16 @@ Demo without Vivado: serve `vmon/static/` with any static server and open `index
 
 All Vivado-specific knowledge is data, not code.
 
-- `vmon/flows.toml`: line rules, timing patterns, steps, report parsers, alert thresholds, docs links, message triage rules. Override with `~/.config/vmon/flows.toml`.
-- `vmon/catalog/vivado_<ver>.toml`: steps, phases and tasks per Vivado version. Override or add under `~/.config/vmon/catalog/`.
-- `~/.config/vmon/message_rules.json`: your message priorities (written by the UI).
-- `~/.cache/vmon/`: recent paths, previous-build baselines, step durations.
+- `vmon/flows.toml`: line rules, timing patterns, steps, report parsers, alert thresholds, docs links, message triage rules. Override with `~/.config/vmon/flows.toml` (Windows: `%APPDATA%\vmon\flows.toml`).
+- `vmon/catalog/vivado_<ver>.toml`: steps, phases and tasks per Vivado version. Override or add under `~/.config/vmon/catalog/` (Windows: `%APPDATA%\vmon\catalog\`).
+- `~/.config/vmon/message_rules.json` (Windows: `%APPDATA%\vmon\`): your message priorities (written by the UI).
+- `~/.cache/vmon/` (Windows: `%LOCALAPPDATA%\vmon\`): recent paths, previous-build baselines, step durations, build history.
 
 See [docs/configuration.md](docs/configuration.md), [docs/catalog.md](docs/catalog.md) and [docs/architecture.md](docs/architecture.md).
 
 ## Safety
 
-vmon is read-only on your build directories and never signals or kills processes. It binds to `127.0.0.1` by default. With remotes it makes HTTP requests to the configured URLs only (no redirects, no proxies). It writes only to `~/.cache/vmon/` and `~/.config/vmon/message_rules.json`.
+vmon is read-only on your build directories and never signals or kills processes. It binds to `127.0.0.1` by default. With remotes it makes HTTP requests to the configured URLs only (no redirects, no proxies). It writes only to its cache and message-rules file (`~/.cache/vmon/` and `~/.config/vmon/message_rules.json`; on Windows `%LOCALAPPDATA%\vmon\` and `%APPDATA%\vmon\message_rules.json`). On Windows it reads other processes' command line and working directory with query/read access only.
 
 ## Development
 
