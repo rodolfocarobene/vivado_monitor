@@ -166,7 +166,16 @@ vmon is read-only on your build directories and never signals or kills processes
 .venv/bin/python tools/check_docs.py   # docs cover every API route, config section and CLI option
 ```
 
-CI (GitHub Actions) runs the tests on Python 3.11–3.14, a server smoke test, frontend checks, a packaging check and the docs check on every push and pull request.
+Browser tests (`tests/e2e/`, marked `e2e`) drive the UI in headless Chromium through Playwright, which is a development-only dependency (pinned in `requirements-dev.txt`, currently 1.64.0; vmon itself still has no runtime dependencies). Install the browser once, then run them:
+
+```sh
+.venv/bin/python -m playwright install chromium
+.venv/bin/python -m pytest -m e2e -q
+```
+
+Without playwright or a browser they are skipped, so a plain `python -m pytest` works everywhere. Set `VMON_E2E_BROWSER=firefox` to use Firefox instead (`playwright install firefox`), `PLAYWRIGHT_BROWSERS_PATH` to keep the browsers outside `~/.cache/ms-playwright`, and `VMON_E2E_REQUIRE=1` to fail instead of skip when the browser is missing (CI does). A failing test leaves a screenshot and a Playwright trace in `.tmp/e2e-artifacts/` (`VMON_E2E_ARTIFACTS` changes the folder; open a trace with `playwright show-trace`).
+
+CI (GitHub Actions) runs the tests on Python 3.11–3.14, a server smoke test, frontend checks, the browser tests (job "Frontend e2e", failure screenshots and traces are uploaded as an artifact), a packaging check and the docs check on every push and pull request.
 
 The architecture contract is in [SPEC.md](SPEC.md).
 

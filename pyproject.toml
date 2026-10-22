@@ -44,3 +44,4 @@ vmon = ["flows.toml", "static/*", "static/mock/*", "catalog/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["e2e: headless-browser tests (need playwright and a browser; run them with -m e2e)"]
