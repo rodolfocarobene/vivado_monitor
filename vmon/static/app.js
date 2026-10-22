@@ -2458,7 +2458,7 @@ function updateMeters(sys) {
   meterEl.hidden = !sys;
   if (!sys) return;
   const rows = {
-    cpu: { pct: sys.cpu_pct, txt: `${Math.round(sys.cpu_pct)}%`, tip: `CPU ${sys.cpu_pct.toFixed(1)}% busy across ${sys.cpu_count} logical CPUs\nLoad average (1 min): ${sys.load1.toFixed(2)}` },
+    cpu: { pct: sys.cpu_pct, txt: `${Math.round(sys.cpu_pct)}%`, tip: `CPU ${sys.cpu_pct.toFixed(1)}% busy across ${sys.cpu_count} logical CPUs${sys.load1 == null ? '' : `\nLoad average (1 min): ${sys.load1.toFixed(2)}`}` },
     ram: { pct: sys.mem_total_mb ? (sys.mem_used_mb / sys.mem_total_mb) * 100 : 0, txt: `${gb(sys.mem_used_mb)}/${gb(sys.mem_total_mb)} GB`, tip: `RAM: ${(sys.mem_used_mb / 1024).toFixed(2)} GB used of ${(sys.mem_total_mb / 1024).toFixed(2)} GB (MemTotal − MemAvailable)` },
     swap: { pct: sys.swap_total_mb ? (sys.swap_used_mb / sys.swap_total_mb) * 100 : 0, txt: sys.swap_total_mb ? `${gb(sys.swap_used_mb)}/${gb(sys.swap_total_mb)} GB` : 'off', tip: sys.swap_total_mb ? `Swap: ${(sys.swap_used_mb / 1024).toFixed(2)} GB used of ${(sys.swap_total_mb / 1024).toFixed(2)} GB` : 'No swap configured' },
   };

@@ -1,8 +1,11 @@
-"""Find running Vivado processes (read-only, via /proc) and group them into firmwares."""
+"""Find running Vivado processes (read-only, via the platform backend) and group them into firmwares."""
 import os
+import re
+import sys
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePath, PureWindowsPath
 
+from .procinfo import get_backend
 from .resume import scan_session
 
 LOG_SCAN_BYTES = 2_000_000
@@ -29,57 +32,37 @@ def _read(path):
         return b""
 
 
-def _ppid(pid):
-    data = _read("/proc/%d/stat" % pid)
-    if not data:
-        return None
-    try:
-        return int(data.rsplit(b")", 1)[1].split()[1])
-    except (IndexError, ValueError):
-        return None
+def _windows_style(path):
+    """Drive-letter or UNC paths are split the Windows way even when vmon runs elsewhere (tests)."""
+    return sys.platform == "win32" or bool(re.match(r"^([A-Za-z]:[\\/]|\\\\)", path))
+
+
+def _pure_path(path):
+    return PureWindowsPath(path) if _windows_style(path) else PurePath(path)
+
+
+def _basename(path):
+    return _pure_path(path).name
 
 
 def runs_location(cwd):
-    """('/x/foo.runs', 'impl_1') when cwd is inside a *.runs dir, else None."""
-    parts = Path(cwd).parts
+    """('/x/foo.runs', 'impl_1') when cwd is inside a *.runs dir (any case, any slash), else None."""
+    pure = _pure_path(cwd)
+    parts = pure.parts
     for i, part in enumerate(parts):
-        if part.endswith(".runs") and len(part) > 5:
-            runs_dir = str(Path(*parts[:i + 1]))
+        if part.lower().endswith(".runs") and len(part) > 5:
+            runs_dir = str(type(pure)(*parts[:i + 1]))
             return runs_dir, (parts[i + 1] if i + 1 < len(parts) else None)
     return None
 
 
 def pid_alive(pid):
-    return pid is not None and os.path.exists("/proc/%d" % pid)
+    return pid is not None and get_backend().alive(pid)
 
 
 def scan_vivado():
-    """Return [{'pid','ppid','args','cwd'}] for real vivado binaries (not the bash wrappers)."""
-    found = []
-    try:
-        names = os.listdir("/proc")
-    except OSError:
-        return found
-    for name in names:
-        if not name.isdigit():
-            continue
-        pid = int(name)
-        if _read("/proc/%d/comm" % pid).strip() != b"vivado":
-            continue
-        try:
-            exe = os.path.basename(os.readlink("/proc/%d/exe" % pid))
-        except OSError:
-            exe = ""
-        args = [a.decode("utf-8", "replace") for a in _read("/proc/%d/cmdline" % pid).split(b"\0") if a]
-        if exe != "vivado" and not (args and os.path.basename(args[0]) == "vivado"
-                                    and "unwrapped" in args[0]):
-            continue
-        try:
-            cwd = os.readlink("/proc/%d/cwd" % pid)
-        except OSError:
-            cwd = None
-        found.append({"pid": pid, "ppid": _ppid(pid), "args": args, "cwd": cwd})
-    return found
+    """Return [{'pid','ppid','args','cwd'}] for real Vivado processes (platform backend decides)."""
+    return get_backend().vivado_processes()
 
 
 def _arg_after(args, flag):
@@ -103,7 +86,7 @@ def is_run_worker(proc, run_dir):
     if not log:
         return False
     name = os.path.basename(log)
-    return (os.path.dirname(os.path.normpath(log)) == os.path.normpath(run_dir)
+    return (os.path.normcase(os.path.dirname(os.path.normpath(log))) == os.path.normcase(os.path.normpath(run_dir))
             and (name.endswith((".vdi", ".vds")) or name == "runme.log"))
 
 
@@ -161,14 +144,8 @@ class Discovery:
         if not procs:
             return []
         children_of = {}
-        try:
-            for name in os.listdir("/proc"):
-                if name.isdigit():
-                    parent = _ppid(int(name))
-                    if parent is not None:
-                        children_of.setdefault(parent, []).append(int(name))
-        except OSError:
-            pass
+        for pid, parent in get_backend().process_table().items():
+            children_of.setdefault(parent, []).append(pid)
         groups = {}
 
         def group_for(kind, path, name):
@@ -183,7 +160,7 @@ class Discovery:
             if loc:
                 in_runs[proc["pid"]] = loc
                 runs_dir, run = loc
-                group = group_for("project", runs_dir, Path(runs_dir).name[:-5])
+                group = group_for("project", runs_dir, _basename(runs_dir)[:-5])
                 group.pids.add(proc["pid"])
                 if run and is_run_worker(proc, os.path.join(runs_dir, run)):
                     group.run_pids.setdefault(run, set()).add(proc["pid"])
@@ -204,11 +181,11 @@ class Discovery:
             if target is None and log:
                 target = self._project_from_log(log, cwd)
             if target:
-                group = group_for("project", target, Path(target).name[:-5])
+                group = group_for("project", target, _basename(target)[:-5])
                 group.pids.add(proc["pid"])
                 group.launcher = launcher
             elif log and (ckpt := self._resume_target(proc, log)):
-                group = group_for("project", ckpt[0], Path(ckpt[0]).name[:-5])
+                group = group_for("project", ckpt[0], _basename(ckpt[0])[:-5])
                 group.pids.add(proc["pid"])
                 self._add_resume(group, proc, ckpt[1])
             elif log and os.path.exists(log):

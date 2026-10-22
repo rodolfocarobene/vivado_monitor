@@ -38,6 +38,39 @@ jobs:
           curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8765/api/browse?path=/proc" | grep -q 403
           kill %1
 
+  windows:
+    name: Tests (Windows, Python 3.13)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -r requirements-dev.txt
+      - name: Unit tests
+        run: python -m pytest -q
+      - name: Smoke test (server + API)
+        shell: pwsh
+        run: |
+          $server = Start-Process -FilePath python -ArgumentList "-m", "vmon", "--no-browser", "--port", "8765", "tests/fixtures/qick/d_1_wrapper.vdi" -PassThru -WindowStyle Hidden
+          try {
+            $state = $null
+            for ($i = 0; $i -lt 30 -and -not $state; $i++) {
+              try { $state = Invoke-RestMethod -Uri http://127.0.0.1:8765/api/state } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $state) { throw "server did not answer" }
+            if (-not $state.firmwares -or -not $state.system) { throw "state lacks firmwares or system" }
+            if (-not $state.firmwares[0].flows) { throw "no flow parsed" }
+            if ($state.system.mem_total_mb -le 0 -or $null -ne $state.system.load1) { throw "unexpected system stats" }
+            $page = Invoke-WebRequest -Uri http://127.0.0.1:8765/ -UseBasicParsing
+            if ($page.Content -notmatch "<html") { throw "no UI page" }
+          } finally {
+            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          }
+
   frontend:
     name: Frontend checks
     runs-on: ubuntu-latest

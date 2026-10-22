@@ -43,8 +43,11 @@ Everything read is read-only. The only files vmon writes are under `~/.cache/vmo
 
 ## Discovery
 
-- Scans `/proc/*/comm` for `vivado`, then reads `cmdline`, `cwd` and the parent pid.
-- If the cwd is `<X>.runs/<run>/`, the process belongs to project `<X>.runs`.
+- Process access goes through a read-only platform backend (`vmon/procinfo.py` picks it from `sys.platform`; Python standard library and `ctypes` only):
+  - Linux (`procinfo_linux.py`): scans `/proc/*/comm` for `vivado`, then reads `cmdline`, `cwd` and the parent pid; system and per-process stats come from `/proc/stat`, `meminfo`, `loadavg`, `PID/stat` and `PID/status`.
+  - Windows (`procinfo_windows.py`, bindings in `winapi.py`): a Toolhelp snapshot lists pids, parent pids and image names; Vivado is any `vivado.exe` (case-insensitive; `vivado.bat`, the loader and `cmd.exe` parents are not Vivado processes but stay in the process tree, so launcher detection through descendants works unchanged). Command line and current directory are read from the target's PEB (`NtQueryInformationProcess` + `ReadProcessMemory`, opened with query/read rights only) and split like `CommandLineToArgvW`. Protected or other users' processes simply lack those fields. CPU comes from `GetSystemTimes`/`GetProcessTimes`, memory from `GlobalMemoryStatusEx` and the working set. Swap is approximated as commit limit minus physical RAM; there is no load average (`load1` is `null`, the UI omits it). Reading another process's PEB needs a 64-bit Python.
+  - Other systems (macOS): a null backend with no discovery and no stats; a one-line notice is printed and manually added paths still work.
+- If the cwd is `<X>.runs/<run>/` (matched case-insensitively, with either slash style on Windows), the process belongs to project `<X>.runs`.
 - Otherwise it looks for `-log <file>` (or `vivado.log` in the cwd) and scans it for `open_project <path>.xpr`. A launcher process is tied to a project through its Vivado descendants.
 - With no project found, the log becomes a standalone "log" firmware (non-project flow).
 - Paths given on the command line or through the UI are watched too, and the last 20 are remembered in `~/.cache/vmon/recent.json` so finished runs reappear after a restart.

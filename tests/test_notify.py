@@ -1,5 +1,6 @@
 import json
 import stat
+import sys
 import threading
 import time
 import urllib.request
@@ -71,6 +72,9 @@ def fw(name="lockin", path="/proj/lockin.runs"):
 def ev(kind="step_failed", level="error", code=None, t=None, node="n/route", title="lockin: Route failed", message="boom"):
     return {"t": time.time() + 1 if t is None else t, "kind": kind, "level": level, "code": code,
             "node_id": node, "title": title, "message": message}
+
+
+posix_only = pytest.mark.skipif(sys.platform == "win32", reason="fake notify command is a /bin/sh script")
 
 
 def fake_command(tmp_path, exit_code=0):
@@ -230,6 +234,7 @@ def test_matrix_request_and_unique_txn(rx):
     assert body["msgtype"] == "m.text" and "lockin: Route failed" in body["body"] and "/proj/lockin.runs" in body["body"]
 
 
+@posix_only
 def test_desktop_argv_no_shell(tmp_path):
     script, out = fake_command(tmp_path)
     n = Notifier(spec(desktop={"enabled": True, "command": str(script), "urgency_error": "critical"}))
@@ -241,6 +246,7 @@ def test_desktop_argv_no_shell(tmp_path):
     assert "-u\nnormal" in out.read_text() and "vmon · x; touch /tmp/pwned" in lines
 
 
+@posix_only
 def test_desktop_command_list(tmp_path):
     script, out = fake_command(tmp_path)
     n = Notifier(spec(desktop={"enabled": True, "command": [str(script), "--extra"]}))
@@ -281,6 +287,7 @@ def test_error_strings_hide_details():
     assert redact_url("not a url") == "invalid URL" and redact_url("file:///etc/passwd") == "invalid URL"
 
 
+@posix_only
 def test_desktop_failure_and_missing_command(tmp_path):
     script, _ = fake_command(tmp_path, exit_code=3)
     n = Notifier(spec(desktop={"enabled": True, "command": str(script)}))
@@ -303,6 +310,7 @@ def serve(tmp_path, cfg):
     return server, "http://127.0.0.1:%d" % server.server_address[1]
 
 
+@posix_only
 def test_api_status_and_test(tmp_path, cfg, rx):
     script, out = fake_command(tmp_path)
     secret_url = rx.base + "/" + PATH_SECRET

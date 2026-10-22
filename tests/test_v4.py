@@ -1,9 +1,11 @@
 import json
 import os
+import sys
 import threading
 import urllib.error
 import urllib.request
 
+import pytest
 from conftest import FIXTURES, build_runs
 from test_project import lockin, qick, stage_map
 from test_v2 import make_monitor
@@ -11,6 +13,8 @@ from vmon.browse import browse, live_paths
 from vmon.discovery import Group
 from vmon.project import ProjectSource
 from vmon.server import make_server
+
+posix_only = pytest.mark.skipif(sys.platform == "win32", reason="relies on /proc and POSIX chmod/root semantics")
 
 
 def route_after_na(tmp_path, cfg, report_cache, catalogs):
@@ -118,6 +122,7 @@ def test_browse_kinds_hidden_sorting(tmp_path):
     assert out["parent"] == os.path.dirname(os.path.realpath(tmp_path))
 
 
+@posix_only
 def test_browse_errors_and_limits(tmp_path, monkeypatch):
     from vmon import browse as mod
     import pytest
@@ -144,6 +149,7 @@ def test_browse_errors_and_limits(tmp_path, monkeypatch):
     assert browse("/", "/h", set(), [])["parent"] is None
 
 
+@posix_only
 def test_live_paths_and_http_browse(tmp_path, cfg, monkeypatch):
     home = tmp_path / "home"
     home.mkdir()
