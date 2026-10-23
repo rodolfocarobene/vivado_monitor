@@ -139,6 +139,34 @@ def is_run_worker(proc, run_dir):
             and (name.endswith((".vdi", ".vds")) or name == "runme.log"))
 
 
+def _in_scratch(cwd):
+    """True inside a Vivado .Xil scratch dir (helpers for debug cores, IP generation, ...)."""
+    return bool(cwd) and any(part.lower() == ".xil" for part in syntax_path(cwd).parts)
+
+
+def _ancestor_in(pid, parent_of, pids):
+    """Nearest ancestor of pid that is in `pids`, else None."""
+    seen = set()
+    pid = parent_of.get(pid)
+    while pid and pid not in seen:
+        if pid in pids:
+            return pid
+        seen.add(pid)
+        pid = parent_of.get(pid)
+    return None
+
+
+def _ancestor_group(pid, parent_of, owner):
+    seen = set()
+    pid = parent_of.get(pid)
+    while pid and pid not in seen:
+        if pid in owner:
+            return owner[pid]
+        seen.add(pid)
+        pid = parent_of.get(pid)
+    return None
+
+
 def _descendants(pid, children_of):
     out, todo = set(), [pid]
     while todo:
@@ -214,8 +242,8 @@ class Discovery:
         procs = scan_vivado()
         if not procs:
             return []
-        children_of = {}
-        for pid, parent in get_backend().process_table().items():
+        children_of, parent_of = {}, get_backend().process_table()
+        for pid, parent in parent_of.items():
             children_of.setdefault(parent, []).append(pid)
         groups = {}
 
@@ -226,19 +254,32 @@ class Discovery:
                 groups[key] = Group(kind, path, name)
             return groups[key]
 
-        in_runs = {}
-        for proc in procs:
-            loc = runs_location(proc["cwd"]) if proc["cwd"] else None
+        in_runs, maybe_resume = {}, []
+        for proc in procs:                                    # 1. the processes Vivado starts for each run
+            loc = runs_location(proc["cwd"]) if proc["cwd"] and not _in_scratch(proc["cwd"]) else None
             if loc:
                 in_runs[proc["pid"]] = loc
                 runs_dir, run = loc
-                group = group_for("project", runs_dir, _basename(runs_dir)[:-5])
-                group.pids.add(proc["pid"])
                 if run and is_run_worker(proc, os.path.join(runs_dir, run)):
+                    group = group_for("project", runs_dir, _basename(runs_dir)[:-5])
+                    group.pids.add(proc["pid"])
                     group.run_pids.setdefault(run, set()).add(proc["pid"])
                 else:
-                    self._add_resume(group, proc, run)
-        for proc in procs:
+                    maybe_resume.append((proc, runs_dir, run))
+        # 2. Any Vivado started by another Vivado process (debug cores and IP generation, often in a .Xil scratch
+        # dir) is a helper of its ancestor's build: it counts for resources, but is never a resume, an attempt or a
+        # build of its own. Only the top Vivado of each process tree is classified below.
+        vivado = {p["pid"] for p in procs}
+        resumable = {proc["pid"] for proc, _, _ in maybe_resume}
+        tops = [p for p in procs if p["pid"] not in in_runs or p["pid"] in resumable]
+        tops = [p for p in tops if _ancestor_in(p["pid"], parent_of, vivado) is None and not _in_scratch(p["cwd"])]
+        top_ids = {p["pid"] for p in tops}
+        for proc, runs_dir, run in maybe_resume:               # 3. a top Vivado inside a run dir: a user resume
+            if proc["pid"] in top_ids:
+                group = group_for("project", runs_dir, _basename(runs_dir)[:-5])
+                group.pids.add(proc["pid"])
+                self._add_resume(group, proc, run)
+        for proc in tops:                                     # 4. launchers (vivado -source build.tcl, the GUI)
             if proc["pid"] in in_runs:
                 continue
             args, cwd = proc["args"], proc["cwd"]
@@ -264,4 +305,10 @@ class Discovery:
                 group = group_for("log", log, Path(_basename(log)).stem)
                 group.pids.add(proc["pid"])
                 group.launcher = launcher
+        owner = {pid: g for g in groups.values() for pid in g.pids}
+        for proc in procs:                                    # helpers join the build of their nearest owned ancestor
+            if proc["pid"] not in owner and proc["pid"] not in top_ids:
+                group = _ancestor_group(proc["pid"], parent_of, owner)
+                if group is not None:
+                    group.pids.add(proc["pid"])
         return list(groups.values())

@@ -72,3 +72,45 @@ def test_a_standalone_log_is_kept(cfg, tmp_path):
     log_id = monitor._watch("log", str(log))
     monitor.tick()
     assert log_id in monitor.firmwares
+
+
+def discover_with(cfg, procs, parent_of):
+    from vmon import procinfo
+
+    class Backend(procinfo.NullBackend):
+        def vivado_processes(self):
+            return procs
+
+        def process_table(self):
+            return parent_of
+    procinfo.set_backend(Backend())
+    try:
+        return Discovery(cfg).discover()
+    finally:
+        procinfo.set_backend(None)
+
+
+def test_debug_core_helpers_are_part_of_their_run(cfg, tmp_path):
+    """Debug-core generation spawns Vivados under impl_1/.Xil (and a nested prj_ip.runs): not resumes, not builds."""
+    impl = tmp_path / "top.runs" / "impl_1"
+    impl.mkdir(parents=True)
+    xil = impl / ".Xil" / "Vivado-20-host" / "dc_drv.0" / "dc"
+    procs = [
+        {"pid": 20, "args": ["vivado", "-log", "top.vdi", "-mode", "batch"], "cwd": str(impl)},
+        {"pid": 30, "args": ["vivado", "-mode", "batch", "-source", "debug_ip_core.tcl"], "cwd": str(xil)},
+        {"pid": 40, "args": ["vivado", "-mode", "batch", "-source", "dbg_hub.tcl"],
+         "cwd": str(xil / "prj_ip.runs" / "dbg")},
+        {"pid": 50, "args": ["vivado", "-mode", "batch"], "cwd": str(impl)},   # a non-scratch child in the run dir
+    ]
+    groups = discover_with(cfg, procs, {20: 1, 25: 20, 30: 25, 40: 30, 50: 20})
+    assert len(groups) == 1
+    group = groups[0]
+    assert group.resumes == [] and group.pids == {20, 30, 40, 50} and group.run_pids == {"impl_1": {20}}
+
+
+def test_a_launchers_vivado_child_is_not_a_build(cfg, tmp_path):
+    (tmp_path / "vivado.log").write_text("plain\n")
+    procs = [{"pid": 10, "args": ["vivado", "-mode", "batch", "-source", "b.tcl"], "cwd": str(tmp_path)},
+             {"pid": 11, "args": ["vivado", "-mode", "batch"], "cwd": str(tmp_path)}]
+    groups = discover_with(cfg, procs, {10: 1, 11: 10})
+    assert [(g.kind, g.pids) for g in groups] == [("log", {10, 11})]
