@@ -9,7 +9,7 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 ## Features
 
 - **Auto-discovery** of running Vivado processes; one tab per firmware, finished runs stay visible.
-- **Stage rail + drill-down**: synth, opt, place, phys_opt, route, bitstream stay pinned in a left rail with a *follow live* switch; the selected stage drills down on the right (on narrow windows the list becomes one tree, with the stage opening in place). Upcoming steps and phases come from a per-version phase catalog, with predicted phase numbers.
+- **Stage rail + drill-down**: synth, opt, place, phys_opt, route, bitstream stay pinned in a left rail, with a *follow live* switch in the top bar; the selected stage drills down on the right (on narrow windows the list becomes one tree, with the stage opening in place). Upcoming steps and phases come from a per-version phase catalog, with predicted phase numbers.
 - **Timing you can trust**: intermediate and estimated values are shown as "not final"; red only when the final result fails. Missing hold metrics are carried forward and marked stale.
 - **Utilization card**, parsing of intermediate reports (timing, DRC, power, route status, ...).
 - **Worst timing paths** (setup/hold, logic vs route; expand one to see it as a chain of blocks: launch register, each cell and net with its delay and fanout, capture register), **per-clock history** across stages and builds with regressions highlighted.
@@ -139,7 +139,7 @@ ssh -N -L 9001:127.0.0.1:8765 user@server &          # or let vmon do it: vmon -
 vmon --remote buildsrv=http://127.0.0.1:9001
 ```
 
-Remote firmwares appear as tabs with a host badge; the top bar shows one dot per remote (hover for the address and last update). Messages, logs, reports, timing paths, history, comparisons, summaries and downloads are fetched from the server on demand through your local vmon, which only ever talks to the hosts you configured. `Watch` and `Explore` still act on this machine. See [docs/configuration.md](docs/configuration.md#remote-vmon-instances).
+Remote firmwares appear as tabs with a host badge; the top bar shows one dot per remote (hover for the address and last update). Messages, logs, reports, timing paths, history, comparisons, summaries and downloads are fetched from the server on demand through your local vmon, which only ever talks to the hosts you configured. `Explore` still acts on this machine. See [docs/configuration.md](docs/configuration.md#remote-vmon-instances).
 
 Demo without Vivado: serve `vmon/static/` with any static server and open `index.html?mock=1`, for example `python -m http.server 8798 --bind 127.0.0.1 --directory vmon/static`.
 
