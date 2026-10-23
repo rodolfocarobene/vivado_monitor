@@ -1114,6 +1114,7 @@ function syncBody(el, n, fw, depth) {
     }
     if (act === 'flow') {
       if (r.panes.flow.firstChild && r.panes.flow.firstChild._isNone) r.panes.flow.innerHTML = '';
+      r.panes.flow.classList.toggle('parallel', !!n.parallel);
       patchList(r.panes.flow, n.children, (c) => c.id, createNode, (e, c) => updateNode(e, c, fw, depth + 1));
     } else if (act === 'messages') ensureMessages(el, n, fw);
     else if (act === 'log') ensureLog(el, n, fw);

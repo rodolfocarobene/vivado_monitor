@@ -76,6 +76,7 @@ class Node:
     log_missing: bool = False
     convergence: dict | None = None
     congestion: dict | None = None
+    parallel: bool = False       # children are independent (OOC runs): no connector between them
 
     def to_dict(self):
         return {
@@ -90,7 +91,7 @@ class Node:
             "doc_url": self.doc_url, "number": self.number, "number_predicted": self.number_predicted,
             "failure": self.failure, "attempts": self.attempts, "log_missing": self.log_missing,
             "convergence": self.convergence, "congestion": self.congestion,
-            "children": [c.to_dict() for c in self.children],
+            "parallel": self.parallel, "children": [c.to_dict() for c in self.children],
         }
 
 

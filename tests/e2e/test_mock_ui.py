@@ -225,3 +225,16 @@ def test_narrow_layout_hosts_the_detail_under_the_selected_stage(page, mock_url)
     expect(page.locator(".stagelist > .stg.sel .stagedetail")).to_have_count(1)
     assert page.locator(".stagedetail").count() == 1
     assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+
+
+def test_ooc_runs_are_not_chained_by_rail_lines(page, mock_url):
+    """OOC runs are independent: no connector between them, while the stage's own children stay connected."""
+    open_mock(page, mock_url, "fw=top&sel=synth")
+    node_card(page, "IP out-of-context").click()
+    rails = page.locator(".pane-flow.parallel > .node > .rail")
+    expect(rails.first).to_be_visible()
+    assert rails.count() == 12
+    shown = rails.evaluate_all("els => els.map(e => getComputedStyle(e, '::after').display + getComputedStyle(e, '::before').display)")
+    assert set(shown) == {"nonenone"}
+    first = page.locator(".stagedetail > .main > .body .pane-flow > .node > .rail").first
+    assert first.evaluate("e => getComputedStyle(e, '::after').display") != "none"

@@ -182,6 +182,7 @@
        "children": [
         {
          "id": "synth/ooc",
+         "parallel": true,
          "label": "IP out-of-context (1)",
          "kind": "group",
          "status": "done",
@@ -3195,6 +3196,7 @@
        "children": [
         {
          "id": "synth/ooc",
+         "parallel": true,
          "label": "IP out-of-context (12)",
          "kind": "group",
          "status": "done",
@@ -6593,6 +6595,7 @@
        "children": [
         {
          "id": "synth/ooc",
+         "parallel": true,
          "label": "IP out-of-context (12)",
          "kind": "group",
          "status": "done",
@@ -9029,6 +9032,7 @@
        "children": [
         {
          "id": "synth/ooc",
+         "parallel": true,
          "label": "IP out-of-context (12)",
          "kind": "group",
          "status": "done",
@@ -10662,6 +10666,7 @@
        "children": [
         {
          "id": "synth/ooc",
+         "parallel": true,
          "label": "IP out-of-context (12)",
          "kind": "group",
          "status": "done",
@@ -12930,6 +12935,7 @@
        "children": [
         {
          "id": "synth/ooc",
+         "parallel": true,
          "label": "IP out-of-context (12)",
          "kind": "group",
          "status": "done",

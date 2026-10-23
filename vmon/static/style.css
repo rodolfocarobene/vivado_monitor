@@ -161,6 +161,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 22px 20px 80px; }
 .rail::after { --seg: var(--line); top: var(--icy); bottom: 0; }
 .node + .node > .rail::before { --seg: var(--line-dim); top: 0; height: var(--icy); }
 .node:last-child > .rail::after { display: none; }
+.parallel > .node > .rail::before, .parallel > .node > .rail::after { display: none; }   /* independent OOC runs */
 .node[data-status="done"] { --line: var(--ok); }
 .node[data-status="done"] > .rail::after { background: var(--ok); }
 .node[data-status="done"] + .node > .rail::before { background: var(--ok); }

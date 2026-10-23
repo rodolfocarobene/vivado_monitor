@@ -1161,6 +1161,7 @@ class ProjectSource(Source):
             if ooc:
                 children.append(self._group_node("synth/ooc", self.cfg.layout["ooc_group_label"].format(n=len(ooc)),
                                                  ooc, live, now))
+                children[-1].parallel = True
             children.extend(top)
             synth_stage = self._group_node("synth", self.cfg.layout["synth_stage_label"], children, live, now)
             synth_stage.alerts = []
