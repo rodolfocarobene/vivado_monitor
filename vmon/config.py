@@ -171,6 +171,9 @@ class Config:
         self.wallclock_format = parse["wallclock_format"]
         self.tcl_start_step_re = re.compile(parse["tcl_start_step_re"], re.M)
         self.open_project_re = re.compile(parse["open_project_re"])
+        self.create_project_re = re.compile(parse["create_project_re"], re.M)
+        self.tcl_set_re = re.compile(parse["tcl_set_re"], re.M)
+        self.tcl_set_dir_re = re.compile(parse["tcl_set_dir_re"], re.M)
         self.version_re = re.compile(parse["version_re"])
         self.max_messages = parse.get("max_messages", 300000)
 
