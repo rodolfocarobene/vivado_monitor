@@ -139,7 +139,7 @@ def is_run_worker(proc, run_dir):
             and (name.endswith((".vdi", ".vds")) or name == "runme.log"))
 
 
-def _in_scratch(cwd):
+def in_scratch(cwd):
     """True inside a Vivado .Xil scratch dir (helpers for debug cores, IP generation, ...)."""
     return bool(cwd) and any(part.lower() == ".xil" for part in syntax_path(cwd).parts)
 
@@ -256,7 +256,7 @@ class Discovery:
 
         in_runs, maybe_resume = {}, []
         for proc in procs:                                    # 1. the processes Vivado starts for each run
-            loc = runs_location(proc["cwd"]) if proc["cwd"] and not _in_scratch(proc["cwd"]) else None
+            loc = runs_location(proc["cwd"]) if proc["cwd"] and not in_scratch(proc["cwd"]) else None
             if loc:
                 in_runs[proc["pid"]] = loc
                 runs_dir, run = loc
@@ -272,7 +272,7 @@ class Discovery:
         vivado = {p["pid"] for p in procs}
         resumable = {proc["pid"] for proc, _, _ in maybe_resume}
         tops = [p for p in procs if p["pid"] not in in_runs or p["pid"] in resumable]
-        tops = [p for p in tops if _ancestor_in(p["pid"], parent_of, vivado) is None and not _in_scratch(p["cwd"])]
+        tops = [p for p in tops if _ancestor_in(p["pid"], parent_of, vivado) is None and not in_scratch(p["cwd"])]
         top_ids = {p["pid"] for p in tops}
         for proc, runs_dir, run in maybe_resume:               # 3. a top Vivado inside a run dir: a user resume
             if proc["pid"] in top_ids:

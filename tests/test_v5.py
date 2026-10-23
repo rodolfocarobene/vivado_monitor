@@ -450,3 +450,15 @@ def test_artifact_map_is_configurable(tmp_path, catalogs):
     assert cfg.artifacts.step_for_file("main_wrapper.xyz", "main_wrapper") == "write_bitstream"
     assert cfg.artifacts.step_for_file("main_wrapper.bit", "main_wrapper") == "write_bitstream"
     assert cfg.artifacts.step_for_file("other.bit", "main_wrapper") is None
+
+
+def test_session_recorded_from_a_xil_helper_is_dropped(tmp_path, cfg, report_cache, catalogs):
+    """Older versions took debug-core helpers (logging under impl_1/.Xil) for resumes and persisted them."""
+    runs = crashed_run(tmp_path, vivado_error=False)
+    log = runs / "impl_1" / ".Xil" / "Vivado-1-host" / "dc_drv.0" / "dc" / "vivado.log"
+    log.parent.mkdir(parents=True)
+    shutil.copy(CRASH / "resume.log", log)
+    for group in (resume_group(runs, log), None):          # as if handed over by the old discovery, then gone
+        fw = snap(runs, cfg, report_cache, catalogs, group)
+        assert fw.attempt["n"] == 1
+        assert all(len(s.attempts) < 2 for s in fw.flows[0].stages)

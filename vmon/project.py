@@ -18,7 +18,7 @@ from . import convergence as convergence_mod
 from . import failure as failure_mod
 from .attempts import AttemptStore
 from .config import StepDef
-from .discovery import pid_alive
+from .discovery import in_scratch, pid_alive
 from .resume import scan_session
 from .docs import DocLinks
 from . import info as info_mod
@@ -871,8 +871,10 @@ class ProjectSource(Source):
                     state["sessions"].append(known)
                 known.update({"checkpoint": item["checkpoint"] or known.get("checkpoint"),
                               "script": item["script"], "cwd": item["cwd"]})
-        # a session whose log is gone stays as long as it has a persisted summary to show
-        state["sessions"] = [x for x in state["sessions"] if os.path.isfile(x["log"]) or x.get("steps")]
+        # a session whose log is gone stays as long as it has a persisted summary to show; one logged in a .Xil
+        # scratch dir was a helper (debug cores) that older versions took for a resume, never a real attempt
+        state["sessions"] = [x for x in state["sessions"]
+                             if (os.path.isfile(x["log"]) or x.get("steps")) and not in_scratch(x["log"])]
         out = []
         for sess in state["sessions"]:
             info = dict(sess)
