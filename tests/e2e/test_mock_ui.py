@@ -206,6 +206,46 @@ def test_compare_view_opens_with_two_picks(page, mock_url):
     expect(history.locator("table.hx")).to_be_visible()
 
 
+def test_compare_across_firmwares(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=all", ready="table.hx")
+    history = page.get_by_label("Build history", exact=True)
+    rows = history.locator("tbody tr")
+    expect(rows.first.locator(".sub.path")).not_to_be_empty()
+    names = {row.locator(".hx-open").inner_text() for row in rows.all()[:4]}
+    assert len(names) > 1
+    first = rows.nth(0).get_by_role("checkbox")
+    first.check()
+    other = next(r for r in rows.all() if r.locator(".hx-open").inner_text() != rows.nth(0).locator(".hx-open").inner_text())
+    other.get_by_role("checkbox").check()
+    history.get_by_role("button", name="Compare", exact=True).click()
+    expect(history.locator(".cmp-card").first).to_be_visible()
+    expect(history.locator(".cmp-fw")).to_have_count(2)
+    expect(history.locator(".cmp-b .cmp-sub.mono")).to_have_count(2)
+    expect(history.locator(".hx-n")).to_contain_text("↔")
+
+
+def test_finished_only_filter_hides_failed_and_stopped(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=all", ready="table.hx")
+    history = page.get_by_label("Build history", exact=True)
+    total = history.locator("tbody tr").count()
+    history.locator("tbody tr td.pick input").first.check()
+    toggle = history.get_by_role("switch", name="Finished only")
+    toggle.check()
+    shown = history.locator("tbody tr").count()
+    assert 0 < shown < total
+    expect(history.locator(".pill[data-status=failed], .pill[data-status=stopped]")).to_have_count(0)
+    expect(history.locator(".hx-n")).to_have_text("%d builds" % shown)
+    toggle.uncheck()
+    expect(history.locator("tbody tr")).to_have_count(total)
+
+
+def test_finished_only_from_hash(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=all&hdone=1", ready="table.hx")
+    history = page.get_by_label("Build history", exact=True)
+    expect(history.get_by_role("switch", name="Finished only")).to_be_checked()
+    expect(history.locator(".pill[data-status=failed]")).to_have_count(0)
+
+
 def test_notifications_popover_opens_and_escape_closes_it(page, mock_url):
     open_mock(page, mock_url, "fw=lockin")
     bell = page.get_by_role("button", name="Notifications")

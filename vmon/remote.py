@@ -218,7 +218,7 @@ class Remotes:
         if remote is None:
             handler._error(404, "unknown firmware")
             return True
-        params = [("fw", local) if k == "fw" else (k, v) for k, v in _pairs(query)]
+        params = [(k, split_id(v)[1]) if k in ("fw", "fw_b") else (k, v) for k, v in _pairs(query)]
         if route in REWRITTEN:
             status, data = self.fetch_json(host, route, params)
             handler._json(rewrite(route, data, host) if status == 200 else data, status)
@@ -291,6 +291,8 @@ REWRITTEN = frozenset(("/api/history", "/api/history/build", "/api/history/compa
 
 def rewrite(route, data, host):
     """Namespace the firmware ids in a remote's history answer so the UI keeps addressing that host."""
+    if route == "/api/history/compare" and isinstance(data, dict):
+        return {**qualify_record(data, host), **{k: qualify_record(data[k], host) for k in ("a", "b") if k in data}}
     if route != "/api/history":
         return qualify_record(data, host)
     return {**data, "builds": [qualify_build(b, host) for b in data.get("builds", ())],

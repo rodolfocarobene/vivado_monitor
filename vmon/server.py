@@ -56,6 +56,11 @@ def make_server(monitor, host, port):
             url = urlparse(self.path)
             query = parse_qs(url.query)
             route = url.path
+            if route == "/api/history/compare":
+                fw_a = query.get("fw", [""])[0]
+                fw_b = query.get("fw_b", [""])[0] or fw_a
+                if remote_mod.split_id(fw_a)[0] != remote_mod.split_id(fw_b)[0]:
+                    return self._error(400, "builds on different hosts cannot be compared")
             if route in remote_mod.PROXY_GET and remote_mod.split_id(query.get("fw", [""])[0])[0]:
                 return monitor.remotes.forward(self, route, query)
             if route == "/api/state":
@@ -213,7 +218,8 @@ def make_server(monitor, host, port):
                 if route == "/api/history/build":
                     record = store.build(fw_id, query.get("build", [""])[0])
                     return self._json(record) if record else self._error(404, "no such build in the history")
-                result, err = store.compare(fw_id, query.get("a", [""])[0], query.get("b", [""])[0])
+                result, err = store.compare(fw_id, query.get("a", [""])[0], query.get("b", [""])[0],
+                                              query.get("fw_b", [""])[0] or None)
                 return self._error(*err) if err else self._json(result)
             if route == "/api/history/summary":
                 return self._summary(store, fw_id, query)

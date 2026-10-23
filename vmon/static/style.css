@@ -1202,6 +1202,8 @@ body[data-page="history"] .sumbar { display: none; }
 .hx-sel { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: var(--fs-small); }
 .hx-sel select { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; font-size: var(--fs-control); color: var(--text); }
 .hx-sel select:hover { border-color: var(--accent); }
+.hx-chk { cursor: pointer; white-space: nowrap; }
+.hx-chk input { margin: 0; accent-color: var(--accent); }
 .hx-back { padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-3); font-size: var(--fs-control); font-weight: 600; color: var(--text-2); }
 .hx-back:hover { border-color: var(--accent); color: var(--text); }
 .hx-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); overflow-x: auto; }
@@ -1214,8 +1216,10 @@ table.hx { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
 .hx tr.go { cursor: pointer; }
 .hx tr.go:hover td { background: var(--panel-2); }
 .hx .when { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hx .res .pill { white-space: nowrap; }
 .hx .fwn { font-weight: 600; }
 .hx .sub { display: block; color: var(--muted); font-size: var(--fs-caption); margin-top: 2px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hx .sub.path { font-family: var(--mono); max-width: 240px; direction: rtl; text-align: left; } /* ellipsis at the front: the tail tells copies apart */
 .hx .dur, .hx .tm, .hx .ut { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hx .tm .neg { color: var(--err); font-weight: 700; }
 .hx .tm i, .hx .ut i { font-style: normal; color: var(--muted); font-family: var(--sans); font-size: var(--fs-caption); margin-right: 4px; }
@@ -1244,6 +1248,7 @@ table.hx { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
   .hx td::before { content: attr(data-label); display: block; font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 2px; }
   .hx td.links-c { grid-column: 1 / -1; min-width: 0; }
   .hx .sub { max-width: none; white-space: normal; }
+  .hx .sub.path { white-space: nowrap; max-width: 100%; }
 }
 .hx .pill { text-transform: none; } /* outcome text is a sentence ("Finished, timing met") */
 .hx-bitgrp { display: inline-flex; gap: 4px; white-space: nowrap; } /* keep the copy button with its .bit */
@@ -1271,6 +1276,8 @@ table.hist.pclk-t td.mono { padding: 4px 8px 4px 12px; }
 .cmp-when { font-size: var(--fs-lead); font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0 8px; }
 .cmp-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: var(--fs-control); }
 .cmp-b .pill { text-transform: none; }
+.cmp-fw { font-weight: 700; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-sub.mono { font-size: var(--fs-micro); direction: rtl; text-align: left; }
 .cmp-sub { color: var(--muted); font-size: var(--fs-caption); margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cmp-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 8px; color: var(--text-2); }
 .cmp-mid .num { font-size: var(--fs-heading); font-weight: 700; color: var(--text); }

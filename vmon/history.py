@@ -211,11 +211,12 @@ class HistoryStore:
             return None
         return {**record, "artifacts": [{**a, "current": is_current(a)} for a in record.get("artifacts", ())]}
 
-    def compare(self, fw_id, a, b):
-        """(diff, None) of two builds of one firmware, else (None, (status, why))."""
-        if a == b:
+    def compare(self, fw_id, a, b, fw_b=None):
+        """(diff, None) of build `a` of `fw_id` and build `b` of `fw_b` (default: same firmware), else (None, (status, why))."""
+        fw_b = fw_b or fw_id
+        if (fw_id, a) == (fw_b, b):
             return None, (400, "pick two different builds")
-        old, new = self.build(fw_id, a), self.build(fw_id, b)
+        old, new = self.build(fw_id, a), self.build(fw_b, b)
         if old is None or new is None:
             return None, (404, "no such build in the history")
         return compare_records(old, new), None
@@ -239,7 +240,7 @@ def _pair(a, b, digits=3):
 
 
 def _header(r):
-    keys = ("build", "started_at", "ended_at", "duration_s", "result", "part", "strategy_impl", "vivado_version", "counts")
+    keys = ("build", "fw_id", "firmware", "project", "started_at", "ended_at", "duration_s", "result", "part", "strategy_impl", "vivado_version", "counts")
     return {k: r.get(k) for k in keys}
 
 
@@ -295,7 +296,7 @@ def _messages_diff(a, b):
 
 
 def compare_records(a, b):
-    """Structured diff of two records of one firmware; `a` is the base (older), `b` the newer build."""
+    """Structured diff of two records (of one firmware or two); `a` is the base, `b` the build compared against it."""
     return {"fw_id": b.get("fw_id"), "firmware": b.get("firmware"), "a": _header(a), "b": _header(b),
             "duration": _pair(a.get("duration_s"), b.get("duration_s"), 1),
             "timing": _timing_diff(a, b), "utilization": _util_diff(a, b), "steps": _steps_diff(a, b),

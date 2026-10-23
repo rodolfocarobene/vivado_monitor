@@ -131,6 +131,8 @@ def test_history_api(tmp_path, cfg):
         assert get(cmp_url).code == 400                                      # same build twice
         assert get(cmp_url.replace("&b=%s" % build["build"], "&b=nope")).code == 404
         assert get("%s/api/history/compare?fw=../x&a=1&b=2" % base).code == 404
+        assert get(cmp_url + "&fw_b=%s" % fw_id).code == 400                 # fw_b naming the same firmware: still one build
+        assert get(cmp_url + "&fw_b=zzz").code == 404
         assert get("%s/api/history?fw=../etc" % base).code == 404
         assert json.load(get("%s/api/history?fw=zzz" % base))["builds"] == []
 
@@ -223,3 +225,16 @@ def test_messages_of_caps_and_filters():
     out = history.messages_of(groups, 500)
     assert list(out) == ["E", "C", "W"] and len(out["W"]["text"]) == 160
     assert list(history.messages_of(groups, 2)) == ["E", "C"] and history.messages_of(None, 5) == {}
+
+
+def test_compare_across_firmwares(tmp_path):
+    store = history.HistoryStore(tmp_path / "h")
+    store.record({**full("1", 1.0)[0], "project": "/w/top/top.runs"})
+    store.record({**full("1", 2.0, fw_id="fw2", firmware="top_backup")[0], "project": "/w/top_backup/top.runs"})
+    d, err = store.compare("fw1", "1", "1", "fw2")                       # same build key, different firmware: allowed
+    assert err is None and d["fw_id"] == "fw2"
+    assert (d["a"]["fw_id"], d["a"]["firmware"], d["a"]["project"]) == ("fw1", "top", "/w/top/top.runs")
+    assert (d["b"]["fw_id"], d["b"]["firmware"], d["b"]["project"]) == ("fw2", "top_backup", "/w/top_backup/top.runs")
+    assert store.compare("fw1", "1", "1", "fw1")[1][0] == 400
+    assert store.compare("fw1", "1", "1", "nope")[1][0] == 404
+    assert store.compare("fw1", "1", "1", "../x")[1][0] == 404
