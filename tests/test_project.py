@@ -206,3 +206,14 @@ def test_impl_only_relaunch_keeps_the_synthesis_it_builds_on(tmp_path, cfg, repo
     fw = ProjectSource(runs, cfg, report_cache, catalogs).snapshot(None, now=2_000_100)
     synth = fw.flows[0].stages[0]
     assert synth.id == "synth" and [c.id for c in synth.children] == ["synth/ooc", "synth_1"]
+
+
+def test_launch_from_a_later_step_keeps_the_steps_it_builds_on(tmp_path, cfg, report_cache, catalogs):
+    """`launch_runs impl_1 -from_step write_bitstream` rewrites the run script with that step alone."""
+    runs = qick(tmp_path)
+    (runs / "impl_1" / "d_1_wrapper.tcl").write_text("start_step write_bitstream\nwrite_bitstream x.bit\nend_step write_bitstream\n")
+    fw = ProjectSource(runs, cfg, report_cache, catalogs).snapshot(None, now=1_010_000)
+    impl = [s for s in fw.flows[0].stages if s.id.startswith("impl_1/")]
+    assert [s.id.split("/")[1] for s in impl] == ["init_design", "opt_design", "place_design", "phys_opt_design",
+                                                  "route_design", "write_bitstream"]
+    assert {s.status for s in impl} == {"done"}
