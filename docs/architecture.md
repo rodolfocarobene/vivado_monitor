@@ -51,7 +51,7 @@ Everything read is read-only. The only files vmon writes are under the cache dir
   - Windows (`procinfo_windows.py`, bindings in `winapi.py`): a Toolhelp snapshot lists pids, parent pids and image names; Vivado is any `vivado.exe` (case-insensitive; `vivado.bat`, the loader and `cmd.exe` parents are not Vivado processes but stay in the process tree, so launcher detection through descendants works unchanged). Command line and current directory are read from the target's PEB (`NtQueryInformationProcess` + `ReadProcessMemory`, opened with query/read rights only) and split like `CommandLineToArgvW`. Protected or other users' processes simply lack those fields. CPU comes from `GetSystemTimes`/`GetProcessTimes`, memory from `GlobalMemoryStatusEx` and the working set. Swap is approximated as commit limit minus physical RAM; there is no load average (`load1` is `null`, the UI omits it). Reading another process's PEB needs a 64-bit Python.
   - Other systems (macOS): a null backend with no discovery and no stats; a one-line notice is printed and manually added paths still work.
 - If the cwd is `<X>.runs/<run>/` (matched case-insensitively, with either slash style on Windows), the process belongs to project `<X>.runs`.
-- Otherwise it looks for `-log <file>` (or `vivado.log` in the cwd) and scans it for `open_project <path>.xpr`. A launcher process is tied to a project through its Vivado descendants.
+- Otherwise it looks for `-log <file>` (or `vivado.log` in the cwd) and scans it for `open_project <path>.xpr` and `create_project <name> [dir]` (the last one wins). Vivado echoes a sourced script with its variables unexpanded, so simple `set var value`, `set var [file normalize x]` and `set var [pwd]` lines are substituted first; anything still unresolved is ignored (patterns in `[parse]`). A launcher process is also tied to a project through its Vivado descendants, and a log first seen on its own is merged into the project once it turns out to be that project's launcher.
 - With no project found, the log becomes a standalone "log" firmware (non-project flow).
 - Paths given on the command line or through the UI are watched too, and the last 20 are remembered in `<cache dir>/recent.json` so finished runs reappear after a restart.
 
@@ -73,7 +73,9 @@ For a run directory `R`:
 - `R/.<step>.begin.rst`, `.end.rst`, `.error.rst`: step status and start/end time (mtime).
 - `R/<top>.tcl`: `start_step <name>` lines give the planned step list (only enabled steps).
 - `R/gen_run.xml`, `runme.log`; main log is `<top>.vds` (synth) or `<top>.vdi` (impl).
-- `<X>.runs/.jobs/vrs_config_<N>.xml` with the highest N lists the runs of the current launch.
+- `<X>.runs/.jobs/vrs_config_<N>.xml` with the highest N lists the runs of the current launch. When it has no
+  synthesis run (a script that calls `launch_runs impl_1` after synthesis), the latest earlier launch that has one
+  adds its synthesis and OOC runs.
 - Reports such as `<top>_timing_summary_routed.rpt`; a report older than its step's begin marker is flagged stale and never raises alerts.
 
 Flow layout: a "Synthesis" stage (out-of-context IP runs collapsed into a sub-group, then the top synth run), followed by each implementation step in tcl order. Steps not yet started are shown as pending placeholders from the catalog.

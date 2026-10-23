@@ -14,7 +14,7 @@ from . import remote as remote_mod
 from . import rules_io
 from .docs import DocLinks
 from .notify import Notifier
-from .paths import cache_dir, canon, write_atomic
+from .paths import cache_dir, canon, path_key, write_atomic
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
 from .expected import CatalogSet
 from .discovery import Discovery
@@ -140,6 +140,20 @@ class Monitor:
             self._save_recent()
             return True
 
+    def _absorb_launcher_logs(self, groups, live):
+        """A log watched on its own (seen before its project could be told) that is now the launcher log of a
+        project is the same build: drop the stale duplicate instead of keeping an idle extra tab."""
+        logs = {path_key(g.launcher["log"]) for g in groups
+                if g.kind == "project" and g.launcher and g.launcher.get("log")}
+        dropped = False
+        for fw_id, (kind, path) in list(self.watched.items()):
+            if kind == "log" and fw_id not in live and path_key(path) in logs:
+                for table in (self.sources, self.firmwares, self.watched, self._hint_groups):
+                    table.pop(fw_id, None)
+                dropped = True
+        if dropped:
+            self._save_recent()
+
     def _load_recent(self):
         try:
             entries = json.loads(self.recent_file.read_text())
@@ -184,6 +198,7 @@ class Monitor:
                 if source.id not in self.sources:
                     self._watch(group.kind, group.path)
                 by_id[source.id] = group
+            self._absorb_launcher_logs(groups, by_id)
             now = time.time()
             for fw_id, source in list(self.sources.items()):
                 try:

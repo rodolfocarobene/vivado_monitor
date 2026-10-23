@@ -666,7 +666,7 @@ function buildView() {
   head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), host: $('.fw-host', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), hints: $('.hintbar', head), seg: $('.viewseg', head), exp: $('.fw-exp', head) };
   const banner = h('div', 'banner');
   // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
-  const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span><button class="followbtn" data-act="follow" title="Keep the running stage selected">follow live</button></div><div class="segwrap"></div><div class="stagelist"></div>`);
+  const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span></div><div class="segwrap"></div><div class="stagelist"></div>`);
   setAttr(rail, 'aria-label', 'Stages');
   const split = h('div', 'split', '<section class="detail"></section>');
   const mv = h('section', 'msgview', `
@@ -679,7 +679,7 @@ function buildView() {
   tv.hidden = true;
   mainEl.classList.add('railed');
   mainEl.append(rail, head, banner, split, mv, tv);
-  mainEl._r = { banner, rail, seg: $('.segwrap', rail), split, stages: $('.stagelist', rail), detail: $('.detail', split), followBtn: $('.followbtn', rail), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
+  mainEl._r = { banner, rail, seg: $('.segwrap', rail), split, stages: $('.stagelist', rail), detail: $('.detail', split), followBtn: $('#follow-btn'), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
 }
 
 // Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
@@ -1005,6 +1005,7 @@ function renderStageList(fw, flow) {
   if (!sel) { sel = { id: null, follow: true }; ui.sel.set(fw.id, sel); }
   if (hashSelPending && stages.some((s) => s.id === hashSel)) { sel.id = hashSel; sel.follow = false; hashSelPending = false; }
   const selStage = (!sel.follow && stages.find((s) => s.id === sel.id)) || autoStage(stages);
+  v.followBtn.hidden = false;
   v.followBtn.classList.toggle('on', sel.follow);
   setAttr(v.followBtn, 'aria-pressed', String(sel.follow));
   setText(v.followBtn, 'follow live'); // same text in both states: the switch shows the state, the button never changes width
@@ -1051,7 +1052,8 @@ function followExpand(fw, stage, v) {
   const chain = runningChain(stage);
   const sig = chain.map((n) => n.id).join('>');
   if (a.sig !== sig) { a.dismissed.clear(); const first = a.sig === null; a.sig = sig; if (!first || chain.length > 1) v.scrollTo = chain[chain.length - 1].id; }
-  const want = new Set(chain.slice(1).map((n) => keyOf(fw, n)).filter((k) => !a.dismissed.has(k)));
+  // a leaf would only open on its messages: the running leaf stays a visible, closed card
+  const want = new Set(chain.slice(1).filter((n) => (n.children || []).length).map((n) => keyOf(fw, n)).filter((k) => !a.dismissed.has(k)));
   for (const k of [...a.keys]) if (!want.has(k)) { a.keys.delete(k); ui.tab.delete(k); }
   for (const k of want) if (!ui.open.has(k)) a.keys.add(k);
 }
@@ -1114,6 +1116,7 @@ function syncBody(el, n, fw, depth) {
     }
     if (act === 'flow') {
       if (r.panes.flow.firstChild && r.panes.flow.firstChild._isNone) r.panes.flow.innerHTML = '';
+      r.panes.flow.classList.toggle('parallel', !!n.parallel);
       patchList(r.panes.flow, n.children, (c) => c.id, createNode, (e, c) => updateNode(e, c, fw, depth + 1));
     } else if (act === 'messages') ensureMessages(el, n, fw);
     else if (act === 'log') ensureLog(el, n, fw);
@@ -1541,6 +1544,7 @@ function render() {
     if (!selected) { const run = fws.find((f) => f.status === 'running'); selected = (run || fws[0] || {}).id || null; }
   }
   if (fws.length) firstLoad = false;
+  $('#follow-btn').hidden = true; // shown again by renderStageList, when there are stages to follow
   patchList(tabsEl, fws, (f) => f.id, createTab, updateTab);
   syncTabsOverflow();
   if (syncHistoryPage()) return;
@@ -1548,7 +1552,7 @@ function render() {
   const fw = curFw();
   if (!fw) {
     mainEl._r = null; head = null; hideSummary();
-    if (!mainEl.querySelector('.empty:not(.loading)')) mainEl.innerHTML = '<div class="empty"><h2>No firmware runs yet</h2><p>Start a Vivado build, or enter a <code>.runs</code> directory, <code>.xpr</code> or log path above.</p></div>';
+    if (!mainEl.querySelector('.empty:not(.loading)')) mainEl.innerHTML = '<div class="empty"><h2>No firmware runs yet</h2><p>Start a Vivado build, or pick a <code>.runs</code> directory, <code>.xpr</code> or log with Explore above.</p></div>';
     return;
   }
   if (!mainEl._r) { buildView(); observeHead(); }
@@ -2123,17 +2127,6 @@ function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 3500);
 }
-$('#watch-form').addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const inp = $('#watch-input'); const path = inp.value.trim();
-  if (!path) return;
-  if (MOCK) { toast('Mock mode: watch ignored'); return; }
-  try {
-    const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
-    if (!r.ok) throw new Error(await r.text() || r.status);
-    inp.value = ''; toast('Watching ' + path); poll();
-  } catch (e) { toast('Watch failed: ' + e.message); }
-});
 
 
 /* ------------------------------------------------------------------ explore: modal file browser (GET /api/browse) */

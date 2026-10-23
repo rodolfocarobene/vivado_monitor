@@ -159,6 +159,11 @@ time_re = 'Time \(s\): cpu = (\S+) ; elapsed = (\S+) \. Memory \(MB\): peak = ([
 wallclock_format = "%a %b %d %H:%M:%S %Y"
 tcl_start_step_re = '^start_step (\w+)'
 open_project_re = 'open_project\s+(?:\{([^}]+)\}|"([^"]+)"|(\S+\.xpr))'
+# create_project and simple `set var value` lines as Vivado echoes a sourced script ("# " prefix; "## " is a
+# script comment and must not match), so a launcher that creates its project is tied to it before any run starts
+create_project_re = '^(?:#\s+)?create_project\s+(.+?)\s*$'
+tcl_set_re = '^(?:#\s+)?set\s+(\w+)\s+(?:\{([^{}]*)\}|"([^"$\[]*)"|([^\s$\[;]+))\s*$'
+tcl_set_dir_re = '^(?:#\s+)?set\s+(\w+)\s+\[\s*(?:file\s+normalize\s+(?:\{([^{}]*)\}|"([^"$\[]*)"|([^\s$\]]+))|(pwd))\s*\]\s*$'
 version_re = 'Vivado v(\d+\.\d+)'
 max_messages = 300000
 
