@@ -742,8 +742,17 @@ class ProjectSource(Source):
                     hit = (mtime, [])
                 self._tcl_cache[str(tcl)] = hit
             if hit[1]:
-                return list(dict.fromkeys(hit[1]))
+                # a launch continuing from a later step (`launch_runs impl_1 -from_step ...`) rewrites the script
+                # with only the steps it runs; the earlier steps it builds on left their markers in the run dir
+                done_before = [s for s in self._marker_steps(run) if s not in hit[1]]
+                return sorted(dict.fromkeys(hit[1] + done_before), key=self._step_rank)
+        return self._marker_steps(run)
+
+    def _marker_steps(self, run):
         return [s for s in self.cfg.step_order if s in run.markers and self.cfg.steps[s].flow == "impl"]
+
+    def _step_rank(self, step_id):
+        return self.cfg.step_order.index(step_id) if step_id in self.cfg.step_order else len(self.cfg.step_order)
 
     # ---- reports
     def _run_reports(self, run, begins=None):

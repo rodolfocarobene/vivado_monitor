@@ -71,7 +71,9 @@ Everything read is read-only. The only files vmon writes are under the cache dir
 For a run directory `R`:
 
 - `R/.<step>.begin.rst`, `.end.rst`, `.error.rst`: step status and start/end time (mtime).
-- `R/<top>.tcl`: `start_step <name>` lines give the planned step list (only enabled steps).
+- `R/<top>.tcl`: `start_step <name>` lines give the planned step list (only enabled steps). A launch from a later step
+  (`launch_runs -from_step`) rewrites it with the remaining steps only, so steps that left `.<step>.begin.rst`/`.end.rst`
+  markers are added back in flow order.
 - `R/gen_run.xml`, `runme.log`; main log is `<top>.vds` (synth) or `<top>.vdi` (impl).
 - `<X>.runs/.jobs/vrs_config_<N>.xml` with the highest N lists the runs of the current launch. When it has no
   synthesis run (a script that calls `launch_runs impl_1` after synthesis), the latest earlier launch that has one
