@@ -147,7 +147,7 @@ function parseHash() {
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
   hashPclk = p.get('pclk') === '1'; hashRulesDemo = p.get('rulesdemo') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
-  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
+  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hdone')) hist.done = p.get('hdone') === '1'; if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
   if (p.get('popover') === 'notif' && typeof openPop === 'function') openPop();
   if (p.get('popover') === 'explore' && typeof openExplore === 'function') openExplore(p.get('path'));
@@ -3012,13 +3012,14 @@ function renderCongestion(pane, n) {
 }
 
 /* ------------------------------------------------------------------ build history page (GET /api/history) */
-const hist = { on: false, fw: null, fwName: null, asc: false, pick: [], cmp: null, cmpTab: 'new', cmpHash: null, mockCmp: null, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
+const hist = { on: false, fw: null, fwName: null, asc: false, done: lsGet('vmon.histDone') === '1', pick: [], cmp: null, cmpTab: 'new', cmpHash: null, mockCmp: null, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
 const HX_KIND = { timing_summary: 'Timing', utilization: 'Util', drc: 'DRC', methodology: 'Method', power: 'Power', route_status: 'Route', clock_utilization: 'Clocks', control_sets: 'Ctrl sets' };
 const HX_RESULT = {
   met: { key: 'done', text: 'Finished, timing met' }, timing_not_met: { key: 'done-fail', text: 'Finished, timing not met' },
   failed: { key: 'failed', text: 'Failed' }, stopped: { key: 'stopped', text: 'Stopped' }, done: { key: 'idle', text: 'Finished' },
 };
 const HX_ICON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1h-6.5a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h.5"/></svg>';
+const HX_UNFINISHED = new Set(['failed', 'stopped']);
 const HX_GONE = 'Replaced by a later build';
 
 function setHistory(on) {
@@ -3142,7 +3143,7 @@ function hxRow(b, loaded, hasPrev) {
   return `<tr class="go${picked ? ' picked' : ''}" data-act="hrow" ${ds} title="${esc(tip)}">
     <td class="pick" data-label="Compare">${ck}</td>
     <td class="when" data-label="Date">${fmtWhen(b.started_at)}${prev}</td>
-    <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${b.host ? `<span class="hbadge" title="Built on ${esc(b.host)}">${esc(b.host)}</span>` : ''}${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}</td>
+    <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${b.host ? `<span class="hbadge" title="Built on ${esc(b.host)}">${esc(b.host)}</span>` : ''}${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}${b.project ? `<span class="sub path" title="${esc(b.project)}"><bdi>${esc(b.project)}</bdi></span>` : ''}</td>
     <td class="dur" data-label="Duration">${fmtDur(b.duration_s)}</td>
     <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
     <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
@@ -3157,25 +3158,32 @@ function renderHistory() {
   const fws = [...(d ? d.firmwares : [])];
   for (const f of state.firmwares) if (!fws.some((x) => x.id === f.id)) fws.push({ id: f.id, name: f.name, host: f.host });
   const opts = `<option value=""${hist.fw ? '' : ' selected'}>All firmwares</option>` + fws.map((f) => `<option value="${esc(f.id)}"${f.id === hist.fw ? ' selected' : ''}>${esc(fwLabel(f))}</option>`).join('');
-  const builds = d ? [...d.builds].sort((a, b) => (hist.asc ? 1 : -1) * ((a.started_at || 0) - (b.started_at || 0))) : [];
+  const builds = d ? d.builds.filter((b) => !hist.done || !HX_UNFINISHED.has(b.result)).sort((a, b) => (hist.asc ? 1 : -1) * ((a.started_at || 0) - (b.started_at || 0))) : [];
   const loaded = new Set(state.firmwares.map((f) => f.id));
   const arrow = hist.asc ? '↑' : '↓';
   let body;
   if (hist.error) body = `<div class="hx-empty">Could not load the history (${esc(hist.error)}).</div>`;
+  else if (!builds.length && d.builds.length) body = '<div class="hx-empty">Every recorded build failed or was stopped. Untick Finished only to see them.</div>';
   else if (!builds.length) body = '<div class="hx-empty">No finished builds recorded yet. Builds are recorded when they finish.</div>';
   else body = `<table class="hx"><thead><tr><th class="pick"><span class="sr">Compare</span></th><th aria-sort="${hist.asc ? 'ascending' : 'descending'}"><button type="button" data-act="hsort" title="Sort by date">Date <span aria-hidden="true">${arrow}</span></button></th><th>Firmware</th><th>Duration</th><th>Result</th><th>WNS / WHS</th><th>Utilization</th><th>Reports</th></tr></thead><tbody>${builds.map((b) => hxRow(b, loaded.has(b.fw_id), !!previousOf(b))).join('')}</tbody></table>`;
-  const sel = $('select', hist.root);
-  const focusSel = sel && document.activeElement === sel;
-  const n = hist.pick.length, pickName = n ? (builds.find((b) => b.fw_id === hist.pick[0].fw) || {}).firmware : '';
-  const hint = n === 0 ? 'Tick two builds of one firmware to compare them' : n === 1 ? `Pick one more ${pickName} build` : '2 builds selected';
+  const focusId = document.activeElement && hist.root.contains(document.activeElement) && ['hx-fw', 'hx-done'].includes(document.activeElement.id) ? document.activeElement.id : null;
+  const n = hist.pick.length;
+  const hint = n === 0 ? 'Tick any two builds to compare them' : n === 1 ? 'Pick one more build' : '2 builds selected';
   const act = document.activeElement, keep = act && hist.root.contains(act) && act.dataset.act && act.dataset.build ? `[data-act="${act.dataset.act}"][data-build="${act.dataset.build}"][data-fw="${act.dataset.fw}"]` : null;
   setHTML(hist.root, `<div class="hx-head"><h1>Build history</h1><span class="hx-n">${builds.length} build${builds.length === 1 ? '' : 's'}</span>
-    <div class="hx-tools"><span class="hx-hint" aria-live="polite">${hint}</span>${n ? '<button type="button" class="hx-back" data-act="hclear">Clear</button>' : ''}<button type="button" class="hx-go" data-act="hcompare"${n === 2 ? '' : ' disabled'} title="Compare the two selected builds">Compare</button><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
+    <div class="hx-tools"><span class="hx-hint" aria-live="polite">${hint}</span>${n ? '<button type="button" class="hx-back" data-act="hclear">Clear</button>' : ''}<button type="button" class="hx-go" data-act="hcompare"${n === 2 ? '' : ' disabled'} title="Compare the two selected builds">Compare</button><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><label class="hx-sel hx-chk" title="Hide failed and stopped builds"><input type="checkbox" role="switch" id="hx-done"${hist.done ? ' checked' : ''}> Finished only</label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
     ${d && d.unreachable && d.unreachable.length ? `<div class="hx-note">Not included: ${esc(d.unreachable.join(', '))} unreachable</div>` : ''}<div class="hx-wrap">${body}</div>`);
-  if (focusSel) $('select', hist.root).focus();
+  if (focusId) $('#' + focusId, hist.root).focus();
   else if (keep) { const k = $(keep, hist.root); if (k) k.focus(); }
 }
 hist.root.addEventListener('change', (ev) => {
+  if (ev.target.id === 'hx-done') {
+    hist.done = ev.target.checked; lsSet('vmon.histDone', hist.done ? '1' : '0');
+    const shown = new Set(hist.data ? hist.data.builds.filter((b) => !hist.done || !HX_UNFINISHED.has(b.result)).map((b) => `${b.fw_id}|${b.build}`) : []);
+    hist.pick = hist.pick.filter((p) => shown.has(`${p.fw}|${p.build}`));
+    renderHistory();
+    return;
+  }
   if (ev.target.id !== 'hx-fw') return;
   hist.fw = ev.target.value; hist.sig = null; hist.data = null; hist.pick = []; render();
 });
@@ -3185,34 +3193,47 @@ function mockHistory() {
   if (hist.mock) return;
   hist.mock = syncJson('mock/history.json'); hist.mockShift = nowS() - hist.mock.generated_at; shiftTimes(hist.mock, hist.mockShift);
 }
-/* ---- compare two builds of one firmware (GET /api/history/compare; mock: mock/compare.json) */
+/* ---- compare two builds, of one firmware or two (GET /api/history/compare; mock: mock/compare.json) */
 const hxSame = (p, b) => p.fw === b.fw_id && p.build === b.build;
 const hxOlderFirst = (x, y) => (x.started_at || 0) - (y.started_at || 0);
 
-async function openCompare(fw, a, b) {
+const HX_HEAD_KEYS = ['build', 'fw_id', 'firmware', 'project', 'started_at', 'ended_at', 'duration_s', 'result', 'part', 'strategy_impl', 'vivado_version', 'counts'];
+// Mock: same-firmware diffs are precomputed; a cross-firmware pick reuses one of them under the picked builds' headers.
+function mockCrossCompare(fw, a, fwB, b) {
+  const builds = hist.mock.builds, head = (fwId, id) => {
+    const r = builds.find((x) => x.fw_id === fwId && x.build === id);
+    return r && Object.fromEntries(HX_HEAD_KEYS.map((k) => [k, r[k]]));
+  };
+  const ha = head(fw, a), hb = head(fwB, b), base = Object.values(hist.mockCmp)[0];
+  if (!ha || !hb) return null;
+  return { ...base, fw_id: fwB, firmware: hb.firmware, a: ha, b: hb, duration: { a: ha.duration_s, b: hb.duration_s, delta: hb.duration_s - ha.duration_s } };
+}
+async function openCompare(fw, a, b, fwB = fw) {
   hist.cmp = { fw, a, b, data: null, error: null };
   const cmp = hist.cmp;
   try {
     if (MOCK) {
       mockHistory();
       hist.mockCmp = hist.mockCmp || shiftTimes(syncJson('mock/compare.json'), hist.mockShift);
-      cmp.data = hist.mockCmp[`${fw}|${a}|${b}`];
+      cmp.data = fw === fwB ? hist.mockCmp[`${fw}|${a}|${b}`] : mockCrossCompare(fw, a, fwB, b);
       if (!cmp.data) throw new Error('no mock comparison for these builds');
-    } else cmp.data = await jget(`/api/history/compare?fw=${q(fw)}&a=${q(a)}&b=${q(b)}`);
+    } else cmp.data = await jget(`/api/history/compare?fw=${q(fw)}&a=${q(a)}&b=${q(b)}${fw === fwB ? '' : `&fw_b=${q(fwB)}`}`);
   } catch (e) { cmp.error = String(e.message || e); }
   if (hist.cmp === cmp && hist.on) renderHistory();
   if (hist.cmp === cmp) window.scrollTo(0, 0);
 }
-// A hash such as hcmp=<buildA>,<buildB> resolves to the first firmware that has both builds.
+// hcmp=<fwA>:<buildA>,<fwB>:<buildB> (any two firmwares); the older hcmp=<buildA>,<buildB> resolves to the first firmware that has both.
 function resolveHashCompare() {
   const keys = hist.cmpHash || [], d = hist.data;
   hist.cmpHash = null;
-  const first = keys.length === 2 && d && d.builds.find((x) => x.build === keys[0] && d.builds.some((y) => y.fw_id === x.fw_id && y.build === keys[1]));
+  if (keys.length !== 2 || !d) return;
+  if (keys.every((k) => k.includes(':'))) { startCompare(keys.map((k) => ({ fw: k.slice(0, k.indexOf(':')), build: k.slice(k.indexOf(':') + 1) }))); return; }
+  const first = d.builds.find((x) => x.build === keys[0] && d.builds.some((y) => y.fw_id === x.fw_id && y.build === keys[1]));
   if (first) startCompare(keys.map((build) => ({ fw: first.fw_id, build })));
 }
 function startCompare(pairs) {
   const two = pairs.map((p) => hist.data.builds.find((b) => hxSame(p, b))).filter(Boolean).sort(hxOlderFirst);
-  if (two.length === 2 && two[0].fw_id === two[1].fw_id) { hist.pick = []; openCompare(two[0].fw_id, two[0].build, two[1].build); }
+  if (two.length === 2) { hist.pick = []; openCompare(two[0].fw_id, two[0].build, two[1].build, two[1].fw_id); }
 }
 function previousOf(b) {
   const older = hist.data.builds.filter((x) => x.fw_id === b.fw_id && hxOlderFirst(x, b) < 0).sort(hxOlderFirst);
@@ -3222,7 +3243,6 @@ function hxPick(ev, t) {
   const key = { fw: t.dataset.fw, build: t.dataset.build };
   const i = hist.pick.findIndex((p) => p.fw === key.fw && p.build === key.build);
   if (i >= 0) hist.pick.splice(i, 1);
-  else if (hist.pick.length && hist.pick[0].fw !== key.fw) { ev.preventDefault(); toast('Compare builds of the same firmware: clear the selection to pick another firmware.'); return; }
   else if (hist.pick.length >= 2) { ev.preventDefault(); toast('Pick at most two builds. Untick one first.'); return; }
   else hist.pick.push(key);
   renderHistory();
@@ -3238,11 +3258,11 @@ function deltaClass(delta, bValue, bFinal) {
 }
 const hxNum = (v, fmt) => (v == null ? '<span class="nil">—</span>' : fmt(v));
 
-function cmpHeadCard(role, h) {
+function cmpHeadCard(role, h, showFw) {
   const res = HX_RESULT[h.result] || HX_RESULT.done;
   const where = [h.part, h.strategy_impl].filter(Boolean).join(' · ');
-  return `<div class="cmp-b"><div class="cmp-role">${role}</div><div class="cmp-when">${fmtWhen(h.started_at)}</div>
-    <div class="cmp-meta"><span class="pill" data-status="${res.key}">${res.text}</span><span class="mono">${fmtDur(h.duration_s)}</span></div>${where ? `<div class="cmp-sub" title="${esc(where)}">${esc(where)}</div>` : ''}</div>`;
+  return `<div class="cmp-b"><div class="cmp-role">${role}</div>${showFw && h.firmware ? `<div class="cmp-fw">${esc(h.firmware)}</div>` : ''}<div class="cmp-when">${fmtWhen(h.started_at)}</div>
+    <div class="cmp-meta"><span class="pill" data-status="${res.key}">${res.text}</span><span class="mono">${fmtDur(h.duration_s)}</span></div>${where ? `<div class="cmp-sub" title="${esc(where)}">${esc(where)}</div>` : ''}${h.project ? `<div class="cmp-sub mono" title="${esc(h.project)}"><bdi>${esc(h.project)}</bdi></div>` : ''}</div>`;
 }
 function cmpTiming(c) {
   const t = c.timing, fin = t.final.b;
@@ -3293,12 +3313,12 @@ function renderCompare() {
   if (cmp.error) body = `<div class="hx-empty">Could not compare these builds (${esc(cmp.error)}).</div>`;
   else if (!c) body = '<div class="hx-empty">Loading…</div>';
   else {
-    const d = c.duration;
-    body = `<div class="cmp-top">${cmpHeadCard('A · base (older)', c.a)}<div class="cmp-mid" title="Duration change"><span class="num">${fmtDurDelta(d.delta)}</span><small>duration</small></div>${cmpHeadCard('B · newer', c.b)}</div>
+    const d = c.duration, differ = !!(c.a.firmware && c.b.firmware && (c.a.fw_id !== c.b.fw_id || c.a.project !== c.b.project));
+    body = `<div class="cmp-top">${cmpHeadCard('A · base (older)', c.a, differ)}<div class="cmp-mid" title="Duration change"><span class="num">${fmtDurDelta(d.delta)}</span><small>duration</small></div>${cmpHeadCard('B · newer', c.b, differ)}</div>
       <div class="cmp-grid">${cmpTiming(c)}${cmpUtil(c)}${cmpSteps(c)}${cmpMessages(c)}</div>`;
   }
   const act = document.activeElement, keep = act && hist.root.contains(act) && act.dataset.tab;
-  setHTML(hist.root, `<div class="hx-head"><h1>Compare builds</h1><span class="hx-n">${c ? esc(c.firmware) : ''}</span><div class="hx-tools">${back}</div></div>${body}`);
+  setHTML(hist.root, `<div class="hx-head"><h1>Compare builds</h1><span class="hx-n">${c ? esc(c.a.firmware && c.a.firmware !== c.b.firmware ? `${c.a.firmware} ↔ ${c.b.firmware}` : c.firmware) : ''}</span><div class="hx-tools">${back}</div></div>${body}`);
   if (keep) { const n = $(`[data-tab="${keep}"]`, hist.root); if (n) n.focus(); }
 }
 

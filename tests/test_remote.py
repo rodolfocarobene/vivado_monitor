@@ -276,6 +276,22 @@ def test_proxy_compare_passes_query(pair):
     assert status == 400 and body["error"]                               # the remote's own "pick two different builds"
 
 
+def test_proxy_compare_across_firmwares_of_one_host(pair):
+    ns, url = pair["ns"], pair["url"]
+    build = get_json("%s/api/history?fw=%s" % (url, ns))[1]["builds"][0]["build"]
+    other = "%s/api/history/compare?fw=%s&a=%s&b=%s&fw_b=%s" % (url, ns, build, build, "srv~zzz")
+    status, body = get_json(other)
+    assert status == 404 and body["error"]                               # fw_b was stripped to "zzz" and asked of the remote
+
+
+def test_compare_across_hosts_is_refused(pair):
+    ns, url = pair["ns"], pair["url"]
+    base = "%s/api/history/compare?a=1&b=2" % url
+    for fw, fw_b in ((ns, pair["fw"]), (pair["fw"], ns), (ns, "other~x")):
+        status, body = get_json("%s&fw=%s&fw_b=%s" % (base, fw, fw_b))
+        assert status == 400 and "different hosts" in body["error"]
+
+
 def test_global_history_includes_remote_builds(pair):
     status, listing = get_json(pair["url"] + "/api/history")
     assert status == 200 and listing["unreachable"] == []
