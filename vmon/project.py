@@ -617,27 +617,32 @@ class ProjectSource(Source):
     # ---- launch description
     def _launch_runs(self):
         jobs = self.runs_dir / self.cfg.jobs_dir
-        newest = None
         try:
-            for path in jobs.glob(self.cfg.jobs_glob):
-                mtime = path.stat().st_mtime
-                if newest is None or mtime > newest[0]:
-                    newest = (mtime, path)
+            launches = sorted(((path.stat().st_mtime, path) for path in jobs.glob(self.cfg.jobs_glob)), reverse=True)
         except OSError:
-            pass
-        runs, launch_time = [], None
-        if newest:
-            launch_time = newest[0]
-            key = (str(newest[1]), newest[0])
+            launches = []
+        runs, launch_time = [], launches[0][0] if launches else None
+        parsed_by_key = {}
+        for mtime, path in launches:
+            key = (str(path), mtime)
             if key not in self._xml_cache:
                 try:
-                    root = ET.parse(newest[1]).getroot()
-                    parsed = [(r.get("Id"), r.get("FlowId"), [p.get("Id") for p in r.findall("Parent")])
-                              for r in root.findall("Run")]
+                    root = ET.parse(path).getroot()
+                    self._xml_cache[key] = [(r.get("Id"), r.get("FlowId"), [p.get("Id") for p in r.findall("Parent")])
+                                            for r in root.findall("Run")]
                 except (ET.ParseError, OSError):
-                    parsed = []
-                self._xml_cache = {key: parsed}
-            runs = self._xml_cache[key]
+                    self._xml_cache[key] = []
+            parsed_by_key[key] = parsed = self._xml_cache[key]
+            if not runs:
+                runs = list(parsed)
+            elif parsed:
+                # A script that runs `launch_runs impl_1` after synthesis finished writes a launch with impl_1 only:
+                # the synthesis (and its OOC runs) it builds on comes from the latest earlier launch that has one.
+                seen = {rid for rid, _, _ in runs}
+                runs = [r for r in parsed if r[0] not in seen] + runs
+            if any(self.cfg.classify_run(rid, flow) in ("synth", "ooc") for rid, flow, _ in runs):
+                break
+        self._xml_cache = parsed_by_key
         if not runs:
             try:
                 names = sorted(e.name for e in os.scandir(self.runs_dir) if e.is_dir())

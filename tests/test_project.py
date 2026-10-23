@@ -194,3 +194,15 @@ def test_path_resolution(tmp_path):
     assert resolve_path(str(tmp_path / "missing")) is None
     assert runs_location("/a/lockin.runs/impl_1/x") == ("/a/lockin.runs", "impl_1")
     assert runs_location("/a/b") is None
+
+
+def test_impl_only_relaunch_keeps_the_synthesis_it_builds_on(tmp_path, cfg, report_cache, catalogs):
+    """A script that runs `launch_runs impl_1` after synthesis writes a new launch listing impl_1 alone."""
+    runs = lockin(tmp_path)
+    later = runs / ".jobs" / "vrs_config_2.xml"
+    later.write_text('<?xml version="1.0"?>\n<Runs><Run Id="impl_1" FlowId="Vivado_Implementation"/></Runs>\n')
+    os.utime(runs / ".jobs" / "vrs_config_1.xml", (1_000_000, 1_000_000))
+    os.utime(later, (2_000_000, 2_000_000))
+    fw = ProjectSource(runs, cfg, report_cache, catalogs).snapshot(None, now=2_000_100)
+    synth = fw.flows[0].stages[0]
+    assert synth.id == "synth" and [c.id for c in synth.children] == ["synth/ooc", "synth_1"]

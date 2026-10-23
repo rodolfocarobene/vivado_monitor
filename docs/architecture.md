@@ -73,7 +73,9 @@ For a run directory `R`:
 - `R/.<step>.begin.rst`, `.end.rst`, `.error.rst`: step status and start/end time (mtime).
 - `R/<top>.tcl`: `start_step <name>` lines give the planned step list (only enabled steps).
 - `R/gen_run.xml`, `runme.log`; main log is `<top>.vds` (synth) or `<top>.vdi` (impl).
-- `<X>.runs/.jobs/vrs_config_<N>.xml` with the highest N lists the runs of the current launch.
+- `<X>.runs/.jobs/vrs_config_<N>.xml` with the highest N lists the runs of the current launch. When it has no
+  synthesis run (a script that calls `launch_runs impl_1` after synthesis), the latest earlier launch that has one
+  adds its synthesis and OOC runs.
 - Reports such as `<top>_timing_summary_routed.rpt`; a report older than its step's begin marker is flagged stale and never raises alerts.
 
 Flow layout: a "Synthesis" stage (out-of-context IP runs collapsed into a sub-group, then the top synth run), followed by each implementation step in tcl order. Steps not yet started are shown as pending placeholders from the catalog.
