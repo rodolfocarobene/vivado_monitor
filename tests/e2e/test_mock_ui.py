@@ -201,9 +201,87 @@ def test_compare_view_opens_with_two_picks(page, mock_url):
     compare.click()
     expect(history.locator(".cmp-card").first).to_be_visible()
     expect(history.get_by_role("button", name=re.compile("Back to the list"))).to_be_visible()
-    page.keyboard.press("Escape")
+    expect(cmp_tabs(page)).to_have_count(1)
+    history.get_by_role("button", name=re.compile("Back to the list")).click()
     expect(history.locator(".cmp-card")).to_have_count(0)
     expect(history.locator("table.hx")).to_be_visible()
+    expect(cmp_tabs(page)).to_have_count(1)                   # leaving the view keeps the tab
+
+
+def cmp_tabs(page):
+    return page.locator("#tabs [role=tab].ctab")
+
+
+def compare_two_lockin_builds(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=lockin", ready="table.hx")
+    history = page.get_by_label("Build history", exact=True)
+    boxes = history.get_by_role("checkbox")
+    boxes.nth(0).check()
+    boxes.nth(1).check()
+    history.get_by_role("button", name="Compare", exact=True).click()
+    expect(history.locator(".cmp-card").first).to_be_visible()
+    return history
+
+
+def test_comparison_tab_survives_switching_reload_and_closes(page, mock_url):
+    history = compare_two_lockin_builds(page, mock_url)
+    tab = cmp_tabs(page).first
+    expect(tab).to_have_attribute("aria-selected", "true")
+    expect(tab).to_contain_text("lockin")
+    page.locator("#tabs [role=tab]:not(.ctab)").first.click()
+    expect(history).to_be_hidden()
+    expect(tab).to_have_attribute("aria-selected", "false")
+    tab.click()
+    expect(history.locator(".cmp-card").first).to_be_visible()
+    history.locator(".cmp-tab", has_text="Removed").click()
+    page.locator("#tabs [role=tab]:not(.ctab)").first.click()
+    tab.click()
+    expect(history.locator(".cmp-tab[aria-pressed=true]")).to_contain_text("Removed")
+    page.goto(mock_url)                                       # no hash: only localStorage remembers the tab
+    expect(cmp_tabs(page)).to_have_count(1)
+    expect(history.locator(".cmp-card").first).to_be_visible()
+    cmp_tabs(page).first.focus()
+    page.keyboard.press("Delete")
+    expect(cmp_tabs(page)).to_have_count(0)
+    expect(history).to_be_hidden()
+    expect(page.locator("#tabs [role=tab].active")).to_have_count(1)
+
+
+def test_same_pair_focuses_the_open_comparison_tab(page, mock_url):
+    history = compare_two_lockin_builds(page, mock_url)
+    page.get_by_role("button", name="History").click()
+    boxes = history.get_by_role("checkbox")
+    boxes.nth(0).check()
+    boxes.nth(1).check()
+    history.get_by_role("button", name="Compare", exact=True).click()
+    expect(cmp_tabs(page)).to_have_count(1)
+
+
+def test_live_rows_and_live_comparison(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=all", ready="table.hx")
+    history = page.get_by_label("Build history", exact=True)
+    live = history.locator("tbody tr.live")
+    assert live.count() >= 1
+    expect(live.first.locator(".livebadge")).to_be_visible()
+    expect(history.locator("tbody tr").first).to_have_class(re.compile(r"\blive\b"))   # pinned on top
+    live.first.get_by_role("checkbox").check()
+    history.locator("tbody tr:not(.live) td.pick input").first.check()
+    history.get_by_role("button", name="Compare", exact=True).click()
+    expect(history.locator(".cmp-card").first).to_be_visible()
+    expect(history.locator(".cmp-live .livebadge")).to_have_count(1)
+    expect(history.locator(".cmp-live")).to_contain_text("as of")
+    expect(cmp_tabs(page).first).to_contain_text("live")
+    page.get_by_role("button", name="History").click()
+    history.get_by_role("switch", name="Finished only").check()
+    expect(history.locator("tbody tr.live")).to_have_count(0)
+
+
+def test_firmware_compare_button_preticks_live_row(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin")
+    page.locator(".fw-head").get_by_role("button", name="Compare", exact=True).click()
+    history = page.get_by_label("Build history", exact=True)
+    expect(history.locator("tbody tr.live input:checked")).to_have_count(1)
+    expect(history.locator(".hx-hint")).to_contain_text("compare with lockin (live)")
 
 
 def test_compare_across_firmwares(page, mock_url):

@@ -14,6 +14,7 @@ from .paths import write_atomic
 DEFAULTS = {"max_builds": 100, "bitstream": True, "max_messages": 500,
             "kinds": ["timing_summary", "utilization", "drc", "methodology", "power", "route_status"]}
 FINISHED = ("done", "failed", "stopped")
+LIVE = "live"          # build id of a firmware's current (possibly unfinished) state in /api/history/compare
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 UTIL_ROWS = ("LUT", "FF", "BRAM", "URAM", "DSP", "IO")
 BUILD_LIMIT_MAX = 1000
@@ -211,12 +212,15 @@ class HistoryStore:
             return None
         return {**record, "artifacts": [{**a, "current": is_current(a)} for a in record.get("artifacts", ())]}
 
-    def compare(self, fw_id, a, b, fw_b=None):
-        """(diff, None) of build `a` of `fw_id` and build `b` of `fw_b` (default: same firmware), else (None, (status, why))."""
+    def compare(self, fw_id, a, b, fw_b=None, live=None):
+        """(diff, None) of build `a` of `fw_id` and build `b` of `fw_b` (default: same firmware), else (None, (status, why)).
+
+        The build id LIVE means the firmware's current state, taken from `live(fw_id)` and never stored."""
         fw_b = fw_b or fw_id
         if (fw_id, a) == (fw_b, b):
             return None, (400, "pick two different builds")
-        old, new = self.build(fw_id, a), self.build(fw_b, b)
+        pick = lambda fw, build: (live and live(fw)) if build == LIVE else self.build(fw, build)
+        old, new = pick(fw_id, a), pick(fw_b, b)
         if old is None or new is None:
             return None, (404, "no such build in the history")
         return compare_records(old, new), None
@@ -241,7 +245,7 @@ def _pair(a, b, digits=3):
 
 def _header(r):
     keys = ("build", "fw_id", "firmware", "project", "started_at", "ended_at", "duration_s", "result", "part", "strategy_impl", "vivado_version", "counts")
-    return {k: r.get(k) for k in keys}
+    return {**{k: r.get(k) for k in keys}, **({"live": r["live"]} if r.get("live") else {})}
 
 
 def _timing_diff(a, b):

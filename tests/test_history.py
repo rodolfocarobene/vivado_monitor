@@ -238,3 +238,27 @@ def test_compare_across_firmwares(tmp_path):
     assert store.compare("fw1", "1", "1", "fw1")[1][0] == 400
     assert store.compare("fw1", "1", "1", "nope")[1][0] == 404
     assert store.compare("fw1", "1", "1", "../x")[1][0] == 404
+
+
+def test_live_record_and_compare(tmp_path, cfg):
+    monitor, fw_id = finished_monitor(tmp_path, cfg)
+    recorded = monitor.history.load(fw_id)[0]["build"]
+    live = monitor.live_record(fw_id)
+    assert live["build"] == "live" and live["fw_id"] == fw_id and live["live"]["status"] == "done"
+    assert monitor.live_record("nope") is None
+    server = make_server(monitor, "127.0.0.1", 0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = "http://127.0.0.1:%d/api/history/compare?fw=%s" % (server.server_address[1], fw_id)
+    try:
+        resp = get("%s&a=%s&b=live" % (base, recorded))
+        assert resp.code == 200
+        data = json.load(resp)
+        assert data["b"]["live"]["status"] == "done" and data["b"]["build"] == "live" and not data["a"].get("live")
+        assert json.load(get("%s&a=live&b=%s" % (base, recorded)))["a"]["live"]
+        assert get("%s&a=live&b=live" % base).code == 400
+        assert get("%s&a=%s&b=live&fw_b=zzz" % (base, recorded)).code == 404       # firmware not loaded
+        assert get(base.replace(fw_id, "zzz") + "&a=live&b=1").code == 404
+        assert [b["build"] for b in monitor.history.load(fw_id)] == [recorded]    # live is never stored
+    finally:
+        server.shutdown()
+        monitor.stop()

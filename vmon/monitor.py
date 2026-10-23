@@ -332,6 +332,18 @@ class Monitor:
         final = clocks_mod.final_stage(fw, clocks_mod.stages_of(fw, self.cfg), self.cfg)
         self.history.record(history_mod.build_record(fw, key[1], self.history_cfg, groups, final and final["per_clock"]))
 
+    def live_record(self, fw_id):
+        """A history-shaped record of the firmware as it is now (finished or not), or None when it is not loaded. Never stored."""
+        with self.lock:
+            fw = self.firmwares.get(fw_id)
+            if fw is None:
+                return None
+            source = self.sources.get(fw_id)
+            groups = source.raw_groups(None, None) if source else None
+            final = clocks_mod.final_stage(fw, clocks_mod.stages_of(fw, self.cfg), self.cfg)
+            record = history_mod.build_record(fw, history_mod.LIVE, self.history_cfg, groups, final and final["per_clock"])
+            return {**record, "live": {"status": fw.status, "as_of": time.time()}}
+
     def _record_clocks(self, fw_id, fw):
         """Final per-clock timing of a finished build (also catches up on builds not stored yet)."""
         stages = clocks_mod.stages_of(fw, self.cfg)

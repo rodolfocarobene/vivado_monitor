@@ -1392,3 +1392,14 @@ button.hx-chip { cursor: pointer; font-family: inherit; }
 .hat { flex: 1 1 260px; min-width: 0; }
 .hcmd { flex: 1 1 100%; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 4px 3px 9px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border-soft); }
 .hcmd code { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-caption); color: var(--text); scrollbar-width: thin; }
+
+/* comparison tabs and live builds */
+.tab.ctab .cmpic { display: grid; place-items: center; color: var(--accent); flex: none; }
+.tab.ctab .t-name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.livebadge { display: inline-block; flex: none; margin-left: 6px; padding: 0 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .4px; text-transform: uppercase; line-height: 16px; vertical-align: 1px; }
+.cmp-live { margin: -2px 0 8px; color: var(--text-2); font-size: var(--fs-caption); }
+.cmp-live .livebadge { margin-left: 0; }
+.cmp-fwl { padding: 0; border: none; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.cmp-fwl:hover { color: var(--accent); }
+.hx tr.live td:first-child { box-shadow: inset 3px 0 var(--accent); }
+.fw-cmpbtn[hidden] { display: none; }

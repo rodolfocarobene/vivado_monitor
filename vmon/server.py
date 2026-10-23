@@ -219,7 +219,7 @@ def make_server(monitor, host, port):
                     record = store.build(fw_id, query.get("build", [""])[0])
                     return self._json(record) if record else self._error(404, "no such build in the history")
                 result, err = store.compare(fw_id, query.get("a", [""])[0], query.get("b", [""])[0],
-                                              query.get("fw_b", [""])[0] or None)
+                                              query.get("fw_b", [""])[0] or None, monitor.live_record)
                 return self._error(*err) if err else self._json(result)
             if route == "/api/history/summary":
                 return self._summary(store, fw_id, query)
