@@ -91,8 +91,9 @@ def test_follow_live_selects_running_stage_and_can_be_toggled(page, mock_url):
     follow = page.get_by_role("button", name="follow live")
     expect(follow).to_have_attribute("aria-pressed", "true")
     expect(stage_card(page, "place_design")).to_have_attribute("aria-pressed", "true")
-    for label in ("Placer", "Phase 1 Placer Initialization", "Phase 1.3 Build Placer"):
+    for label in ("Placer", "Phase 1 Placer Initialization"):
         expect(node_card(page, label)).to_have_attribute("aria-expanded", "true")
+    expect(node_card(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-expanded", "false")   # the running leaf
     stage_card(page, "opt_design").click()
     expect(follow).to_have_attribute("aria-pressed", "false")
     expect(stage_card(page, "opt_design")).to_have_attribute("aria-pressed", "true")
@@ -103,10 +104,13 @@ def test_follow_live_selects_running_stage_and_can_be_toggled(page, mock_url):
 
 def test_follow_live_tracks_the_running_phase(page, mock_url):
     open_mock(page, mock_url, "fw=lockin")
-    expect(node_card(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-expanded", "true")
+    running = page.locator('.node[data-status="running"] > .main > .card', has_text="Phase 1.3 Build Placer")
+    expect(running).to_be_visible()
     page.clock.run_for(8000)        # the mock finishes the running phase every 8th tick and starts the next
-    expect(node_card(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-expanded", "false")
-    expect(node_card(page, "Phase 1.4 Constrain")).to_have_attribute("aria-expanded", "true")
+    running = page.locator('.node[data-status="running"] > .main > .card', has_text="Phase 1.4 Constrain")
+    expect(running).to_be_visible()
+    expect(running).to_have_attribute("aria-expanded", "false")
+    expect(node_card(page, "Phase 1 Placer Initialization")).to_have_attribute("aria-expanded", "true")
     expect(stage_card(page, "place_design")).to_have_attribute("aria-pressed", "true")
 
 

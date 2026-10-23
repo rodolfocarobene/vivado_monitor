@@ -1051,7 +1051,8 @@ function followExpand(fw, stage, v) {
   const chain = runningChain(stage);
   const sig = chain.map((n) => n.id).join('>');
   if (a.sig !== sig) { a.dismissed.clear(); const first = a.sig === null; a.sig = sig; if (!first || chain.length > 1) v.scrollTo = chain[chain.length - 1].id; }
-  const want = new Set(chain.slice(1).map((n) => keyOf(fw, n)).filter((k) => !a.dismissed.has(k)));
+  // a leaf would only open on its messages: the running leaf stays a visible, closed card
+  const want = new Set(chain.slice(1).filter((n) => (n.children || []).length).map((n) => keyOf(fw, n)).filter((k) => !a.dismissed.has(k)));
   for (const k of [...a.keys]) if (!want.has(k)) { a.keys.delete(k); ui.tab.delete(k); }
   for (const k of want) if (!ui.open.has(k)) a.keys.add(k);
 }
