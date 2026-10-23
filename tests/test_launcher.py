@@ -1,5 +1,6 @@
 """A launcher (`vivado -source build.tcl`) tied to its project from its log, before any run starts."""
 from vmon.discovery import Discovery, Group
+from vmon.paths import canon
 from vmon.monitor import Monitor
 
 # Shape of a project-generating script as Vivado echoes it into vivado.log ("# " = executed line, "## " = comment).
@@ -19,15 +20,19 @@ def projects(cfg, text, cwd="/w"):
     return [runs for _, runs in Discovery(cfg)._projects_in(text, cwd)]
 
 
+def native(*expected):
+    return [canon(path) for path in expected]
+
+
 def test_echoed_script_resolves_the_project(cfg):
-    assert set(projects(cfg, ECHOED)) == {"/w/top/top.runs"}
+    assert set(projects(cfg, ECHOED)) == set(native("/w/top/top.runs"))
 
 
 def test_variables_and_forms(cfg):
-    assert projects(cfg, "set d [pwd]\nopen_project $d/a/b.xpr\n") == ["/w/a/b.runs"]
-    assert projects(cfg, "create_project -force p1 /abs/dir -part xc\n") == ["/abs/dir/p1.runs"]
-    assert projects(cfg, "create_project p2\n") == ["/w/p2.runs"]                      # dir defaults to cwd
-    assert projects(cfg, "open_project {/p/a b/c.xpr}\n") == ["/p/a b/c.runs"]
+    assert projects(cfg, "set d [pwd]\nopen_project $d/a/b.xpr\n") == native("/w/a/b.runs")
+    assert projects(cfg, "create_project -force p1 /abs/dir -part xc\n") == native("/abs/dir/p1.runs")
+    assert projects(cfg, "create_project p2\n") == native("/w/p2.runs")                 # dir defaults to cwd
+    assert projects(cfg, "open_project {/p/a b/c.xpr}\n") == native("/p/a b/c.runs")
 
 
 def test_unresolved_or_in_memory_is_ignored(cfg):
@@ -41,7 +46,7 @@ def test_unresolved_or_in_memory_is_ignored(cfg):
 def test_last_project_wins_and_live_log(cfg, tmp_path):
     log = tmp_path / "vivado.log"
     log.write_text("open_project /p/old.xpr\n" + ECHOED)
-    assert Discovery(cfg)._project_from_log(str(log), "/w") == "/w/top/top.runs"
+    assert Discovery(cfg)._project_from_log(str(log), "/w") == canon("/w/top/top.runs")
 
 
 def make_monitor(tmp_path, cfg):
