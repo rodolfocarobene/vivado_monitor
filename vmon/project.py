@@ -973,6 +973,8 @@ class ProjectSource(Source):
                 status = "stopped"
             elif status == "running" and sid != last_sid:
                 status = "done"
+            elif status == "done" and sid == last_sid and alive:
+                status = "running"     # the session is still busy after it (checkpoints, reports, a script's own work)
             failure = None
             if status in ("stopped", "failed"):
                 found = failure_mod.detect([sess["log"]], self.cfg)
@@ -986,8 +988,8 @@ class ProjectSource(Source):
             node = self._step_node(sid, "%s/%s" % (run.id, sid), plog, section, status, open_status, alive,
                                    run.id, begins[sid], end, reports.get(sid, ()), now, failure, extras.get(sid, ()))
             nodes[sid] = node
-        if alive and not [n for n in nodes.values() if n.status == "running"]:
-            # still loading the checkpoint / between steps: the next planned step is the one it will run
+        if alive and not assigned:
+            # still loading the checkpoint: the next planned step is the one it will run
             seen = set(assigned)
             todo = [s for s in self._script_steps(sess.get("script")) if s in after and s not in seen]
             sid = todo[0] if todo else next((s for s in after if s not in seen), None)
