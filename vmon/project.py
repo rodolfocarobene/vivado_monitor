@@ -63,6 +63,43 @@ class ParsedLog:
     def line_count(self):
         return self.tail.line_count
 
+    def step_sections(self):
+        """Top-level step sections of the newest state of the run. -applog appends a relaunch to the same log, and
+        each session supersedes the earlier sections from the step it starts at onward (a `-from_step` session keeps
+        the steps it builds on; one that restarts at link_design keeps nothing)."""
+        sections = [c for c in self.parser.root.children if c.kind == "step"]
+        starts = self.parser.session_starts
+        if len(starts) < 2:
+            return sections
+        rank = lambda sec: min((self.cfg.step_order.index(s.id) for s in self.cfg.steps_for_command(sec.cmd)),
+                               default=-1)
+        kept = []
+        bounds = [1] + starts[1:] + [None]
+        for lo, hi in zip(bounds, bounds[1:]):
+            chunk = [s for s in sections if s.line_start >= lo and (hi is None or s.line_start < hi)]
+            if not chunk:
+                continue
+            first = rank(chunk[0])
+            cut = next((i for i, s in enumerate(kept) if rank(s) >= first), len(kept))
+            kept = kept[:cut] + chunk
+        return kept
+
+    def counts(self):
+        """Message counts of the newest state of the run (the whole log when it holds a single session)."""
+        if len(self.parser.session_starts) < 2:
+            return self.parser.root.rolled_counts()
+        total = list(self.parser.root.own)
+        for section in self.step_sections():
+            for i, value in enumerate(section.rolled_counts()):
+                total[i] += value
+        return total
+
+    def kept_ranges(self):
+        """Line ranges of the newest state of the run, or None when the log holds a single session."""
+        if len(self.parser.session_starts) < 2:
+            return None
+        return [(s.line_start, s.line_end or self.parser.line_no) for s in self.step_sections()]
+
     def growth_age(self, now):
         return None if self.tail.last_growth is None else max(0.0, now - self.tail.last_growth)
 
@@ -420,7 +457,7 @@ class Source:
         fw.current = self._current(flows)
         total = [0, 0, 0, 0]
         for plog in parsers:
-            for i, value in enumerate(plog.parser.root.rolled_counts()):
+            for i, value in enumerate(plog.counts()):
                 total[i] += value
         fw.counts = total
         for flow in reversed(flows):
@@ -552,7 +589,14 @@ class Source:
         if self._agg_cache is None or self._agg_cache[0] != gen:
             merged = {}
             for plog in self._parsers:
+                ranges = plog.kept_ranges()
                 for key, (sev, count, text, first, last) in plog.parser.agg.items():
+                    if ranges is not None:      # an appended relaunch: only the messages of the kept sections
+                        lines = [n for n in plog.parser.lines_by_key.get(key, ())
+                                 if any(a <= n <= b for a, b in ranges)]
+                        if not lines:
+                            continue
+                        count, first, last = len(lines), lines[0], lines[-1]
                     cur = merged.get(key)
                     if cur is None:
                         merged[key] = {"id": key, "sev": sev, "count": count, "text": text,
@@ -825,10 +869,10 @@ class ProjectSource(Source):
         open_status = {"running": "running", "stopped": "stopped", "failed": "failed"}.get(run.status, "done")
         sections = []
         if plog is not None:
-            sections = [c for c in plog.parser.root.children if c.kind == "step"]
+            sections = plog.step_sections()
             node.log = plog.path
             node.line_start, node.line_end = 1, plog.line_count
-            node.counts = plog.parser.root.rolled_counts()
+            node.counts = plog.counts()
             self._register(node, plog, 1, plog.line_count, run.status == "running")
             if len(sections) == 1:
                 node.children = [self._convert(c, run.id, plog, open_status) for c in sections[0].children]
@@ -954,7 +998,7 @@ class ProjectSource(Source):
         if sess.get("log_missing"):
             return self._summary_nodes(run, sess, step_ids, now)
         plog = self._log(sess["log"])
-        sections = [c for c in plog.parser.root.children if c.kind == "step"]
+        sections = plog.step_sections()
         resumed = sess["resumed_from"]
         if resumed in step_ids:
             after = [s for s in step_ids if self.cfg.step_order.index(s) > self.cfg.step_order.index(resumed)]
@@ -1065,7 +1109,7 @@ class ProjectSource(Source):
         sections = []
         plog = self._log(run.log_path) if run.log_path else None
         if plog is not None:
-            sections = [c for c in plog.parser.root.children if c.kind == "step"]
+            sections = plog.step_sections()
         planned = self._planned_steps(run)
         assigned = assign_sections(planned, sections, self.cfg)
         extras = extra_sections(assigned, sections)
@@ -1284,7 +1328,7 @@ class LogSource(Source):
         self.report_paths = set()
         plog = self._log(self.path)
         live = bool(group and group.pids) or (plog.growth_age(now) or 1e9) < RECENT_GROWTH_S
-        sections = [c for c in plog.parser.root.children if c.kind == "step"]
+        sections = plog.step_sections()
         assigned = assign_sections([], sections, self.cfg)
         extras = extra_sections(assigned, sections)
         order = [s for s in self.cfg.step_order if s in assigned]

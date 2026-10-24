@@ -219,6 +219,30 @@ def test_launch_from_a_later_step_keeps_the_steps_it_builds_on(tmp_path, cfg, re
     assert {s.status for s in impl} == {"done"}
 
 
+def test_relaunch_from_link_design_drops_the_sections_of_the_earlier_session(tmp_path, cfg, report_cache, catalogs):
+    """-applog appends a relaunch to the same .vdi: steps the new session has not reached must not show the old one."""
+    runs = qick(tmp_path)
+    vdi = runs / "impl_1" / "d_1_wrapper.vdi"
+    with vdi.open("a") as fh:
+        fh.write("#-----------------------------------------------------------\n# Vivado v2023.2 (64-bit)\n"
+                 "# Start of session at: Sat Oct 24 16:03:55 2026\n#-----------------------------------------------------------\n"
+                 "Command: link_design -top d_1_wrapper -part xczu48dr-ffvg1517-2-e\n"
+                 "WARNING: [Project 1-1] only in the second session\n"
+                 "Command: opt_design\n")
+    fw = ProjectSource(runs, cfg, report_cache, catalogs).snapshot(None, now=1_010_000)
+    stages = stage_map(fw)
+    for sid in ("place_design", "phys_opt_design", "route_design", "write_bitstream"):
+        node = stages["impl_1/" + sid]
+        assert node.counts == [0, 0, 0, 0] and (node.timing is None or node.timing.source == "report")
+        assert not [c for c in node.children if not c.expected]
+    assert stages["impl_1/init_design"].counts[1] == 1
+    assert not [c for s in stages.values() for c in s.children if c.label.endswith("(script)")]
+    source = ProjectSource(runs, cfg, report_cache, catalogs)
+    source.snapshot(None, now=1_010_000)
+    assert [g["count"] for g in source.raw_groups()
+            if g["severity"] == "warning" and g["log"] == str(vdi)] == [1]
+
+
 def test_commands_run_by_a_hook_stay_inside_their_step(tmp_path, cfg, report_cache, catalogs):
     """A post-hook re-running place/phys_opt/route (timing-closure loops) used to vanish from the flow."""
     runs = qick(tmp_path)

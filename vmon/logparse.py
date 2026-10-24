@@ -92,6 +92,7 @@ class LogParser:
         self.lines_by_key = {}         # same key -> [line numbers]
         self.msg_count = 0             # bumps on every message: cache key for derived views
         self.version = None
+        self.session_starts = []       # line numbers of "Start of session" banners (-applog appends relaunches)
         self.wall = None               # last wall-clock timestamp seen in the log
         self.live = False              # True once the initial catch-up is done
         self.pending_time = None
@@ -103,6 +104,7 @@ class LogParser:
     # ------------------------------------------------------------------ feeding
     def feed(self, lines):
         rules_for = self.cfg.rules_for
+        session_re = self.cfg.resume.session_start_re
         for line in lines:
             self.line_no += 1
             if not line:
@@ -115,6 +117,8 @@ class LogParser:
                     self.version = match.group(1)
                     if self.catalogs is not None:
                         self.stages = self.catalogs.stage_matchers(self.version)
+            if line[0] == "#" and session_re is not None and session_re.search(line):   # banners are comments
+                self.session_starts.append(self.line_no)
             if self.stages and self.cur_step is not None and self.cur_step.completed_line is None:
                 self._check_stage(line)
             for rule in rules_for(line[0]):
