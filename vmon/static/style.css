@@ -332,6 +332,10 @@ table.hist { width: 100%; border-collapse: collapse; font-family: var(--mono); f
 .alerts { margin-top: 14px; border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 12px; padding: 8px 10px 10px; }
 .alerts[data-level="error"] { border-color: var(--err); background: var(--err-bg); }
 .al-h { font-weight: 700; font-size: var(--fs-control); padding: 2px 4px 6px; }
+.al-x { margin-left: 8px; flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); }
+.al-x:hover { color: var(--text); border-color: var(--border); background: var(--panel-2); }
+.al-restore { margin-left: 8px; border: none; background: none; padding: 0; font: inherit; font-weight: 600; font-size: var(--fs-small); color: var(--accent); }
+.al-restore:hover { text-decoration: underline; }
 .alerts[data-level="error"] .al-h { color: var(--err); }
 .alert { display: flex; align-items: center; gap: 0; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: var(--fs-control); margin-top: 3px; background: var(--panel); border: 1px solid var(--border-soft); }
 .alert:hover { border-color: var(--text-2); }
