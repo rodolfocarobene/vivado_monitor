@@ -471,3 +471,16 @@ def test_echoed_open_checkpoint_with_a_variable_is_skipped(tmp_path, cfg):
     dcp = str(tmp_path / "top.runs" / "impl_1" / "top_routed.dcp")
     log.write_text("# open_checkpoint $dcp\nCommand: open_checkpoint %s\nStarting open_checkpoint Task\n" % dcp)
     assert scan_session(str(log), str(tmp_path), cfg)["checkpoint"] == os.path.normpath(dcp)
+
+
+def test_resume_busy_after_its_last_command_stays_in_that_step(tmp_path, cfg, report_cache, catalogs):
+    """A recovery script doing its own work after route_design (checkpoints, timing analysis) is not yet in the
+    next planned step: route_design stays running, write_bitstream pending."""
+    runs = crashed_run(tmp_path)
+    log = tmp_path / "resume.log"
+    lines = (CRASH / "resume.log").read_text().split("\n")
+    done = next(i for i, ln in enumerate(lines) if ln.startswith("route_design completed successfully"))
+    log.write_text("\n".join(lines[:done + 1] + ["# write_checkpoint -force eco.dcp", "TIMING ECO: start"]) + "\n")
+    stages = stage_map(snap(runs, cfg, report_cache, catalogs, resume_group(runs, log)))
+    assert stages["impl_1/route_design"].status == "running"
+    assert stages["impl_1/write_bitstream"].status == "pending"
