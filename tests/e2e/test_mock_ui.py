@@ -360,3 +360,25 @@ def test_ooc_runs_are_not_chained_by_rail_lines(page, mock_url):
     assert set(shown) == {"nonenone"}
     first = page.locator(".stagedetail > .main > .body .pane-flow > .node > .rail").first
     assert first.evaluate("e => getComputedStyle(e, '::after').display") != "none"
+
+
+def test_alerts_can_be_dismissed_and_shown_again(page, mock_url):
+    """The banner keeps its colour and counts; only the rows go, and 'show' brings them back."""
+    open_mock(page, mock_url, "fw=lockin")
+    banner = page.locator(".alerts")
+    head = banner.locator(".al-h")
+    counts = head.inner_text()
+    rows = banner.locator(".alert")
+    n = rows.count()
+    assert n >= 2
+    rows.first.locator(".al-x").click()
+    expect(rows).to_have_count(n - 1)
+    while rows.count():
+        rows.first.locator(".al-x").click()
+    expect(rows).to_have_count(0)
+    expect(head).to_contain_text(counts.split(" need attention")[0])
+    expect(banner).to_have_attribute("data-level", re.compile("warning|error"))
+    page.clock.run_for(3000)                         # live updates keep them dismissed
+    expect(rows).to_have_count(0)
+    head.get_by_role("button", name=re.compile("dismissed")).click()
+    expect(rows).to_have_count(n)

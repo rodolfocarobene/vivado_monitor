@@ -320,6 +320,19 @@ function mockLogAround(fw, log, line) {
 }
 
 /* ------------------------------------------------------------------ alerts */
+// Alerts dismissed from the banner, per build (a new build of the firmware shows its alerts again). The key leaves out
+// the message, so an alert whose numbers change (WNS -0.12 -> -0.10) stays dismissed.
+const alertKey = (a) => `${a.level}|${a.code || ''}|${a.node_id || ''}`;
+const dismissed = (() => { try { return new Map(Object.entries(JSON.parse(lsGet('vmon.alDismissed') || '{}')).map(([k, v]) => [k, new Set(v)])); } catch { return new Map(); } })();
+function dismissedOf(fw) {
+  const k = `${fw.id}@${fw.started_at ?? ''}`;
+  if (!dismissed.has(k)) dismissed.set(k, new Set());
+  return dismissed.get(k);
+}
+function saveDismissed() {
+  const keep = [...dismissed].filter(([, set]) => set.size).slice(-50);   // bounded: old builds fall off
+  lsSet('vmon.alDismissed', JSON.stringify(Object.fromEntries(keep.map(([k, set]) => [k, [...set]]))));
+}
 function fwAlerts(fw) {
   const seen = new Set(); const out = [];
   const add = (a, nid) => {
@@ -1588,10 +1601,12 @@ function render() {
   if (v.fwId !== fw.id) { v.fwId = fw.id; v.stages.innerHTML = ''; v.detail.innerHTML = ''; v.detEl = null; v.selId = null; v.mvList._h = null; v.mvList.innerHTML = ''; v.tv._h = null; v.tv.innerHTML = ''; v.mvQ.value = mvOf(fw).q; }
   renderHeader(fw);
   const als = fwAlerts(fw);
-  setHTML(v.banner, als.length ? `<div class="alerts${topLevel(als) === 'error' ? '' : ' compact'}" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention</div>${als.map((a) => {
+  const gone = dismissedOf(fw), shown = als.filter((a) => !gone.has(alertKey(a)));
+  const nDismissed = als.length - shown.length;
+  setHTML(v.banner, als.length ? `<div class="alerts${topLevel(als) === 'error' && shown.length ? '' : ' compact'}" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention${nDismissed ? ` <button class="al-restore" data-act="al-restore" title="Show the dismissed alerts again">${nDismissed} dismissed · show</button>` : ''}</div>${shown.map((a) => {
     const pn = a.node_id && findPath(fw, a.node_id);
     const where = pn ? pn.chain.map((n) => n.label).slice(-2).join(' / ') : '';
-    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<span class="acode" title="${esc(a.code || a.level)}">${esc(alertName(a))}</span><span class="amsg" title="${esc(a.message)}">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}</div>`;
+    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<span class="acode" title="${esc(a.code || a.level)}">${esc(alertName(a))}</span><span class="amsg" title="${esc(a.message)}">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}<button class="al-x" data-act="al-dismiss" data-key="${esc(alertKey(a))}" title="Dismiss this alert (it stays counted above)" aria-label="Dismiss alert"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>`;
   }).join('')}</div>` : '');
 
   const view = curView(fw);
@@ -1790,6 +1805,10 @@ document.addEventListener('click', async (ev) => {
       try { document.execCommand('copy'); toast('Copied'); } catch { toast('Copy failed'); }
       ta.remove();
     }
+  } else if (act === 'al-dismiss') {
+    const fw = curFw(); dismissedOf(fw).add(t.dataset.key); saveDismissed(); render();
+  } else if (act === 'al-restore') {
+    const fw = curFw(); dismissedOf(fw).clear(); saveDismissed(); render();
   } else if (act === 'goto') {
     gotoNode(curFw(), t.dataset.node);
   } else if (act === 'rchip' && nodeEl) {

@@ -85,6 +85,19 @@ def assign_sections(planned, sections, cfg):
     return result
 
 
+def extra_sections(assigned, sections):
+    """Sections no step claimed (place/phys_opt/route run again by a Tcl hook or a script) belong to the step whose
+    section precedes them in the log: {step id: [section, ...]}."""
+    owner = {id(section): sid for sid, section in assigned.items()}
+    out, current = {}, None
+    for section in sections:
+        if id(section) in owner:
+            current = owner[id(section)]
+        elif current is not None:
+            out.setdefault(current, []).append(section)
+    return out
+
+
 def _aggregate_status(statuses, live):
     statuses = list(statuses)
     if not statuses:
@@ -222,8 +235,16 @@ class Source:
         kids = [c for c in node.children if not c.expected]
         return {"done": sum(1 for c in kids if c.status == "done"), "total": len(kids)} if kids else None
 
+    def _extra_node(self, node_id, section, plog, open_status):
+        """A step command run again inside another step (hook/script), with its phases."""
+        node = self._convert(section, node_id, plog, open_status)
+        node.kind = "command"
+        node.label = "%s (script)" % section.cmd
+        node.description = "Run inside this step by a Tcl hook or script, after the step's own command"
+        return node
+
     def _step_node(self, step_id, node_id, plog, section, status, open_status, alive, run_id,
-                   begin=None, end=None, reports=(), now=None, failure=None):
+                   begin=None, end=None, reports=(), now=None, failure=None, extras=()):
         stepdef = self.cfg.steps.get(step_id) or StepDef(step_id, {})
         node = Node(id=node_id, label=stepdef.label, kind="step", status=status, run=run_id)
         node.started_at, node.ended_at = begin, end
@@ -240,6 +261,14 @@ class Source:
             node.timing = self._timing_from_history(section, step_id, status)
             node.convergence = convergence_mod.summarize(section.iters, self.cfg)
             node.congestion = congestion_mod.summarize(section.congestion, self.cfg)
+            for extra in extras:
+                child = self._extra_node(node_id, extra, plog, open_status)
+                node.children.append(child)
+                for i, value in enumerate(child.counts):
+                    node.counts[i] += value
+                node.line_end = child.line_end
+                if extra.peak_mem and (node.peak_mem_mb is None or extra.peak_mem > node.peak_mem_mb):
+                    node.peak_mem_mb = extra.peak_mem
             node.progress = self._progress(node)
             if node.started_at is None:
                 node.started_at = section.started_at
@@ -251,8 +280,11 @@ class Source:
         elif section is not None:
             node.elapsed_s = section.elapsed_s
         node.reports = list(reports)
+        hook_timing = next((t for t in (self._timing_from_history(x, step_id, status) for x in reversed(extras)) if t), None)
         for report in node.reports:
             summary = report["summary"]
+            if hook_timing is not None:
+                break                 # the step's reports come before its post-hook commands: the log is newer
             if report["kind"] == "timing_summary" and not report["stale"] and summary.get("wns") is not None:
                 history = node.timing.history if node.timing else []
                 final, stage = self._timing_stage(step_id, status, "", report=True)
@@ -265,6 +297,9 @@ class Source:
                     source="report", label="Timing report", history=history,
                     clocks=summary.get("clocks", []), report=report["path"],
                     path_counts=summary.get("path_counts"), paths=summary.get("paths", []))
+        if hook_timing is not None:
+            hook_timing.final, hook_timing.stage = False, "%s (script)" % extras[-1].cmd
+            node.timing = hook_timing
         node.children = self.catalog.merge(step_id, node, status, self.version)
         stall = plog.growth_age(now or time.time()) if plog and section is not None else None
         node.failure = failure
@@ -926,6 +961,7 @@ class ProjectSource(Source):
         else:
             after = list(step_ids)
         assigned = assign_sections(after, sections, self.cfg)
+        extras = extra_sections(assigned, sections)
         alive, started = sess["alive"], sess["started_at"]
         begins = {sid: (sec.started_at or started) for sid, sec in assigned.items()}
         reports = self._run_reports(run, {sid: started for sid in assigned})
@@ -948,7 +984,7 @@ class ProjectSource(Source):
             if status != "running" and sid == last_sid:
                 end = plog.tail.last_growth
             node = self._step_node(sid, "%s/%s" % (run.id, sid), plog, section, status, open_status, alive,
-                                   run.id, begins[sid], end, reports.get(sid, ()), now, failure)
+                                   run.id, begins[sid], end, reports.get(sid, ()), now, failure, extras.get(sid, ()))
             nodes[sid] = node
         if alive and not [n for n in nodes.values() if n.status == "running"]:
             # still loading the checkpoint / between steps: the next planned step is the one it will run
@@ -1030,6 +1066,7 @@ class ProjectSource(Source):
             sections = [c for c in plog.parser.root.children if c.kind == "step"]
         planned = self._planned_steps(run)
         assigned = assign_sections(planned, sections, self.cfg)
+        extras = extra_sections(assigned, sections)
         step_ids = planned or sorted(
             set(assigned) | {s for s in run.markers if s in self.cfg.steps and s != "vivado"},
             key=self.cfg.step_order.index)
@@ -1068,7 +1105,7 @@ class ProjectSource(Source):
                 run.markers.get("vivado", {}).get("error") if status == "failed" else None)
             nodes[sid] = self._step_node(
                 sid, "%s/%s" % (run.id, sid), plog, assigned.get(sid), status, open_status, run.alive,
-                run.id, marker.get("begin"), end, reports.get(sid, ()), now, failure)
+                run.id, marker.get("begin"), end, reports.get(sid, ()), now, failure, extras.get(sid, ()))
 
         # attempts: main launch first, then every resume session replaces the steps it ran
         main_n = 1 + state["launches"]
@@ -1247,6 +1284,7 @@ class LogSource(Source):
         live = bool(group and group.pids) or (plog.growth_age(now) or 1e9) < RECENT_GROWTH_S
         sections = [c for c in plog.parser.root.children if c.kind == "step"]
         assigned = assign_sections([], sections, self.cfg)
+        extras = extra_sections(assigned, sections)
         order = [s for s in self.cfg.step_order if s in assigned]
         stages = []
         for sid in order:
@@ -1263,7 +1301,7 @@ class LogSource(Source):
                 open_status = "failed"
                 failure = self._failure_for([self.path], None, None, section, plog)
             stages.append(self._step_node(sid, "log/" + sid, plog, section, status, open_status, live,
-                                          None, None, None, (), now, failure))
+                                          None, None, None, (), now, failure, extras.get(sid, ())))
         if live and order:
             flow_kind = self.cfg.steps[order[-1]].flow
             last = self.cfg.step_order.index(order[-1])
