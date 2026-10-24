@@ -437,7 +437,8 @@ main { max-width: 1440px; }
 .no-hint { color: var(--muted); }
 .no-hint code, .no-sum code { font-family: var(--mono); font-size: var(--fs-micro); }
 .rawbtn:disabled { opacity: .5; cursor: default; }
-.np-loghead { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 6px; padding-top: 10px; border-top: 1px solid var(--border-soft); font-size: var(--fs-control); }
+.np-loghead { display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; font-size: var(--fs-control); }
+.np-settings { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
 .np-log { max-height: 270px; overflow: auto; display: flex; flex-direction: column; gap: 4px; }
 .np-log .none { color: var(--muted); font-size: var(--fs-small); padding: 6px 2px; }
 .nl { display: flex; gap: 9px; padding: 6px 8px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
