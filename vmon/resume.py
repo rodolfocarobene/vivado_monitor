@@ -39,8 +39,10 @@ def scan_session(log_path, cwd, cfg):
                 here = target if paths.is_abs(target) or not here else paths.join(here, target)
         if checkpoint is None and rc.checkpoint_re:
             match = rc.checkpoint_re.match(line)
-            if match:
-                path = rc.first_group(match)
+            path = rc.first_group(match) if match else None
+            # a sourced script is echoed with its variables unexpanded ("# open_checkpoint $dcp"); the
+            # "Command: open_checkpoint <path>" line Vivado writes next has the real path
+            if path and not any(c in path for c in "$["):
                 if not paths.is_abs(path) and here:
                     path = paths.join(here, path)
                 checkpoint = paths.normpath(path)

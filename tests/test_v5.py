@@ -462,3 +462,13 @@ def test_session_recorded_from_a_xil_helper_is_dropped(tmp_path, cfg, report_cac
         fw = snap(runs, cfg, report_cache, catalogs, group)
         assert fw.attempt["n"] == 1
         assert all(len(s.attempts) < 2 for s in fw.flows[0].stages)
+
+
+def test_echoed_open_checkpoint_with_a_variable_is_skipped(tmp_path, cfg):
+    """`open_checkpoint $dcp` in a sourced script is echoed unexpanded; the Command: line after it has the path."""
+    from vmon.resume import scan_session
+    log = tmp_path / "vivado.log"
+    log.write_text("# open_checkpoint $dcp\n"
+                   "Command: open_checkpoint /w/top.runs/impl_1/top_routed.dcp\n"
+                   "Starting open_checkpoint Task\n")
+    assert scan_session(str(log), str(tmp_path), cfg)["checkpoint"] == os.path.normpath("/w/top.runs/impl_1/top_routed.dcp")
