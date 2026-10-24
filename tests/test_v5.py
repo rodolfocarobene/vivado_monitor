@@ -468,7 +468,6 @@ def test_echoed_open_checkpoint_with_a_variable_is_skipped(tmp_path, cfg):
     """`open_checkpoint $dcp` in a sourced script is echoed unexpanded; the Command: line after it has the path."""
     from vmon.resume import scan_session
     log = tmp_path / "vivado.log"
-    log.write_text("# open_checkpoint $dcp\n"
-                   "Command: open_checkpoint /w/top.runs/impl_1/top_routed.dcp\n"
-                   "Starting open_checkpoint Task\n")
-    assert scan_session(str(log), str(tmp_path), cfg)["checkpoint"] == os.path.normpath("/w/top.runs/impl_1/top_routed.dcp")
+    dcp = str(tmp_path / "top.runs" / "impl_1" / "top_routed.dcp")
+    log.write_text("# open_checkpoint $dcp\nCommand: open_checkpoint %s\nStarting open_checkpoint Task\n" % dcp)
+    assert scan_session(str(log), str(tmp_path), cfg)["checkpoint"] == os.path.normpath(dcp)
