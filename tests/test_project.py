@@ -217,3 +217,20 @@ def test_launch_from_a_later_step_keeps_the_steps_it_builds_on(tmp_path, cfg, re
     assert [s.id.split("/")[1] for s in impl] == ["init_design", "opt_design", "place_design", "phys_opt_design",
                                                   "route_design", "write_bitstream"]
     assert {s.status for s in impl} == {"done"}
+
+
+def test_commands_run_by_a_hook_stay_inside_their_step(tmp_path, cfg, report_cache, catalogs):
+    """A post-hook re-running place/phys_opt/route (timing-closure loops) used to vanish from the flow."""
+    runs = qick(tmp_path)
+    vdi = runs / "impl_1" / "d_1_wrapper.vdi"
+    with vdi.open("a") as fh:
+        fh.write("ECO: window 0.10: route_design\nCommand: route_design -directive Explore\nStarting Routing Task\n"
+                 "INFO: [Route 35-416] Intermediate Timing Summary | WNS=-3.884 | TNS=-985.414| WHS=-0.499 | THS=-151.653|\n"
+                 "Ending Routing Task | Checksum: 1\nroute_design completed successfully\n"
+                 "Command: phys_opt_design -directive Explore\n")
+    fw = ProjectSource(runs, cfg, report_cache, catalogs).snapshot(None, now=1_010_000)
+    bit = stage_map(fw)["impl_1/write_bitstream"]
+    extra = [c for c in bit.children if c.kind == "command" and c.label.endswith("(script)")]
+    assert [c.label for c in extra] == ["route_design (script)", "phys_opt_design (script)"]
+    assert bit.line_end == extra[-1].line_end and extra[0].line_start > stage_map(fw)["impl_1/route_design"].line_end
+    assert bit.timing.wns == -3.884 and not bit.timing.final       # newer than the step's own reports
