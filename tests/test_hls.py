@@ -50,8 +50,8 @@ def lines_until(marker, extra=""):
     return edit
 
 
-def snapshot(log, cfg, report_cache, catalogs, group=None):
-    return HlsSource(str(log), cfg, report_cache, catalogs).snapshot(group)
+def snapshot(log, cfg, report_cache, catalogs, group=None, now=None):
+    return HlsSource(str(log), cfg, report_cache, catalogs).snapshot(group, now)
 
 
 def stages(fw):
@@ -169,7 +169,9 @@ def test_a_log_that_stops_with_no_process_is_stopped(cfg, report_cache, catalogs
 
 def test_running_step_with_a_live_process(cfg, report_cache, catalogs, tmp_path):
     log = build(tmp_path, lines_until("INFO: [SCHED 204-11]"), reports=False)
-    fw = snapshot(log, cfg, report_cache, catalogs, SimpleNamespace(pids={1}, launcher=None, kind="hls"))
+    live = SimpleNamespace(pids={1}, launcher=None, kind="hls")
+    started = snapshot(log, cfg, report_cache, catalogs, live).started_at   # log local time: pin "now" to it (CI is UTC)
+    fw = snapshot(log, cfg, report_cache, catalogs, live, now=started + 60)
     assert fw.status == "running" and fw.live and fw.current["label"].endswith("Code transformations")
     synth = stages(fw)["csynth_design"]
     assert synth.status == "running" and synth.elapsed_s > 0
@@ -226,6 +228,8 @@ def test_other_logs_stay_logs(tmp_path):
 # ---------------------------------------------------------------- discovery with fake process lists
 def discover_with(cfg, vivados, hls, parent_of):
     class Backend(procinfo.NullBackend):
+        name = "windows" if sys.platform == "win32" else "linux"      # picks the HLS image names of this platform
+
         def vivado_processes(self):
             return vivados
 
