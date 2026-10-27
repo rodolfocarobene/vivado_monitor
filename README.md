@@ -32,17 +32,21 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 - **Keyboard**: `1`-`9` firmware tabs, `f`/`m`/`t` views, `j`/`k` stages, `n` next alert, `c` collapse all rows, up/down/left/right/Enter in the phase outline, `0` all builds, `h` build history, `?` help; arrow keys on the tab strip.
 - No AI: pure log parsing. Read-only. Python standard library only.
 
-| Messages triage | Light theme, finished build | Narrow window |
-|---|---|---|
-| ![Messages](docs/img/messages.png) | ![Light theme](docs/img/light-theme.png) | <img src="docs/img/narrow.png" alt="Narrow window: stages as one tree" width="240"> |
+| Phase timeline and inspector | All builds (click the logo) |
+|---|---|
+| ![Phase timeline with the inspector](docs/img/timeline.png) | ![All builds home](docs/img/home.png) |
 
-| Build history | Congestion (route) |
+| Messages triage | Light theme, finished build | Phone |
+|---|---|---|
+| ![Messages](docs/img/messages.png) | ![Light theme](docs/img/light-theme.png) | <img src="docs/img/narrow.png" alt="Phone: one screen per level, with a breadcrumb" width="240"> |
+
+| Build history with trends | Congestion (place) |
 |---|---|
 | ![Build history](docs/img/history.png) | ![Congestion](docs/img/congestion.png) |
 
 ![Compare two builds](docs/img/compare.png)
 
-![Suggested actions](docs/img/hints.png)
+![Needs attention, with a suggested fix opened](docs/img/hints.png)
 
 ## Requirements
 
