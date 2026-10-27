@@ -66,6 +66,7 @@ class Node:
     optional: bool = False
     description: str | None = None
     estimate: dict | None = None
+    expected_s: float | None = None   # predicted duration of a pending or running node (history, else catalog weight)
     reports: list = field(default_factory=list)
     alerts: list = field(default_factory=list)
     doc_url: str | None = None
@@ -87,7 +88,7 @@ class Node:
             "run": self.run, "log": self.log, "line_start": self.line_start,
             "line_end": self.line_end, "progress": self.progress,
             "expected": self.expected, "optional": self.optional, "description": self.description,
-            "estimate": self.estimate, "reports": self.reports, "alerts": self.alerts,
+            "estimate": self.estimate, "expected_s": self.expected_s, "reports": self.reports, "alerts": self.alerts,
             "doc_url": self.doc_url, "number": self.number, "number_predicted": self.number_predicted,
             "failure": self.failure, "attempts": self.attempts, "log_missing": self.log_missing,
             "convergence": self.convergence, "congestion": self.congestion,

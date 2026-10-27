@@ -128,6 +128,7 @@ Node = {
   "progress": {"done": int, "total": int} | null,     # e.g. OOC group: 1/1 runs; step: phases done
   "expected": bool, "optional": bool, "description": str|null,   # expected=true: catalog placeholder not seen yet
   "estimate": {"weight": float}|null,                            # catalog weight (share of parent)
+  "expected_s": float|null,                                      # predicted duration of a pending/running node (history, else weights)
   "reports": [Report], "alerts": [Alert],
   "children": [Node]
 }

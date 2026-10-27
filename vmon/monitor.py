@@ -15,7 +15,7 @@ from . import rules_io
 from .docs import DocLinks
 from .notify import Notifier
 from .paths import cache_dir, canon, path_key, write_atomic
-from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
+from .eta import DurationStore, annotate_expected, estimate, phase_durations, settings as eta_settings, step_durations
 from .expected import CatalogSet
 from .discovery import Discovery
 from .hls import resolve as resolve_hls
@@ -221,7 +221,9 @@ class Monitor:
                 self._record_durations(fw_id, fw)
                 self._record_clocks(fw_id, fw)
                 self._record_history(fw_id, fw)
-                fw.eta = estimate(fw, self.durations.load(fw_id) if fw.status == "running" else None, now, self.eta_cfg)
+                history = self.durations.load(fw_id) if fw.status == "running" else None
+                fw.eta = estimate(fw, history, now, self.eta_cfg)
+                annotate_expected(fw, history)
                 fw.events = list(self._events.get(fw_id, ()))
                 fw.top_messages = self._top_messages(fw_id, fw)
                 fw.hints = self._hints(fw_id, fw)

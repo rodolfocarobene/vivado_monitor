@@ -116,13 +116,13 @@ let selectedCmp = null; // key of the comparison tab being shown, null = the fir
 let firstLoad = true;
 const ui = {
   open: new Map(),        // `${fw}|${node}` -> bool (explicit user choice)
-  tab: new Map(),         // node key -> details tab
   flow: new Map(),        // fw id -> selected flow id
   det: new Map(),         // node key -> fetched details state
   sel: new Map(),         // fw id -> {id, follow}: selected top-level stage in the left column
   view: new Map(),        // fw id -> 'flow' | 'messages'
   mv: new Map(),          // fw id -> messages (triage) view state
-  auto: new Map(),        // fw id -> {keys:Set auto-opened node keys, dismissed:Set, sig}: follow-live auto-expansion
+  rowSel: new Map(),      // stage key -> id of the outline row the user pinned (absent: the running / failed row is auto-selected)
+  insTab: new Map(),      // stage key -> inspector tab, kept while moving between rows
   rsel: new Map(),        // node key -> path of the report shown in the Reports tab
   paths: new Map(),       // `${fw}|${report path}` -> worst-paths table state (filters, expanded rows, fetched data)
 };
@@ -160,8 +160,6 @@ function parseHash() {
 }
 
 const keyOf = (fw, n) => `${fw.id}|${n.id}`;
-const autoOf = (fw) => { let a = ui.auto.get(fw.id); if (!a) { a = { keys: new Set(), dismissed: new Set(), sig: null }; ui.auto.set(fw.id, a); } return a; };
-const isOpen = (fw, n) => (ui.open.has(keyOf(fw, n)) ? ui.open.get(keyOf(fw, n)) : (autoOf(fw).keys.has(keyOf(fw, n)) || hashOpen.has(n.id)));
 const curFw = () => state.firmwares.find((f) => f.id === selected);
 // Remote firmwares (host set) go stale when their vmon cannot be reached: kept, but not live. Never an error colour.
 const remoteOf = (fw) => (fw.host && (state.remotes || []).find((r) => r.name === fw.host)) || null;
@@ -170,12 +168,12 @@ const fwLabel = (fw) => (fw.host ? `${fw.name} · ${fw.host}` : fw.name);
 const staleText = (r) => `${r.name} unreachable${r.last_ok ? ` · last update ${fmtClock(r.last_ok)}` : ''}`;
 const curView = (fw) => ui.view.get(fw.id) || (hashView === 'messages' || hashView === 'timing' ? hashView : 'flow');
 
-// Forget open-state, chosen details tab and fetched data of a node and all its descendants,
+// Forget open-state, pinned row, inspector tab and fetched data of a node and all its descendants,
 // so that reopening it looks freshly opened.
 function resetNode(fw, n, withSelf = true) {
   walk(withSelf ? [n] : n.children, (x) => {
     const k = keyOf(fw, x);
-    ui.open.delete(k); ui.tab.delete(k); ui.det.delete(k); autoOf(fw).keys.delete(k);
+    ui.open.delete(k); ui.rowSel.delete(k); ui.insTab.delete(k); ui.det.delete(k);
     hashOpen.delete(x.id); hashTab.delete(x.id);
   });
 }
@@ -415,13 +413,10 @@ function gotoNode(fw, id) {
   ui.flow.set(fw.id, hit.flow.id);
   ui.view.set(fw.id, 'flow');
   ui.sel.set(fw.id, { id: hit.chain[0].id, follow: false });
-  hit.chain.forEach((n, i) => {
-    ui.open.set(keyOf(fw, n), true);
-    if (i < hit.chain.length - 1) ui.tab.set(keyOf(fw, n), 'flow');
-  });
+  hit.chain.slice(0, -1).forEach((n) => ui.open.set(keyOf(fw, n), true));
+  ui.rowSel.set(keyOf(fw, hit.chain[0]), id);
   render();
-  const root = hit.chain.length === 1 ? mainEl.querySelector('.stagedetail') : null;
-  const el = root || [...mainEl.querySelectorAll('.detail .node')].find((e) => e._node && e._node.id === id);
+  const el = hit.chain.length === 1 ? mainEl.querySelector('.stagedetail > .main > .card') : [...mainEl.querySelectorAll('.orow')].find((e) => e._node && e._node.id === id);
   if (el) {
     setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
     el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2200);
@@ -771,9 +766,13 @@ function hintsBarHTML(fw) {
   const head = `<div class="ti-h"><button class="infotoggle" data-act="hints-toggle" aria-expanded="${hintsOpen}">Suggested actions<span class="hcount mono">${hs.length}</span>${CHEV}</button>${sum}</div>`;
   return hintsOpen ? `${head}<div class="hintlist">${hs.map((h) => hintHTML(h, true)).join('')}</div>` : head;
 }
+const hintsUnfolded = new Set();   // keys of the stage hints the user unfolded, kept across re-renders
+const hintKey = (fw, n, h) => `${fw.id}|${n.id}|${h.title}`;
+document.addEventListener('toggle', (ev) => { const d = ev.target; if (d.classList && d.classList.contains('hdet')) (d.open ? hintsUnfolded.add(d.dataset.key) : hintsUnfolded.delete(d.dataset.key)); }, true);
 function stageHintsHTML(fw, n) {
   const hs = (fw.hints || []).filter((h) => h.node_id === n.id);
-  return hs.length ? `<div class="hintlist"><div class="hint-cap">Suggested actions</div>${hs.map((h) => hintHTML(h, false)).join('')}</div>` : '';
+  // one line per hint ("CHECK <title> · N suggested actions"); the evidence and commands unfold on click
+  return hs.length ? `<div class="hintlist folded">${hs.map((h) => { const k = hintKey(fw, n, h); const nact = (h.actions || []).length; return `<details class="hdet" data-key="${esc(k)}" data-sev="${esc(h.severity)}"${hintsUnfolded.has(k) ? ' open' : ''}><summary><span class="hpill">${HINT_WORD[h.severity] || 'TIP'}</span><b class="hint-t">${esc(h.title)}</b><span class="hmore">${nact} suggested action${nact === 1 ? '' : 's'}${CHEV}</span></summary>${hintHTML(h, false)}</details>`; }).join('')}</div>` : '';
 }
 
 function etaParts(fw) {
@@ -929,7 +928,7 @@ function updateNode(el, n, fw, depth) {
   const p = n.progress;
   r.prog.hidden = !(p && p.total);
   if (p && p.total) { const pc = Math.min(100, Math.round((p.done / p.total) * 100)); r.bar.style.width = `${pc}%`; r.prog.title = `${p.done}/${p.total}`; }
-  syncBody(el, n, fw, depth);
+  if (el._detail) renderStageBody(el, n, fw);
 }
 
 /* ---- master column: compact stage items; detail column: the selected stage as a forced-open node */
@@ -1059,7 +1058,6 @@ function renderFlowView(fw, flow) {
   const v = mainEl._r;
   const stages = flow.stages;
   const selStage = renderStageList(fw, flow); // also creates the selection state on first render
-  const sel = ui.sel.get(fw.id);
   if (v.selId !== selStage.id || v.selFlow !== flow.id || !v.detEl) {
     const prev = v.selId && v.selFlow === flow.id && stages.find((s) => s.id === v.selId);
     if (prev) resetNode(fw, prev);
@@ -1068,17 +1066,14 @@ function renderFlowView(fw, flow) {
     v.detEl = createDetail();
     v.detail.appendChild(v.detEl);
   }
-  if (sel.follow && fw.status === 'running' && selStage.status === 'running') followExpand(fw, selStage, v);
   renderDetail(v.detEl, selStage, fw);
   placeDetail(v);
-  if (v.scrollTo) { const id = v.scrollTo; v.scrollTo = null; setTimeout(() => scrollRunningIntoView(id), 420); }
 }
 
-/* ---- follow live: keep the running chain of the selected stage expanded */
-let lastUserScroll = 0;
-for (const evn of ['wheel', 'touchmove', 'keydown', 'mousedown']) window.addEventListener(evn, () => { lastUserScroll = Date.now(); }, { passive: true, capture: true });
-window.addEventListener('scroll', () => { if (!programmaticScroll) lastUserScroll = Date.now(); }, { passive: true });
-let programmaticScroll = false;
+/* ---- stage detail: the phase timeline (one flat outline, a Gantt bar per row on the step's time axis) and the single
+   inspector below it. Rows are patched in place by node id, so keyboard focus, scroll and the open inspector survive polls. */
+const OUTLINE_GUESS_S = 20;   // bar length of an unstarted leaf with no expected_s and no finished phase to compare with
+const isOpenStatus = (n) => n.status === 'pending' || n.status === 'queued' || n.status === 'running';
 
 function runningChain(stage) {
   const chain = [stage];
@@ -1086,35 +1081,216 @@ function runningChain(stage) {
   return chain;
 }
 
-// Auto-opened nodes are tracked apart from ui.open (explicit user choices), so they can be collapsed
-// again when no longer running without ever touching what the user opened.
-function followExpand(fw, stage, v) {
-  const a = autoOf(fw);
-  const chain = runningChain(stage);
-  const sig = chain.map((n) => n.id).join('>');
-  if (a.sig !== sig) { a.dismissed.clear(); const first = a.sig === null; a.sig = sig; if (!first || chain.length > 1) v.scrollTo = chain[chain.length - 1].id; }
-  // a leaf would only open on its messages: the running leaf stays a visible, closed card
-  const want = new Set(chain.slice(1).filter((n) => (n.children || []).length).map((n) => keyOf(fw, n)).filter((k) => !a.dismissed.has(k)));
-  for (const k of [...a.keys]) if (!want.has(k)) { a.keys.delete(k); ui.tab.delete(k); }
-  for (const k of want) if (!ui.open.has(k)) a.keys.add(k);
+function chainTo(n, id) {
+  if (n.id === id) return [n];
+  for (const c of n.children || []) { const p = chainTo(c, id); if (p) return [n, ...p]; }
+  return null;
 }
 
-function scrollRunningIntoView(id) {
-  if (Date.now() - lastUserScroll < 5000) return;
-  const el = [...mainEl.querySelectorAll('.detail .node')].find((e) => e._node && e._node.id === id);
-  if (!el) return;
-  const r = el.getBoundingClientRect();
-  const top = stickTop(); const bottom = window.innerHeight - 20;
-  if (r.top >= top && r.bottom <= bottom) return;
-  programmaticScroll = true;
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(() => { programmaticScroll = false; }, 900);
+// The row shown in the inspector: the one the user pinned, else the running leaf, else the deepest failed node, else the step.
+function pickRow(fw, stage) {
+  const pin = ui.rowSel.get(keyOf(fw, stage));
+  if (pin && chainTo(stage, pin)) return pin;
+  if (stage.status === 'running') return runningChain(stage).pop().id;
+  return (stage.status === 'failed' && deepestFailed(stage) || stage).id;
 }
 
-/* ---- expanded body: details tabs (Flow / Messages / Log / Timing) */
+// Visible rows, depth first. A row opens by the user's choice, else because it is an ancestor of the selected row or a
+// hash `expand` target; collapsed rows hide their subtree.
+function outlineRows(fw, stage, selId) {
+  const anc = new Set((chainTo(stage, selId) || []).slice(0, -1).map((x) => x.id));
+  const rows = [];
+  (function go(n, depth) {
+    const kids = (n.children || []).length;
+    const k = keyOf(fw, n);
+    const open = !!kids && (depth === 0 || (ui.open.has(k) ? ui.open.get(k) : anc.has(n.id) || hashOpen.has(n.id)));
+    rows.push({ n, depth, kids, open });
+    if (open) for (const c of n.children) go(c, depth + 1);
+  }(stage, 0));
+  return rows;
+}
+
+// Time span of every node on the step's axis. e = actual end (null if not finished), pe = end of what is predicted.
+// Unstarted nodes are placed after their predecessor (children of a parallel node all at its start), sized by expected_s.
+function timelineLayout(stage, now) {
+  const leaves = [];
+  walk(stage.children, (x) => { if (!(x.children || []).length && x.status === 'done' && x.elapsed_s != null) leaves.push(x.elapsed_s); });
+  const guess = leaves.length ? leaves.reduce((a, b) => a + b, 0) / leaves.length : OUTLINE_GUESS_S;
+  const spans = new Map();
+  function lay(n, cursor, predict) {
+    const kids = n.children || [];
+    const started = n.started_at != null;
+    const s = started ? n.started_at : cursor;
+    let end = s;
+    for (const c of kids) end = Math.max(end, lay(c, n.parallel ? s : Math.max(end, s), isOpenStatus(n)));
+    let e = null;
+    if (started) e = n.status === 'running' ? now : n.ended_at ?? (n.elapsed_s != null ? s + n.elapsed_s : Math.max(end, s));
+    else if (n.elapsed_s != null) e = s + n.elapsed_s;
+    let pe;
+    if (e != null) pe = n.status === 'running' ? Math.max(now, n.expected_s != null ? s + n.expected_s : now, end) : e;
+    else if (!predict || n.status === 'skipped') { spans.set(n.id, null); return s; }
+    else pe = Math.max(s + (n.expected_s != null ? n.expected_s : kids.length ? 0 : guess), end);
+    spans.set(n.id, { s, e, pe, running: n.status === 'running' && started });
+    return pe;
+  }
+  lay(stage, stage.started_at != null ? stage.started_at : now, isOpenStatus(stage));
+  const root = spans.get(stage.id);
+  const t0 = root ? root.s : now;
+  let last = t0;
+  for (const sp of spans.values()) if (sp) last = Math.max(last, sp.pe);
+  return { spans, t0, total: Math.max(last - t0, 1), now };
+}
+
+function ganttHTML(n, L) {
+  const sp = L.spans.get(n.id);
+  if (!sp) return '';
+  const pc = (t) => Math.max(0, Math.min(100, ((t - L.t0) / L.total) * 100));
+  const kind = (n.children || []).length ? 'par' : 'leaf';
+  const left = pc(sp.s);
+  if (sp.e == null) return `<i class="gb pred ${kind}" style="left:${left}%;width:${Math.max(pc(sp.pe) - left, 0.8)}%" title="${n.expected_s != null ? `expected about ${fmtDur(n.expected_s)}` : 'no history for this phase: rough guess'}"></i>`;
+  const w = Math.max(pc(sp.e) - left, 0.5);
+  const bar = `<i class="gb ${kind} st-${n.status}${sp.running ? ' run' : ''}" style="left:${left}%;width:${w}%"></i>`;
+  return sp.pe > sp.e + 0.5 ? `${bar}<i class="gb ext ${kind}" style="left:${left + w}%;width:${Math.max(pc(sp.pe) - left - w, 0)}%" title="expected end"></i>` : bar;
+}
+
+function axisHTML(L, tree) {
+  // as many evenly spaced ticks as fit the gantt column, at least ~90px apart, so the last label never touches the one before it
+  const w = (tree && tree.querySelector('.ogantt') ? tree.querySelector('.ogantt').clientWidth : 0) || 300;
+  const n = Math.max(1, Math.min(4, Math.floor(w / 110)));
+  const ticks = Array.from({ length: n + 1 }, (_, i) => i / n).map((f) => `<span style="left:${f * 100}%">${fmtDur(Math.round(L.total * f))}</span>`).join('');
+  return `<div class="oh-name">Phase</div><div class="oh-chips">Messages</div><div class="oh-gantt">${ticks}</div><div class="oh-t">Time</div><div class="oh-m">Peak mem</div>`;
+}
+
+function createRow() {
+  const el = h('div', 'orow', `<div class="oname"><span class="ochev" data-act="otog"></span><span class="odot"></span><span class="olbl"></span></div><div class="ochips"></div><div class="ogantt"></div><div class="otime num"></div><div class="omem num"></div>`);
+  el.setAttribute('role', 'treeitem'); el.setAttribute('data-act', 'osel'); el.tabIndex = -1;
+  el._r = { name: $('.oname', el), chev: $('.ochev', el), dot: $('.odot', el), label: $('.olbl', el), chips: $('.ochips', el), gantt: $('.ogantt', el), time: $('.otime', el), mem: $('.omem', el) };
+  return el;
+}
+
+function updateRow(el, row, L, selId, tabId) {
+  const { n } = row;
+  const r = el._r;
+  const root = row.depth === 0;
+  const isSel = n.id === selId;
+  el._node = n; el._open = row.open; el._kids = row.kids;
+  setAttr(el, 'data-status', n.status); setAttr(el, 'data-kind', n.kind);
+  setAttr(el, 'aria-level', row.depth + 1); setAttr(el, 'aria-selected', String(isSel));
+  if (row.kids) setAttr(el, 'aria-expanded', String(row.open)); else el.removeAttribute('aria-expanded');
+  setAttr(el, 'tabindex', n.id === tabId ? 0 : -1);
+  el.classList.toggle('sel', isSel); el.classList.toggle('root', root);
+  if (el._d !== row.depth) { el._d = row.depth; r.name.style.paddingLeft = `${row.depth * 16}px`; }
+  const chev = row.kids && !root;   // the step itself is always open
+  r.chev.classList.toggle('open', row.open); r.chev.classList.toggle('none', !chev);
+  setHTML(r.chev, chev ? CHEV : '');
+  if (r.dot._s !== n.status) { r.dot._s = n.status; r.dot.innerHTML = statusInfo(n.status).icon; }
+  const lvl = nodeLevel(n);
+  setHTML(r.label, root ? '<b>Whole step</b><small>all phases</small>' : `${lvl ? alertIcon(lvl) : ''}${labelHTML(n)}${n.optional ? '<small>optional</small>' : ''}${n.kind === 'task' ? '<small>task</small>' : ''}`);
+  r.label.title = n.description || n.label;
+  setHTML(r.chips, badgesHTML(n.counts));
+  setHTML(r.gantt, ganttHTML(n, L));
+  const running = n.status === 'running' && n.started_at;
+  const dur = running ? nowS() - n.started_at : n.elapsed_s;
+  setHTML(r.time, dur != null ? `<span ${running ? `data-start="${n.started_at}"` : ''}>${fmtDur(dur)}</span>` : n.expected_s != null && isOpenStatus(n) ? `<span class="pt" title="expected duration">~${fmtDur(n.expected_s)}</span>` : '');
+  setHTML(r.mem, n.peak_mem_mb != null ? fmtMem(n.peak_mem_mb) : '');
+}
+
+function createStageBody(el) {
+  const r = el._r;
+  el._ol = h('div', 'olwrap', `<div class="oaxis" aria-hidden="true"></div><div class="otree" role="tree"></div>
+    <div class="olegend"><span><i class="lg done"></i>completed</span><span><i class="lg run"></i>running</span><span><i class="lg pred"></i>expected</span><span><i class="lg now"></i>now</span></div>`);
+  el._tree = $('.otree', el._ol);
+  el._tree.addEventListener('keydown', onTreeKey);
+  const ins = h('div', 'node insp', `<div class="ihead"></div><div class="dtabs itabs"></div>${['messages', 'log', 'reports', 'timing', 'congestion', 'convergence', 'none'].map((k) => `<div class="pane pane-${k}"></div>`).join('')}`);
+  ins._r = { panel: true, tabs: $('.itabs', ins), panes: {} };
+  for (const k of ['messages', 'log', 'reports', 'timing', 'congestion', 'convergence']) ins._r.panes[k] = $(`.pane-${k}`, ins);
+  el._ins = ins;
+  r.bodyin.append(el._ol, ins);
+}
+
+function renderStageBody(el, n, fw) {
+  el.classList.add('open');
+  if (!el._ol) createStageBody(el);
+  const now = nowS();
+  const selId = pickRow(fw, n);
+  const L = timelineLayout(n, now);
+  const rows = outlineRows(fw, n, selId);
+  const tree = el._tree;
+  const tabId = (rows.find((x) => x.n.id === selId) || rows[0]).n.id;   // the one row in the tab order
+  const focused = tree.contains(document.activeElement) ? document.activeElement._key : null;
+  setAttr(tree, 'aria-label', `Phases of ${n.label}`);
+  tree.style.setProperty('--now', `${Math.max(0, Math.min(100, ((now - L.t0) / L.total) * 100))}%`);
+  setAttr(tree, 'data-live', n.status === 'running' ? '1' : '0');
+  patchList(tree, rows, (x) => x.n.id, createRow, (e, x) => updateRow(e, x, L, selId, tabId));
+  setHTML($('.oaxis', el._ol), axisHTML(L, tree));
+  if (focused && !tree.contains(document.activeElement)) { const f = [...tree.children].find((c) => c._key === focused); if (f) f.focus({ preventScroll: true }); }   // a row moved in the list
+  if (tree._sel !== selId) {   // the auto-selected row moved on: keep it in view inside the outline, never scrolling the page
+    tree._sel = selId;
+    const se = tree.querySelector('.orow.sel');
+    if (se && (se.offsetTop < tree.scrollTop || se.offsetTop + se.offsetHeight > tree.scrollTop + tree.clientHeight)) tree.scrollTop = Math.max(0, se.offsetTop - tree.clientHeight / 2);
+  }
+  renderInspector(el._ins, fw, n, selId);
+}
+
+function renderInspector(ins, fw, stage, selId) {
+  const chain = chainTo(stage, selId) || [stage];
+  const sel = chain[chain.length - 1];
+  const rk = keyOf(fw, sel);
+  ins._fw = fw; ins._node = sel; ins._stage = stage;
+  if (ins._rk !== rk) { ins._rk = rk; for (const p of Object.values(ins._r.panes)) { p._sig = null; p._h = null; } }
+  const crumbs = chain.map((x, i) => `<span${x === sel ? ' class="cur"' : ''}>${i === 0 ? esc(x.label) : labelHTML(x)}</span>`).join('<i>›</i>');
+  const running = sel.status === 'running' && sel.started_at;
+  const dur = running ? nowS() - sel.started_at : sel.elapsed_s;
+  setHTML($('.ihead', ins), `<span class="ilab">Inspecting</span><span class="icrumbs">${crumbs}</span><span class="ist" data-status="${sel.status}">${statusInfo(sel.status).label}</span><span class="ibadges">${badgesHTML(sel.counts)}</span><span class="idur num">${dur != null ? `<span ${running ? `data-start="${sel.started_at}"` : ''}>${fmtDur(dur)}</span>` : sel.expected_s != null && isOpenStatus(sel) ? `<span title="expected duration">~${fmtDur(sel.expected_s)}</span>` : ''}${sel.peak_mem_mb != null ? `<span class="mem">${fmtMem(sel.peak_mem_mb)}</span>` : ''}</span>`);
+  const tabs = availableTabs(sel);
+  const want = ui.insTab.get(keyOf(fw, stage)) || hashTab.get(sel.id);
+  const act = tabs.some((t) => t[0] === want) ? want : (tabs[0] && tabs[0][0]) || null;
+  ins._tab = act;
+  patchList(ins._r.tabs, tabs, (t) => t[0], ([id]) => { const b = h('button', 'dtab'); b.dataset.act = 'dtab'; b.dataset.tab = id; return b; },
+    (b, [id, label]) => { b.classList.toggle('on', id === act); setAttr(b, 'aria-pressed', String(id === act)); setHTML(b, label); });
+  for (const [id, pane] of Object.entries(ins._r.panes)) pane.hidden = id !== act;
+  const none = $('.pane-none', ins);
+  none.hidden = !!act;
+  if (!act) {
+    setHTML(none, `<div class="none">${sel.status === 'skipped' ? 'Skipped, no data.' : sel.started_at ? 'No log data for this phase yet.' : `Not started yet${sel.expected_s != null ? `, expected about ${fmtDur(sel.expected_s)}` : ''}.`}</div>`);
+  } else if (act === 'messages') ensureMessages(ins, sel, fw);
+  else if (act === 'log') ensureLog(ins, sel, fw);
+  else if (act === 'reports') renderReports(ins._r.panes.reports, sel, rk, fw);
+  else if (act === 'timing') renderTiming(ins._r.panes.timing, sel, fw);
+  else if (act === 'congestion') renderCongestion(ins._r.panes.congestion, sel);
+  else if (act === 'convergence') renderConvergence(ins._r.panes.convergence, sel);
+}
+
+// Pin a row. The rows open only because of the old selection (its ancestors) would fold away, so their state is kept.
+function selectRow(el, id) {
+  for (const r of el._tree.children) if (r._kids && r._d > 0) ui.open.set(keyOf(el._fw, r._node), r._open);
+  ui.rowSel.set(keyOf(el._fw, el._node), id);
+  render();
+}
+
+// Tree keyboard: Up/Down/Home/End move, Left/Right collapse/expand (or go to the parent / first child), Enter/Space select.
+function onTreeKey(ev) {
+  const row = ev.target.closest('.orow');
+  if (!row || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  const rows = [...ev.currentTarget.children];
+  const i = rows.indexOf(row);
+  const go = (j) => { const t = rows[Math.max(0, Math.min(rows.length - 1, j))]; if (t) t.focus(); };
+  const el = row.closest('.stagedetail');
+  if (ev.key === 'ArrowDown') go(i + 1);
+  else if (ev.key === 'ArrowUp') go(i - 1);
+  else if (ev.key === 'Home') go(0);
+  else if (ev.key === 'End') go(rows.length - 1);
+  else if (ev.key === 'ArrowRight') {
+    if (row._kids && !row._open) { ui.open.set(keyOf(el._fw, row._node), true); render(); } else if (row._kids) go(i + 1);
+  } else if (ev.key === 'ArrowLeft') {
+    if (row._kids && row._open && i > 0) { ui.open.set(keyOf(el._fw, row._node), false); render(); } else { const d = +row.getAttribute('aria-level'); let j = i - 1; while (j > 0 && +rows[j].getAttribute('aria-level') >= d) j--; if (i > 0) go(j); }
+  } else if (ev.key === 'Enter' || ev.key === ' ') selectRow(el, row._node.id); else return;
+  ev.preventDefault();
+}
+
+/* ---- inspector tabs: only those that apply to the selected row */
 function availableTabs(n) {
   const tabs = [];
-  if (n.children && n.children.length) tabs.push(['flow', `Steps<small>${n.children.length}</small>`]);
   if (!NO_FETCH.has(n.status)) { tabs.push(['messages', 'Messages']); tabs.push(['log', 'Log']); }
   if (n.reports && n.reports.length) tabs.push(['reports', `Reports<small>${n.reports.length}</small>`]);
   if (n.timing && ((n.timing.history && n.timing.history.length) || n.timing.report)) tabs.push(['timing', `Timing<small>${(n.timing.history || []).length || ''}</small>`]);
@@ -1124,59 +1300,13 @@ function availableTabs(n) {
   return tabs;
 }
 
-function activeTab(fw, n, tabs) {
-  const k = keyOf(fw, n);
-  const want = ui.tab.get(k) || hashTab.get(n.id);
-  const ids = tabs.map((t) => t[0]);
-  if (want && ids.includes(want)) return want;
-  return ids[0] || null;
-}
-
-function syncBody(el, n, fw, depth) {
-  const r = el._r;
-  const open = el._force || isOpen(fw, n);
-  el.classList.toggle('open', open);
-  const card = el.querySelector(':scope > .main > .card');
-  if (card && card.getAttribute('role') === 'button') setAttr(card, 'aria-expanded', String(open));
-  if (open) {
-    clearTimeout(el._clearT); el._clearT = null;
-    if (!r.panel) {
-      r.panel = h('div', 'panel', '<div class="dtabs"></div><div class="pane pane-flow sub"></div><div class="pane pane-messages"></div><div class="pane pane-log"></div><div class="pane pane-reports"></div><div class="pane pane-timing"></div><div class="pane pane-congestion"></div><div class="pane pane-convergence"></div>');
-      r.bodyin.appendChild(r.panel);
-      r.tabs = $('.dtabs', r.panel);
-      r.panes = { flow: $('.pane-flow', r.panel), messages: $('.pane-messages', r.panel), log: $('.pane-log', r.panel), reports: $('.pane-reports', r.panel), timing: $('.pane-timing', r.panel), congestion: $('.pane-congestion', r.panel), convergence: $('.pane-convergence', r.panel) };
-    }
-    const tabs = availableTabs(n);
-    const act = activeTab(fw, n, tabs);
-    setHTML(r.tabs, tabs.map(([id, lbl]) => `<button class="dtab${id === act ? ' on' : ''}" data-act="dtab" data-tab="${id}">${lbl}</button>`).join(''));
-    for (const [id, pane] of Object.entries(r.panes)) pane.hidden = id !== act;
-    if (!act) {
-      setHTML(r.panes.flow, `<div class="none">${n.status === 'skipped' ? 'Skipped — no data.' : 'Not started yet.'}</div>`);
-      r.panes.flow.hidden = false;
-      return;
-    }
-    if (act === 'flow') {
-      if (r.panes.flow.firstChild && r.panes.flow.firstChild._isNone) r.panes.flow.innerHTML = '';
-      r.panes.flow.classList.toggle('parallel', !!n.parallel);
-      patchList(r.panes.flow, n.children, (c) => c.id, createNode, (e, c) => updateNode(e, c, fw, depth + 1));
-    } else if (act === 'messages') ensureMessages(el, n, fw);
-    else if (act === 'log') ensureLog(el, n, fw);
-    else if (act === 'reports') renderReports(r.panes.reports, n, keyOf(fw, n), fw);
-    else if (act === 'timing') renderTiming(r.panes.timing, n, fw);
-    else if (act === 'congestion') renderCongestion(r.panes.congestion, n);
-    else if (act === 'convergence') renderConvergence(r.panes.convergence, n);
-  } else if (r.panel && !el._clearT) {
-    el._clearT = setTimeout(() => {
-      el._clearT = null;
-      if (!el.classList.contains('open')) { r.bodyin.innerHTML = ''; r.panel = null; }
-    }, 350);
-  }
-}
 
 /* ---- details: messages */
 const detOf = (k) => { let d = ui.det.get(k); if (!d) { d = { sev: new Set(SEVERITIES.map((s) => s.key)), openG: new Set(), msgs: null, msgSig: null, log: null, logSig: null, busy: {} }; ui.det.set(k, d); } return d; };
 const nodeSig = (n) => `${n.status}|${JSON.stringify(n.counts)}`;
 
+// The inspector shows one row at a time: a fetch that comes back after the selection moved on must not paint into it.
+const sameRow = (el, fw, n) => el._node && keyOf(el._fw, el._node) === keyOf(fw, n);
 function ensureMessages(el, n, fw) {
   const d = detOf(keyOf(fw, n));
   const pane = el._r.panes.messages;
@@ -1186,7 +1316,7 @@ function ensureMessages(el, n, fw) {
   if (d.msgSig !== sig && !d.busy.msgs) {
     d.busy.msgs = true;
     apiMessages(fw, n).then((res) => { d.msgs = res; d.msgSig = sig; }).catch((e) => { d.msgs = { groups: [], items: [], error: String(e) }; })
-      .finally(() => { d.busy.msgs = false; if (el.isConnected && el._r.panel) renderMessages(el._r.panes.messages, d, el); });
+      .finally(() => { d.busy.msgs = false; if (el.isConnected && sameRow(el, fw, n)) renderMessages(el._r.panes.messages, d, el); });
   }
 }
 
@@ -1231,7 +1361,7 @@ function ensureLog(el, n, fw, force) {
   if ((force || d.logSig !== sig || !d.log) && !d.busy.log) {
     d.busy.log = true;
     apiLog(fw, n).then((res) => { d.log = res; d.logSig = sig; }).catch((e) => { d.log = { lines: [], error: String(e) }; })
-      .finally(() => { d.busy.log = false; if (el.isConnected && el._r.panel) renderLog(el._r.panes.log, d, n); });
+      .finally(() => { d.busy.log = false; if (el.isConnected && sameRow(el, fw, n)) renderLog(el._r.panes.log, d, n); });
   }
 }
 
@@ -1675,7 +1805,7 @@ const css = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : String(v).replace
 const nodeCard = (n) => n && n.querySelector(':scope > .main > .card');
 function revealFinder(act, t, nodeEl) {
   const d = t.dataset;
-  if (['toggle', 'dtab', 'rchip', 'rsel', 'att-toggle', 'fail-log'].includes(act) && nodeEl) return () => ({ ctrl: nodeCard(nodeEl) || nodeEl, region: nodeEl });
+  if (['dtab', 'rchip', 'rsel', 'att-toggle', 'fail-log'].includes(act) && nodeEl) return () => ({ ctrl: nodeCard(nodeEl) || nodeEl, region: nodeEl });
   if (act === 'info-toggle') return () => { const r = $('.fwinfo', mainEl); return r && { ctrl: r, region: r }; };
   if (act === 'issues-toggle') return () => { const r = $('.topissues', mainEl); return r && { ctrl: r, region: r }; };
   if (act === 'hints-toggle') return () => { const r = $('.hintbar', mainEl); return r && { ctrl: r, region: r }; };
@@ -1704,7 +1834,7 @@ function revealOpened(find) {
     if (!f || !f.region || !f.region.isConnected) return;
     if (observed !== f.region) { if (observed) ro.unobserve(observed); ro.observe(f.region); observed = f.region; }
     const d = Math.min(f.region.getBoundingClientRect().bottom - (window.innerHeight - 16), f.ctrl.getBoundingClientRect().top - stickTop() - 8);
-    if (d > 4) { programmaticScroll = true; window.scrollBy({ top: d, behavior: 'smooth' }); setTimeout(() => { programmaticScroll = false; }, 500); }
+    if (d > 4) window.scrollBy({ top: d, behavior: 'smooth' });
   }
   window.addEventListener('wheel', job.stop, { passive: true }); window.addEventListener('touchmove', job.stop, { passive: true });
   setTimeout(job.stop, 2500);
@@ -1773,16 +1903,13 @@ document.addEventListener('click', async (ev) => {
   } else if (act === 'hrow' || act === 'hopen') {
     if (act === 'hrow' && ev.target.closest('a, button, input, label')) return;
     openFromHistory(t.dataset.fw, t.dataset.project, t.dataset.name);
-  } else if (act === 'toggle' && nodeEl) {
-    const k = keyOf(nodeEl._fw, nodeEl._node);
-    const au = autoOf(nodeEl._fw); const sl = ui.sel.get(nodeEl._fw.id);
-    if (isOpen(nodeEl._fw, nodeEl._node)) {
-      if (sl && sl.follow && nodeEl._node.status === 'running') au.dismissed.add(k); // respect a manual collapse until the running node changes
-      resetNode(nodeEl._fw, nodeEl._node); // closing forgets everything below
-    } else { ui.open.set(k, true); au.dismissed.delete(k); }
-    render();
+  } else if (act === 'osel' && nodeEl) {
+    selectRow(nodeEl, t._node.id);   // a manual selection is pinned
+  } else if (act === 'otog' && nodeEl) {
+    const row = t.closest('.orow');
+    ui.open.set(keyOf(nodeEl._fw, row._node), !row._open); render();
   } else if (act === 'dtab' && nodeEl) {
-    ui.tab.set(keyOf(nodeEl._fw, nodeEl._node), t.dataset.tab); render();
+    ui.insTab.set(keyOf(nodeEl._fw, nodeEl._stage), t.dataset.tab); render();
   } else if (act === 'sev' && nodeEl) {
     const d = detOf(keyOf(nodeEl._fw, nodeEl._node));
     d.sev.has(t.dataset.sev) ? d.sev.delete(t.dataset.sev) : d.sev.add(t.dataset.sev);
@@ -1817,7 +1944,7 @@ document.addEventListener('click', async (ev) => {
     gotoNode(curFw(), t.dataset.node);
   } else if (act === 'rchip' && nodeEl) {
     const k = keyOf(nodeEl._fw, nodeEl._node);
-    ui.open.set(k, true); ui.tab.set(k, 'reports'); ui.rsel.set(k, t.dataset.path); render();
+    ui.rowSel.set(k, nodeEl._node.id); ui.insTab.set(k, 'reports'); ui.rsel.set(k, t.dataset.path); render();
   } else if (act === 'rsel' && nodeEl) {
     ui.rsel.set(keyOf(nodeEl._fw, nodeEl._node), t.dataset.path); render();
   } else if (act === 'raw' && nodeEl) {
@@ -1846,7 +1973,7 @@ document.addEventListener('click', async (ev) => {
   } else if (act === 'follow') {
     const fw = curFw(); const cur = ui.sel.get(fw.id);
     if (cur && cur.follow) ui.sel.set(fw.id, { id: mainEl._r.selId, follow: false }); // toggle off: pin the stage being shown
-    else ui.sel.set(fw.id, { id: null, follow: true });
+    else { ui.sel.set(fw.id, { id: null, follow: true }); for (const f of fw.flows || []) for (const s of f.stages) resetNode(fw, s); }   // following again: unpin the row and forget manual opens too
     render();
   } else if (act === 'issues-toggle') {
     issuesOpen = !issuesOpen; lsSet('vmon.issuesOpen', issuesOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
@@ -2090,6 +2217,11 @@ c     collapse all expanded steps
 Esc   close dialog or popover
 ?     this help`;
 let alertCursor = -1;
+function collapseOutline(fw) {   // every row below the step; the selected row stays in the inspector
+  ui.open.clear();
+  const st = mainEl._r.detEl && mainEl._r.detEl._node;
+  if (st) walk(st.children, (x) => { if ((x.children || []).length) ui.open.set(keyOf(fw, x), false); });
+}
 function moveStage(fw, d) {
   const list = [...mainEl._r.stages.querySelectorAll('.stg')].filter((e) => e._node);
   if (!list.length) return;
@@ -2133,7 +2265,7 @@ document.addEventListener('keydown', (ev) => {
     alertCursor = (alertCursor + 1) % al.length;
     gotoNode(fw, al[alertCursor].node_id);
   } else if (ev.key === 'c') {
-    ui.open.clear(); ui.tab.clear(); hashOpen.clear(); render();
+    collapseOutline(fw); hashOpen.clear(); render();
   }
 });
 window.addEventListener('hashchange', () => { parseHash(); ui.open.clear(); render(); });
@@ -2154,10 +2286,8 @@ setInterval(() => {
 
 // running logs auto-refresh
 setInterval(() => {
-  for (const el of document.querySelectorAll('.node.open')) {
-    const n = el._node, fw = el._fw;
-    if (!n || n.status !== 'running' || !el._r.panel) continue;
-    if (activeTab(fw, n, availableTabs(n)) === 'log') ensureLog(el, n, fw, true);
+  for (const el of document.querySelectorAll('.node.insp')) {
+    if (el._node && el._node.status === 'running' && el._tab === 'log') ensureLog(el, el._node, el._fw, true);
   }
 }, 2000);
 
@@ -2675,6 +2805,29 @@ function mockAdvance() {
 // Sync XHR on purpose (mock only): data is ready before the window load event, which
 // makes headless screenshots deterministic.
 function syncJson(url) { const x = new XMLHttpRequest(); x.open('GET', url, false); x.send(); return JSON.parse(x.responseText); }
+// Backend stand-in for Node.expected_s (history medians, else catalog weights): the mock state predates the field.
+// Each step gets a typical duration; its unfinished phases share it by name, the rest equally.
+const MOCK_STEP_S = { place_design: 300, phys_opt_design: 150, route_design: 900, write_bitstream: 80 };
+const MOCK_PHASE_SHARE = { 'Global Placement': 0.3, 'Detail Placement': 0.15, 'Global Routing': 0.3 };
+function mockExpected(fw) {
+  const open = (n) => ['pending', 'queued', 'running'].includes(n.status);
+  const fill = (n, total) => {
+    const kids = (n.children || []).filter(open);
+    const named = kids.reduce((t, k) => t + (MOCK_PHASE_SHARE[k.label.replace(/^Phase [\d.]+ /, '')] || 0), 0);
+    for (const k of kids) {
+      const share = MOCK_PHASE_SHARE[k.label.replace(/^Phase [\d.]+ /, '')] || Math.max(0.05, (1 - named) / Math.max(1, kids.filter((x) => !MOCK_PHASE_SHARE[x.label.replace(/^Phase [\d.]+ /, '')]).length));
+      k.expected_s = Math.round(total * share);
+    }
+    for (const k of n.children || []) fill(k, k.expected_s || total * 0.4);
+  };
+  for (const flow of fw.flows) {
+    for (const st of flow.stages) {
+      if (!open(st) || !MOCK_STEP_S[st.id.split('/').pop()]) continue;
+      st.expected_s = MOCK_STEP_S[st.id.split('/').pop()];
+      fill(st, st.expected_s);
+    }
+  }
+}
 function startMock() {
   setConn('mock', 'mock data');
   const s = syncJson('mock/state.json');
@@ -2685,7 +2838,7 @@ function startMock() {
     if (src) { const { from, ...over } = c; s.firmwares.push({ ...JSON.parse(JSON.stringify(src)), ...over }); }
   }
   delete s.mock_remote_clones;
-  for (const f of s.firmwares) f.top_messages = mockTop(f);
+  for (const f of s.firmwares) { f.top_messages = mockTop(f); mockExpected(f); }
   if (params.get('remote') === 'off') for (const r of s.remotes) { r.online = false; r.error = 'connection refused'; r.last_ok -= 720; } // ?remote=off demos the unreachable state
   mock.logs.lockin = syncJson('mock/log_lockin.json');
   setState(s);
