@@ -525,11 +525,13 @@ def test_phone_drill_in_pushes_a_level_and_back_pops_it(page, mock_url):
     page.locator(".m-row", has_text="place_design").click()
     crumbs = page.locator(".m-crumbs button")
     expect(crumbs).to_have_text(["lockin", "place_design"])
-    page.locator(".m-row", has_text="Placer").click()
-    expect(crumbs).to_have_text(["lockin", "place_design", "Placer"])
     rows = page.locator(".m-row")
     expect(rows.first).to_be_visible()
-    assert rows.first.evaluate("e => e.getBoundingClientRect().left") < 20     # flat rows, no indentation at depth 2
+    depth1 = rows.first.evaluate("e => e.getBoundingClientRect().left")
+    page.locator(".m-row", has_text="Placer").click()
+    expect(crumbs).to_have_text(["lockin", "place_design", "Placer"])
+    expect(rows.first).to_be_visible()
+    assert abs(rows.first.evaluate("e => e.getBoundingClientRect().left") - depth1) < 1   # flat: no indentation at depth 2
     page.go_back()                                                           # the phone's Back button
     expect(crumbs).to_have_text(["lockin", "place_design"])
     page.locator(".m-back").click()
