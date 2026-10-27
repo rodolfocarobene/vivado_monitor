@@ -284,6 +284,20 @@ blocks. Below 1000px the layout stacks into one column (hero, then the stage lis
 stage's detail opens directly under its own card, and the list is hidden in the Messages and Timing views). Top-bar breakpoints at
 1520, 1360, 1180 and 1100px progressively hide secondary items rather than shrinking type.
 
+**Mobile (below 700px).** The nested tree gives way to drill-in navigation, one screen per level, so text keeps the full
+width at any depth. A compact sticky top bar holds the logo, a firmware switcher (status dot, name, state; it opens a
+bottom sheet listing every firmware with state, progress, WNS and alert count, plus the CPU/RAM/Swap meters, Explore and
+Theme) and the notifications bell. The Build tab is the firmware screen: a compact hero (progress ring, status, current
+step, elapsed and ETA, the verdict line, WNS/TNS/WHS tiles, message counts), the same Needs attention list (three rows,
+Fix fold-outs, dismiss), then the stages as full-width rows. Tapping a row pushes that node's screen: a back button, a
+scrollable breadcrumb, its status and counts, and its children as flat rows (status, name, chips, duration; no indentation
+at any depth). Levels use `history.pushState`, so the phone's Back pops one. Messages / Log / Reports / Timing of the
+current level open in a bottom sheet with a segmented control and the same inspector renderers as the desktop. A bottom
+tab bar switches Build / Messages / History (the Messages view and History page are the shared desktop ones, restyled to
+stack). A *Jump to running* chip makes the stack follow the running node; any manual navigation pauses it. Bars respect
+`env(safe-area-inset-*)`, every control is at least 44px, both themes. The code is a separate section of `app.js` with
+`m-` prefixed classes; the desktop render keeps running underneath, hidden.
+
 ## Elevation & Depth
 
 Mostly flat with tonal layering: depth comes from the three slate surface steps and 1px graphite borders. A single

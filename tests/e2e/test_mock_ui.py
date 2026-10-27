@@ -498,3 +498,92 @@ def test_export_menu_of_a_finished_build(page, mock_url):
     page.keyboard.press("Escape")
     expect(menu).to_be_hidden()
     expect(more).to_be_focused()
+
+
+# ---- mobile (< 700px): drill-in navigation, one screen per level
+
+PHONE = {"width": 390, "height": 844}
+
+
+def open_phone(page, mock_url, hash_="fw=lockin"):
+    page.set_viewport_size(PHONE)
+    open_mock(page, mock_url, hash_, ready=".m-row")
+
+
+def test_phone_hides_the_desktop_chrome_and_never_scrolls_sideways(page, mock_url):
+    open_phone(page, mock_url)
+    expect(page.locator(".m-tabs")).to_be_visible()
+    expect(page.locator("#m-switch")).to_contain_text("lockin")
+    expect(page.locator(".tabs")).to_be_hidden()
+    expect(page.locator(".m-hero")).to_be_visible()
+    expect(page.locator(".m-row")).to_have_count(7)
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+
+
+def test_phone_drill_in_pushes_a_level_and_back_pops_it(page, mock_url):
+    page.emulate_media(reduced_motion="reduce")      # no slide-in: row positions are measured below
+    open_phone(page, mock_url)
+    page.locator(".m-row", has_text="place_design").click()
+    crumbs = page.locator(".m-crumbs button")
+    expect(crumbs).to_have_text(["lockin", "place_design"])
+    rows = page.locator(".m-row")
+    expect(rows.first).to_be_visible()
+    depth1 = rows.first.evaluate("e => e.getBoundingClientRect().left")
+    page.locator(".m-row", has_text="Placer").click()
+    expect(crumbs).to_have_text(["lockin", "place_design", "Placer"])
+    expect(rows.first).to_be_visible()
+    assert abs(rows.first.evaluate("e => e.getBoundingClientRect().left") - depth1) < 1   # flat: no indentation at depth 2
+    page.go_back()                                                           # the phone's Back button
+    expect(crumbs).to_have_text(["lockin", "place_design"])
+    page.locator(".m-back").click()
+    expect(page.locator(".m-crumbs")).to_have_count(0)
+    expect(page.locator(".m-hero")).to_be_visible()
+
+
+def test_phone_sheet_shows_messages_and_back_closes_it(page, mock_url):
+    open_phone(page, mock_url, "fw=lockin&mnode=impl_1/place_design")
+    page.locator(".m-act", has_text="Messages").click()
+    sheet = page.locator("#m-sheet")
+    expect(sheet).to_be_visible()
+    expect(sheet.locator(".m-sh-tabs button").first).to_have_attribute("aria-selected", "true")
+    expect(sheet.locator(".grp-h").first).to_be_visible()
+    sheet.locator(".m-sh-tabs button", has_text="Log").click()
+    expect(sheet.locator(".m-sh-tabs button", has_text="Log")).to_have_attribute("aria-selected", "true")
+    page.go_back()
+    expect(sheet).to_be_hidden()
+    expect(page.locator(".m-crumbs button").last).to_have_text("place_design")
+
+
+def test_phone_follow_live_jumps_to_the_running_node_and_manual_navigation_pauses_it(page, mock_url):
+    open_phone(page, mock_url)
+    chip = page.locator(".m-follow").first
+    expect(chip).to_have_attribute("aria-pressed", "false")
+    chip.click()
+    expect(page.locator(".m-follow").first).to_have_attribute("aria-pressed", "true")
+    expect(page.locator(".m-crumbs button").nth(1)).to_have_text("place_design")
+    page.locator(".m-crumbs button").first.click()                           # a manual jump pauses following
+    expect(page.locator(".m-hero")).to_be_visible()
+    expect(page.locator(".m-follow").first).to_have_attribute("aria-pressed", "false")
+
+
+def test_phone_switcher_lists_firmwares_and_switches(page, mock_url):
+    open_phone(page, mock_url)
+    page.locator("#m-switch").click()
+    sheet = page.locator("#m-sheet")
+    expect(sheet.locator(".m-frow")).not_to_have_count(0)
+    expect(sheet.locator(".m-mtr")).to_have_count(3)
+    sheet.locator(".m-frow", has_text="top").first.click()
+    expect(sheet).to_be_hidden()
+    expect(page.locator("#m-switch")).to_contain_text("top")
+
+
+def test_phone_tabs_open_messages_and_the_real_history_page(page, mock_url):
+    open_phone(page, mock_url)
+    page.locator("[data-act='m-tab'][data-tab='Messages']").click()
+    expect(page.locator(".msgview")).to_be_visible()
+    expect(page.locator(".m-screen")).to_be_hidden()
+    page.locator("[data-act='m-tab'][data-tab='History']").click()
+    expect(page.locator("#history .hx")).to_be_visible()
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    page.locator("[data-act='m-tab'][data-tab='Build']").click()
+    expect(page.locator(".m-hero")).to_be_visible()

@@ -131,6 +131,7 @@ let hashTab = new Map();
 let hashFw = null;
 let hashScroll = null, hashShift = null, hashDebug = null;
 let hashFx = null; // #fx=cur,a1: pre-open failure log excerpts (screenshots/debug)
+let hashMobNode = null; // #mnode=<node id>: open that node's screen on the mobile Build tab (screenshots/tests)
 let hashSel = null, hashSelPending = false, hashView = null, hashMsg = null, hashExcerpt = false;
 let hashRulesDemo = false; // #rulesdemo=1 (mock): open the import preview with a canned file (screenshots)
 let hashPclk = false; // #pclk=1: also open the "Clock & required" table of those rows
@@ -146,7 +147,7 @@ function parseHash() {
   }
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
-  hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
+  hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMobNode = p.get('mnode'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
   hashPclk = p.get('pclk') === '1'; hashRulesDemo = p.get('rulesdemo') === '1';
   hashPth = (p.get('pth') || '').split(',').filter(Boolean).map(Number);
   if (p.get('cmp') && typeof addCmpTab === 'function') {
@@ -166,6 +167,7 @@ const remoteOf = (fw) => (fw.host && (state.remotes || []).find((r) => r.name ==
 const staleRemote = (fw) => { const r = remoteOf(fw); return r && !r.online ? r : null; };
 const fwLabel = (fw) => (fw.host ? `${fw.name} · ${fw.host}` : fw.name);
 const staleText = (r) => `${r.name} unreachable${r.last_ok ? ` · last update ${fmtClock(r.last_ok)}` : ''}`;
+const flowOf = (fw) => fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
 const curView = (fw) => ui.view.get(fw.id) || (hashView === 'messages' || hashView === 'timing' ? hashView : 'flow');
 
 // Forget open-state, pinned row, inspector tab and fetched data of a node and all its descendants,
@@ -408,6 +410,7 @@ function findPath(fw, id) {
 
 // Switch to the Flow view, select the node's stage and open the chain down to the node.
 function gotoNode(fw, id) {
+  if (mobileOn()) { mobileGoto(fw, id); return; }
   const hit = id && findPath(fw, id);
   if (!hit) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   ui.flow.set(fw.id, hit.flow.id);
@@ -804,13 +807,16 @@ function verdictOf(fw, flow) {
 // Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
 const utilClass = (pct) => (pct == null ? '' : pct > 100 ? 'over' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '');
 const UTIL_BADGE = { over: ['OVER CAPACITY', 'notmet'], crit: ['VERY HIGH', 'critb'], warn: ['HIGH', 'warnb'] };
+const slackTone = (v, tl) => (v == null ? 'nil' : v < 0 ? (tl === 'fail' ? 'neg' : tl === 'halted' ? 'dim' : 'soft') : 'pos');
+const timingTag = (t, tl) => (!t ? '' : t.final ? '<span class="tbadge final">FINAL</span>' : tl === 'halted' ? '<span class="tbadge">INCOMPLETE</span>' : '<span class="tbadge est">ESTIMATE</span>');
+const msgCountsHTML = (c) => SEVERITIES.map((s) => `<span class="mc ${(c[s.key] || 0) ? s.cls : 'zero'}" title="${s.label}"><b class="num">${fmtNum(c[s.key] || 0)}</b><small>${s.short}</small></span>`).join('');
 function tilesHTML(fw) {
   const t = fw.timing, tl = fwTimingLevel(fw);
   const out = [];
   const hn = latestHistory(fw);
   const sp = hn && hn.timing.history.length > 1 ? spark(hn.timing.history.map((x) => x.wns), 64, 26, { warn: tl !== 'fail' }) : '';
-  const wcls = t && t.wns != null ? (t.wns < 0 ? (tl === 'fail' ? 'neg' : tl === 'halted' ? 'dim' : 'soft') : 'pos') : 'nil';
-  const badge = !t ? '' : t.final ? '<span class="tbadge final">FINAL</span>' : tl === 'halted' ? '<span class="tbadge">INCOMPLETE</span>' : '<span class="tbadge est">ESTIMATE</span>';
+  const wcls = slackTone(t && t.wns, tl);
+  const badge = timingTag(t, tl);
   const stale = (k) => (carriedOf(t, k) ? ' <i class="ctag">stale</i>' : '');
   out.push(`<button type="button" class="tile t-timing" data-tl="${tl}" data-act="view" data-view="timing" title="${esc(t ? `${timingBadge(t, tl)[0]} · ${t.stage || t.label || ''}${t.final ? ' · final' : ' · not final'}. ` : '')}Open the timing view">`
     + `<div class="tk"><span>WNS</span>${badge}</div>`
@@ -831,7 +837,7 @@ function tilesHTML(fw) {
     + `<div class="ts num">${fw.started_at ? `<span>started ${fmtClock(fw.started_at)}</span>` : ''}${ep ? `<span data-end="${ep.end}">${ep.inTxt}</span>` : ''}</div></div>`);
   const c = fw.counts || {};
   out.push(`<button type="button" class="tile t-msgs" data-act="view" data-view="messages" title="Open the messages view"><div class="tk"><span>Messages</span></div>`
-    + `<div class="mcs">${SEVERITIES.map((s) => `<span class="mc ${(c[s.key] || 0) ? s.cls : 'zero'}" title="${s.label}"><b class="num">${fmtNum(c[s.key] || 0)}</b><small>${s.short}</small></span>`).join('')}</div>`
+    + `<div class="mcs">${msgCountsHTML(c)}</div>`
     + `<div class="stack">${SEVERITIES.map((s) => (c[s.key] ? `<i style="flex-grow:${Math.sqrt(c[s.key]).toFixed(2)};background:var(${s.var})"></i>` : '')).join('')}</div>`
     + `<div class="ts">${fw.resources ? `<span title="Vivado process CPU (100% = one core) and resident memory">Vivado ${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</span>` : '<span>by severity</span>'}</div></button>`);
   return out.join('');
@@ -904,6 +910,7 @@ function stageHintsHTML(fw, n) {
 function hintGoto(fw, hintId) {
   const key = hintRowKey(fw, hintId);
   if (!key) return;
+  if (mobileOn()) { mobileHintGoto(fw, key); return; }
   dismissedOf(fw).delete(key); saveDismissed();
   fixOpen.add(key); attnAll = true;
   render();
@@ -915,7 +922,7 @@ function hintGoto(fw, hintId) {
 
 function renderHeader(fw) {
   const r = head._r;
-  const flow = fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
+  const flow = flowOf(fw);
   setText(r.name, fw.name);
   const oc = outcomeOf(fw);
   const stale = staleRemote(fw);
@@ -1289,11 +1296,16 @@ function createStageBody(el) {
     <div class="olegend"><span><i class="lg done"></i>completed</span><span><i class="lg run"></i>running</span><span><i class="lg pred"></i>expected</span><span><i class="lg now"></i>now</span></div>`);
   el._tree = $('.otree', el._ol);
   el._tree.addEventListener('keydown', onTreeKey);
+  el._ins = createInspector();
+  r.bodyin.append(el._ol, el._ins);
+}
+
+// The inspector (a header, the tabs and one pane per tab) is shared by the desktop stage detail and the mobile sheet.
+function createInspector() {
   const ins = h('div', 'node insp', `<div class="ihead"></div><div class="dtabs itabs"></div>${['messages', 'log', 'reports', 'timing', 'congestion', 'convergence', 'none'].map((k) => `<div class="pane pane-${k}"></div>`).join('')}`);
   ins._r = { panel: true, tabs: $('.itabs', ins), panes: {} };
   for (const k of ['messages', 'log', 'reports', 'timing', 'congestion', 'convergence']) ins._r.panes[k] = $(`.pane-${k}`, ins);
-  el._ins = ins;
-  r.bodyin.append(el._ol, ins);
+  return ins;
 }
 
 function renderStageBody(el, n, fw) {
@@ -1320,7 +1332,7 @@ function renderStageBody(el, n, fw) {
   renderInspector(el._ins, fw, n, selId);
 }
 
-function renderInspector(ins, fw, stage, selId) {
+function renderInspector(ins, fw, stage, selId, tabPref = null) {
   const chain = chainTo(stage, selId) || [stage];
   const sel = chain[chain.length - 1];
   const rk = keyOf(fw, sel);
@@ -1331,7 +1343,7 @@ function renderInspector(ins, fw, stage, selId) {
   const dur = running ? nowS() - sel.started_at : sel.elapsed_s;
   setHTML($('.ihead', ins), `<span class="ilab">Inspecting</span><span class="icrumbs">${crumbs}</span><span class="ist" data-status="${sel.status}">${statusInfo(sel.status).label}</span><span class="ibadges">${badgesHTML(sel.counts)}</span><span class="idur num">${dur != null ? `<span ${running ? `data-start="${sel.started_at}"` : ''}>${fmtDur(dur)}</span>` : sel.expected_s != null && isOpenStatus(sel) ? `<span title="expected duration">~${fmtDur(sel.expected_s)}</span>` : ''}${sel.peak_mem_mb != null ? `<span class="mem">${fmtMem(sel.peak_mem_mb)}</span>` : ''}</span>`);
   const tabs = availableTabs(sel);
-  const want = ui.insTab.get(keyOf(fw, stage)) || hashTab.get(sel.id);
+  const want = tabPref || ui.insTab.get(keyOf(fw, stage)) || hashTab.get(sel.id);
   const act = tabs.some((t) => t[0] === want) ? want : (tabs[0] && tabs[0][0]) || null;
   ins._tab = act;
   patchList(ins._r.tabs, tabs, (t) => t[0], ([id]) => { const b = h('button', 'dtab'); b.dataset.act = 'dtab'; b.dataset.tab = id; return b; },
@@ -1798,7 +1810,8 @@ function renderSummary(fw, flow) {
 function hideSummary() { if (headIO) { headIO.disconnect(); headIO = null; } setSumShown(false); }
 
 /* ------------------------------------------------------------------ render root */
-function render() {
+function render() { renderDesktop(); renderMobile(); }
+function renderDesktop() {
   const fws = state.firmwares;
   if (!selected || !fws.some((f) => f.id === selected)) {
     selected = null;
@@ -1827,7 +1840,7 @@ function render() {
   v.detail.hidden = view !== 'flow'; // may live inside the stage list on narrow windows
   mainEl.dataset.view = view;
   // flow selector (only when several flows)
-  const flow = fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
+  const flow = flowOf(fw);
   if (fw.flows.length > 1) {
     setHTML(v.seg, `<div class="seg">${fw.flows.map((f) => `<button class="${f === flow ? 'on' : ''}" data-act="flow" data-flow="${esc(f.id)}">${esc(f.label)}</button>`).join('')}</div>`);
   } else setHTML(v.seg, '');
@@ -1874,6 +1887,334 @@ function setState(s) {
   renderRemotes(s.remotes);
   syncIntervalSelect();
   tickUpdated();
+}
+
+/* ------------------------------------------------------------------ mobile (< 700px): drill-in navigation
+   Below 700px the stage rail, phase outline and summary bar give way to one screen per level: the firmware, a stage,
+   its phases, and so on, each listing only its own children as full-width rows. The desktop render keeps running
+   underneath (hidden), so Messages, History, notifications and every handler are the shared ones; this section only
+   draws what has no desktop twin: the Build tab (hero, attention list, rows, breadcrumb), the firmware switcher and the
+   node sheet. It reads the same state and helpers and reuses the inspector renderers. Its classes carry an m- prefix. */
+const mobileMQ = window.matchMedia('(max-width: 699px)');
+const mobileOn = () => mobileMQ.matches;
+const mob = {
+  stacks: new Map(),      // fw id -> ids of the screens pushed on the Build tab (a level per id)
+  follow: new Set(),      // fw ids whose stack follows the running node; any manual navigation drops it
+  hdepth: 0,              // depth of the browser history entry we are on, so the back button pops one level
+  sheet: null,            // 'fw' | 'node'
+  sheetPushed: false, selfPop: false, sheetTab: null, det: null, dir: null, key: null,
+};
+const mEl = { app: $('#m-app'), nav: $('#m-nav'), screen: $('#m-screen'), tabs: $('#m-tabs'), scrim: $('#m-scrim'), sheet: $('#m-sheet'), sw: $('#m-switch') };
+const M_ICON = {
+  back: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  folder: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  theme: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  Build: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  Messages: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  History: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7.5V12l3 2"/></svg>',
+};
+const M_TABS = ['Build', 'Messages', 'History'];
+
+// The tab is derived from the desktop state (History page open, or the Messages view), so Back, Esc and keyboard stay in step.
+const mobileTab = () => {
+  const fw = curFw();
+  return hist.on || shownCmpTab() ? 'History' : fw && curView(fw) === 'messages' ? 'Messages' : 'Build';
+};
+function showMobileTab(tab) {
+  selectCmp(null);
+  const fw = curFw();
+  if (tab === 'History') { setHistory(true); return; }
+  if (fw) ui.view.set(fw.id, tab === 'Messages' ? 'messages' : 'flow');
+  if (hist.on) setHistory(false); else render();
+  window.scrollTo(0, 0);
+}
+
+const stackOf = (fw) => { let s = mob.stacks.get(fw.id); if (!s) { s = []; mob.stacks.set(fw.id, s); } return s; };
+function mobileChain(fw, flow) {   // ids -> nodes; an id that vanished cuts the stack there
+  const out = []; let list = flow ? flow.stages : [];
+  for (const id of stackOf(fw)) { const n = list.find((x) => x.id === id); if (!n) break; out.push(n); list = n.children || []; }
+  return out;
+}
+// The deepest level that still has rows to show: the running stage, down through running nodes that have children.
+function followIds(flow) {
+  const run = flow.stages.find((s) => s.status === 'running');
+  if (!run) return null;
+  const chain = runningChain(run);
+  while (chain.length > 1 && !(chain[chain.length - 1].children || []).length) chain.pop();
+  return chain.map((n) => n.id);
+}
+const sameIds = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+const durHTML = (n) => {
+  const running = n.status === 'running' && n.started_at;
+  const d = running ? nowS() - n.started_at : n.elapsed_s;
+  return d != null ? `<span class="num"${running ? ` data-start="${n.started_at}"` : ''}>${fmtDur(d)}</span>` : n.expected_s != null && isOpenStatus(n) ? `<span class="num m-exp" title="expected duration">~${fmtDur(n.expected_s)}</span>` : '';
+};
+// Elapsed and countdown texts are filled by tickTimes, so they do not make every poll look like a change.
+const stable = (html) => html.replace(/(data-(?:start|end)="[\d.]+">)[^<]*</g, '$1<');
+const crumbOf = (n) => n.label.replace(/^Phase\s+/, 'Ph ').replace(/^impl_1\//, '');
+
+/* ---- history: one entry per level (and one for an open sheet), so the phone's Back pops a level */
+function pushLevel(fw) {
+  const d = stackOf(fw).length;
+  history.pushState({ vmob: 1, d }, '');
+  mob.hdepth = d;
+}
+function setStack(fw, ids, { follow = false, replace = false } = {}) {
+  const st = stackOf(fw);
+  const deeper = ids.length > st.length;
+  st.length = 0; st.push(...ids);
+  mob.dir = deeper ? 'fwd' : 'back';
+  if (follow) mob.follow.add(fw.id); else mob.follow.delete(fw.id);
+  if (replace || ids.length <= mob.hdepth) { history.replaceState({ vmob: 1, d: ids.length }, ''); mob.hdepth = ids.length; }
+  else for (let d = mob.hdepth + 1; d <= ids.length; d++) { history.pushState({ vmob: 1, d }, ''); mob.hdepth = d; }
+}
+function popTo(fw, d) {
+  const st = stackOf(fw);
+  if (d >= st.length) return;
+  mob.follow.delete(fw.id); mob.dir = 'back';
+  const steps = mob.hdepth - d;
+  st.length = d;
+  if (steps > 0) { mob.hdepth = d; history.go(-steps); }
+  renderMobile();
+}
+function openSheet(kind, tab = null) {
+  mob.sheet = kind; mob.sheetTab = tab; mob.det = null; mEl.sheet._h = null; mEl.sheet.innerHTML = '';
+  history.pushState({ vmob: 1, d: mob.hdepth, s: 1 }, ''); mob.sheetPushed = true;
+  renderMobile();
+}
+function closeSheet() {
+  if (!mob.sheet) return;
+  mob.sheet = null;
+  if (mob.sheetPushed) { mob.sheetPushed = false; mob.selfPop = true; setTimeout(() => { mob.selfPop = false; }, 500); history.back(); }
+  renderMobile();
+}
+window.addEventListener('popstate', (e) => {
+  if (!mobileOn()) return;
+  const s = e.state && e.state.vmob ? e.state : { d: 0 };
+  mob.hdepth = s.d;
+  if (mob.selfPop) { mob.selfPop = false; return; }   // our own closing of a sheet
+  if (mob.sheet && !s.s) { mob.sheet = null; mob.sheetPushed = false; renderMobile(); return; }
+  const fw = curFw();
+  if (fw && s.d < stackOf(fw).length) {
+    if (mobileTab() !== 'Build') { showMobileTab('Build'); return; }   // Back leaves Messages / History for the Build tab first
+    mob.follow.delete(fw.id); mob.dir = 'back'; stackOf(fw).length = s.d;
+  }
+  renderMobile();
+});
+try { history.replaceState({ vmob: 1, d: 0 }, ''); } catch { /* ignore */ }
+
+// Alerts and message rows name a node: show that node's own screen on the Build tab.
+function mobileGoto(fw, id) {
+  const hit = id && findPath(fw, id);
+  if (!hit) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  ui.flow.set(fw.id, hit.flow.id);
+  setStack(fw, hit.chain.map((n) => n.id));
+  showMobileTab('Build');
+}
+function mobileHintGoto(fw, key) {
+  dismissedOf(fw).delete(key); saveDismissed();
+  fixOpen.add(key); attnAll = true;
+  setStack(fw, []);
+  showMobileTab('Build');
+  const row = [...mEl.screen.querySelectorAll('.arow')].find((e) => e.dataset.key === key);
+  if (row) { row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 2200); row.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+
+/* ---- Build tab */
+function mRowHTML(n) {
+  const lvl = nodeLevel(n), kids = (n.children || []).length;
+  const desc = n.description && (n.status === 'pending' || n.status === 'queued' || n.status === 'running') ? `<span class="m-rdesc">${esc(n.description)}</span>` : '';
+  const chips = `${badgesHTML(n.counts)}${chipHTML(n.timing)}${congChip(n.congestion)}`;
+  const p = n.progress;
+  const prog = p && p.total ? `<span class="m-rprog"><i style="width:${Math.min(100, Math.round((p.done / p.total) * 100))}%"></i></span>` : '';
+  return `<button type="button" class="m-row" data-act="m-open" data-id="${esc(n.id)}" data-status="${esc(n.status)}" data-alert="${lvl}" data-optional="${n.optional ? 1 : 0}" aria-label="${esc(n.label)}, ${esc(statusInfo(n.status).label)}">`
+    + `<span class="m-ric">${statusInfo(n.status).icon}</span>`
+    + `<span class="m-rmain"><span class="m-rname">${lvl ? alertIcon(lvl) : ''}${labelHTML(n)}</span>${chips ? `<span class="m-rchips">${chips}</span>` : ''}${desc}${prog}</span>`
+    + `<span class="m-rside">${durHTML(n)}${kids ? `<span class="m-kids" title="${kids} sub-steps">${kids}</span>` : ''}${CHEV}</span></button>`;
+}
+const mSection = (title, n, body) => `<section class="m-sec"><h2 class="m-h">${title}${n != null ? ` <span class="num">${n}</span>` : ''}</h2>${body}</section>`;
+
+function mFollowHTML(fw, flow) {
+  if (fw.status !== 'running' || !flow || !followIds(flow)) return '';
+  const on = mob.follow.has(fw.id);
+  return `<button type="button" class="m-follow${on ? ' on' : ''}" data-act="m-follow" aria-pressed="${on}"><i></i>${on ? 'Following live' : 'Jump to running'}</button>`;
+}
+
+function mHeroHTML(fw, flow) {
+  const oc = outcomeOf(fw), vd = verdictOf(fw, flow), t = fw.timing, tl = fwTimingLevel(fw);
+  const pe = fw.progress_estimate, pct = pe != null ? Math.round(pe * 100) : null;
+  const R = 34, C = 2 * Math.PI * R;
+  const ring = `<div class="m-ring" aria-hidden="true"><svg viewBox="0 0 84 84" width="84" height="84"><circle class="trk" cx="42" cy="42" r="${R}"/><circle class="val" cx="42" cy="42" r="${R}" stroke-dasharray="${(C * (pct || 0) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 42 42)"/></svg><span class="num">${pct != null ? `${pct}<small>%</small>` : '—'}</span></div>`;
+  const running = fw.status === 'running' && fw.started_at && !staleRemote(fw);
+  const time = `<span><small>Elapsed</small><b class="num"${running ? ` data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</b></span>`;   // the verdict already carries the ETA
+  const tile = (k, v, tone, tag = '') => `<div class="tile"><div class="tk"><span>${k}</span>${tag}</div><div class="tv"><b class="num ${tone}">${t ? fmtSigned(v, 3) : '—'}</b></div></div>`;
+  return `<section class="m-hero" data-status="${esc(oc.key)}" data-tone="${vd.tone}">
+    <div class="m-hrow">${ring}<div class="m-hmain">
+      <span class="pill" data-status="${esc(oc.key)}">${esc(oc.pill)}${fw.kind === 'log' ? ' · log' : fw.kind === 'hls' ? ' · HLS' : ''}</span>
+      ${fw.current ? `<div class="m-now"><small>Now</small><span>${esc(fw.current.label).split(' / ').join(' › ')}</span></div>` : ''}
+      <div class="m-meta">${time}</div>
+    </div></div>
+    <div class="verdict" data-tone="${vd.tone}"><i class="vdot"></i><span class="vtext">${vd.html}</span></div>
+    <div class="m-tiles">${tile('WNS', t && t.wns, slackTone(t && t.wns, tl), timingTag(t, tl))}${tile('TNS', t && t.tns, slackTone(t && t.tns, tl))}${tile('WHS', t && t.whs, slackTone(t && t.whs, tl))}</div>
+    <div class="mcs" role="group" aria-label="Messages by severity">${msgCountsHTML(fw.counts || {})}</div>
+    ${mFollowHTML(fw, flow)}
+  </section>`;
+}
+
+function mRootHTML(fw, flow) {
+  const attn = attentionHTML(fw);
+  const seg = fw.flows.length > 1 ? `<div class="seg m-seg" role="group" aria-label="Flow">${fw.flows.map((f) => `<button type="button" class="${f === flow ? 'on' : ''}" data-act="flow" data-flow="${esc(f.id)}" aria-pressed="${f === flow}">${esc(f.label)}</button>`).join('')}</div>` : '';
+  const stages = flow && flow.stages.length ? flow.stages.map(mRowHTML).join('') : '<p class="m-none">No flow data yet.</p>';
+  return `${mHeroHTML(fw, flow)}${attn ? `<section class="m-attn attn">${attn}</section>` : ''}${mSection('Stages', flow ? flow.stages.length : 0, seg + stages)}`;
+}
+
+function mNodeHTML(fw, flow, chain) {
+  const n = chain[chain.length - 1], kids = n.children || [];
+  const tabs = availableTabs(n);
+  const mem = n.peak_mem_mb != null ? `<span class="m-stat"><small>Peak mem</small><b class="num">${fmtMem(n.peak_mem_mb)}</b></span>` : '';
+  const chips = `${badgesHTML(n.counts)}${chipHTML(n.timing)}${congChip(n.congestion)}`;
+  const fail = n.status === 'failed' && n.failure ? failureHTML(n.failure, fw, n, 'cur', failWhere(n)) : '';
+  const acts = tabs.map(([id, label]) => `<button type="button" class="m-act" data-act="m-sheet" data-tab="${id}">${label}</button>`).join('');
+  const empty = n.status === 'pending' || n.status === 'queued' ? `Not started yet${n.expected_s != null ? `, expected about ${fmtDur(n.expected_s)}` : ''}.` : n.status === 'skipped' ? 'Skipped, no data.' : 'No sub-steps. Messages and Log open above.';
+  return `<section class="m-node" data-status="${esc(n.status)}">
+    <div class="m-title"><span class="m-ric big">${statusInfo(n.status).icon}</span><div><h1>${labelHTML(n)}</h1><span class="m-st" data-status="${esc(n.status)}">${esc(statusInfo(n.status).label)}</span></div></div>
+    ${n.description ? `<p class="m-desc">${esc(n.description)}</p>` : ''}
+    <div class="m-stats"><span class="m-stat"><small>Time</small><b>${durHTML(n) || '—'}</b></span>${mem}${chips ? `<span class="m-rchips">${chips}</span>` : ''}</div>
+    ${fail}${attemptsHTML(n, fw)}${stageHintsHTML(fw, n)}
+    ${acts ? `<div class="m-acts" role="group" aria-label="Details of ${esc(n.label)}">${acts}</div>` : ''}
+    ${mFollowHTML(fw, flow)}
+  </section>${mSection(kids.length ? 'Steps' : 'Details', kids.length || null, kids.length ? kids.map(mRowHTML).join('') : `<p class="m-none">${empty}</p>`)}`;
+}
+
+function mCrumbsHTML(fw, chain) {
+  const parts = [`<button type="button" data-act="m-crumb" data-d="0">${esc(fw.name)}</button>`]
+    .concat(chain.map((n, i) => `<button type="button" data-act="m-crumb" data-d="${i + 1}"${i === chain.length - 1 ? ' aria-current="page"' : ''}>${esc(crumbOf(n))}</button>`));
+  return `<button type="button" class="m-back" data-act="m-back" aria-label="Back">${M_ICON.back}</button><div class="m-crumbs">${parts.join('<i aria-hidden="true">›</i>')}</div>`;
+}
+
+function renderMobileBuild(fw) {
+  if (!fw) { setHTML(mEl.screen, '<p class="m-none">No firmware runs yet. Start a Vivado build, or pick one with Explore.</p>'); mEl.nav.hidden = true; return; }
+  const flow = flowOf(fw);
+  const st = stackOf(fw);
+  if (flow && !mob.sheet) {   // while a sheet is open the level stays put
+    const run = mob.follow.has(fw.id) && followIds(flow);
+    if (run && !sameIds(run, st)) setStack(fw, run, { follow: true, replace: true });
+  }
+  const chain = mobileChain(fw, flow);
+  if (chain.length < st.length) { st.length = chain.length; if (mob.hdepth > chain.length) { history.replaceState({ vmob: 1, d: chain.length }, ''); mob.hdepth = chain.length; } }
+  const key = `${fw.id}|${flow ? flow.id : ''}|${st.join('>')}`;
+  const moved = key !== mob.key;
+  if (moved) {
+    if (mob.key !== null) window.scrollTo(0, 0);
+    mEl.screen._h = null;
+    mEl.screen.dataset.nav = mob.key !== null && mob.key.split('|')[0] === fw.id ? mob.dir || '' : '';
+    mEl.screen.classList.remove('m-slide'); void mEl.screen.offsetWidth; if (mEl.screen.dataset.nav) mEl.screen.classList.add('m-slide');
+    mob.key = key; mob.dir = null;
+  }
+  const html = !flow || !flow.stages.length || !chain.length ? mRootHTML(fw, flow) : mNodeHTML(fw, flow, chain);
+  setHTML(mEl.screen, stable(html));
+  scrollExcerpts(mEl.screen);
+  mEl.nav.hidden = !chain.length;
+  if (!chain.length) setHTML(mEl.nav, '');     // no stale crumbs left behind the hidden bar
+  else {
+    const nav = stable(mCrumbsHTML(fw, chain));
+    const changed = mEl.nav._h !== nav;
+    setHTML(mEl.nav, nav);
+    if (changed) { const c = mEl.nav.querySelector('.m-crumbs'); if (c) c.scrollLeft = c.scrollWidth; }
+  }
+  tickTimes(mEl.screen);
+}
+
+/* ---- sheets: the firmware switcher, and a node's Messages / Log / Reports / Timing */
+function mFwSheetHTML() {
+  const fws = state.firmwares, sys = state.system;
+  const rows = fws.map((f) => {
+    const oc = outcomeOf(f), t = f.timing, pe = f.progress_estimate;
+    const al = fwAlerts(f).filter((a) => !dismissedOf(f).has(alertKey(a))).length;
+    return `<button type="button" class="m-frow${f.id === selected ? ' on' : ''}" data-act="m-pick" data-fw="${esc(f.id)}" aria-current="${f.id === selected}">`
+      + `<i class="sdot" data-status="${esc(oc.key)}"></i><span class="m-fmain"><b>${esc(fwLabel(f))}</b><span>${esc(oc.label)}${f.status === 'running' && pe != null ? ` · ${Math.round(pe * 100)}%` : ''}${al ? ` · ${al} alert${al === 1 ? '' : 's'}` : ''}</span></span>`
+      + `${t && t.wns != null ? `<span class="m-fwns num ${slackTone(t.wns, fwTimingLevel(f))}">${fmtSigned(t.wns, 3)}</span>` : ''}</button>`;
+  }).join('');
+  const meters = sys ? Object.entries(meterRows(sys)).map(([k, r]) => {
+    const p = Math.max(0, Math.min(100, r.pct));
+    return `<div class="m-mtr" data-level="${p >= 90 ? 'crit' : p >= 80 ? 'warn' : 'ok'}"><span>${k.toUpperCase()}</span><div><i style="width:${p}%"></i></div><b class="num">${r.txt}</b></div>`;
+  }).join('') : '';
+  return `<div class="m-grab"></div><div class="m-sh-head"><h2>Firmwares</h2><button type="button" class="m-x" data-act="m-close" aria-label="Close">${M_ICON.x}</button></div>
+    <div class="m-sh-body">${rows || '<p class="m-none">No firmware yet.</p>'}
+    ${meters ? `<div class="m-sys"><h3 class="m-h">This machine</h3>${meters}</div>` : ''}
+    <div class="m-tools"><button type="button" data-act="m-explore">${M_ICON.folder} Explore</button><button type="button" data-act="m-theme">${M_ICON.theme} Theme</button></div></div>`;
+}
+
+function renderMobileSheet(fw) {
+  const open = !!mob.sheet;
+  mEl.sheet.hidden = !open; mEl.scrim.hidden = !open;
+  document.body.classList.toggle('m-locked', open);
+  if (!open) { mob.det = null; return; }
+  mEl.sheet.dataset.kind = mob.sheet;
+  if (mob.sheet === 'fw') { setHTML(mEl.sheet, stable(mFwSheetHTML())); return; }
+  const chain = fw ? mobileChain(fw, flowOf(fw)) : [];
+  const n = chain[chain.length - 1];
+  if (!n) { mob.sheet = null; renderMobileSheet(fw); return; }
+  if (!mob.det) {
+    mEl.sheet.innerHTML = '<div class="m-grab"></div><div class="m-sh-head"></div><div class="m-sh-tabs" role="tablist"></div><div class="m-sh-body"></div>';
+    mob.det = createInspector();
+    $('.m-sh-body', mEl.sheet).appendChild(mob.det);
+  }
+  renderInspector(mob.det, fw, chain[0], n.id, mob.sheetTab);
+  mob.sheetTab = mob.det._tab;
+  setHTML($('.m-sh-head', mEl.sheet), `<h2>${labelHTML(n)}</h2><span class="m-st" data-status="${esc(n.status)}">${esc(statusInfo(n.status).label)}</span><button type="button" class="m-x" data-act="m-close" aria-label="Close">${M_ICON.x}</button>`);
+  const tabs = availableTabs(n);
+  $('.m-sh-tabs', mEl.sheet).hidden = !tabs.length;
+  setHTML($('.m-sh-tabs', mEl.sheet), tabs.map(([id, label]) => `<button type="button" role="tab" data-act="m-sheet-tab" data-tab="${id}" aria-selected="${id === mob.det._tab}">${label}</button>`).join(''));
+}
+
+/* ---- the render, called by render() after the desktop one */
+function renderMobile() {
+  const on = mobileOn();
+  document.body.dataset.mTab = on ? mobileTab() : '';
+  if (!on) { document.body.classList.remove('m-locked'); return; }
+  const fw = curFw();
+  if (fw && hashMobNode) { const id = hashMobNode; hashMobNode = null; mobileGoto(fw, id); return; }
+  const oc = fw ? outcomeOf(fw) : null;
+  setHTML(mEl.sw, fw ? `<i class="sdot" data-status="${esc(oc.key)}"></i><span class="m-sw-name">${esc(fw.name)}</span><span class="m-sw-st">${esc(oc.label)}</span>${M_ICON.down}` : `<span class="m-sw-name">No firmware</span>${M_ICON.down}`);
+  setAttr(mEl.sw, 'aria-label', `Firmware: ${fw ? fw.name : 'none'}. Switch firmware`);
+  const tab = mobileTab();
+  setHTML(mEl.tabs, M_TABS.map((k) => `<button type="button" data-act="m-tab" data-tab="${k}"${k === tab ? ' aria-current="page"' : ''}>${M_ICON[k]}<span>${k}</span></button>`).join(''));
+  if (tab === 'Build') renderMobileBuild(fw);
+  renderMobileSheet(fw);
+}
+mobileMQ.addEventListener('change', () => { if (!mobileOn()) { mob.sheet = null; mob.sheetPushed = false; } render(); });
+
+function mobileAct(act, t) {
+  const fw = curFw();
+  if (act === 'm-tab') showMobileTab(t.dataset.tab);
+  else if (act === 'm-switcher') openSheet('fw');
+  else if (act === 'm-close') closeSheet();
+  else if (act === 'm-open' && fw) {
+    const flow = flowOf(fw), chain = mobileChain(fw, flow);
+    const list = chain.length ? chain[chain.length - 1].children || [] : flow.stages;
+    if (list.some((x) => x.id === t.dataset.id)) setStack(fw, [...chain.map((x) => x.id), t.dataset.id]);
+    renderMobile();
+  } else if (act === 'm-back' && fw) popTo(fw, stackOf(fw).length - 1);
+  else if (act === 'm-crumb' && fw) popTo(fw, +t.dataset.d);
+  else if (act === 'm-follow' && fw) {
+    if (mob.follow.has(fw.id)) mob.follow.delete(fw.id);
+    else { const ids = followIds(flowOf(fw)); if (ids) setStack(fw, ids, { follow: true }); }
+    renderMobile();
+  } else if (act === 'm-sheet') openSheet('node', t.dataset.tab);
+  else if (act === 'm-sheet-tab') { mob.sheetTab = t.dataset.tab; renderMobile(); }
+  else if (act === 'm-pick') {
+    const was = mobileTab(), steps = mob.hdepth + (mob.sheetPushed ? 1 : 0);
+    mob.sheet = null; mob.sheetPushed = false; mob.hdepth = 0;
+    if (steps > 0) history.go(-steps);          // drop the levels (and the sheet) of the firmware we leave
+    selectCmp(null); hist.on = false;
+    stackOf({ id: t.dataset.fw }).length = 0; mob.follow.delete(t.dataset.fw);
+    openFirmware(t.dataset.fw);
+    showMobileTab(was === 'History' ? 'Build' : was);
+  } else if (act === 'm-explore') { closeSheet(); openExplore(); }
+  else if (act === 'm-theme') $('#theme-btn').click();
 }
 
 /* ------------------------------------------------------------------ events */
@@ -1925,6 +2266,7 @@ document.addEventListener('click', async (ev) => {
   if (!t) return;
   const act = t.dataset.act;
   if (act === 'doc') return; // plain link: open in new tab, never toggles the card around it
+  if (act.startsWith('m-')) { mobileAct(act, t); return; }
   const nodeEl = t.closest('.node');
   const rf = revealFinder(act, t, nodeEl);
   if (rf) setTimeout(() => revealOpened(rf), 0); // after this handler has re-rendered
@@ -2054,9 +2396,9 @@ document.addEventListener('click', async (ev) => {
     else { ui.sel.set(fw.id, { id: null, follow: true }); for (const f of fw.flows || []) for (const s of f.stages) resetNode(fw, s); }   // following again: unpin the row and forget manual opens too
     render();
   } else if (act === 'fix-toggle') {
-    fixOpen.has(t.dataset.key) ? fixOpen.delete(t.dataset.key) : fixOpen.add(t.dataset.key); renderHeader(curFw());
+    fixOpen.has(t.dataset.key) ? fixOpen.delete(t.dataset.key) : fixOpen.add(t.dataset.key); renderHeader(curFw()); renderMobile();
   } else if (act === 'attn-more') {
-    attnAll = !attnAll; renderHeader(curFw());
+    attnAll = !attnAll; renderHeader(curFw()); renderMobile();
   } else if (act === 'hero-menu') {
     heroMenu = !heroMenu; renderHeader(curFw());
   } else if (act === 'hero-stage') {
@@ -2355,18 +2697,19 @@ document.addEventListener('keydown', (ev) => {
 window.addEventListener('hashchange', () => { parseHash(); ui.open.clear(); render(); });
 
 // client-side ticking of elapsed times
-setInterval(() => {
+function tickTimes(root = document) {
   const t = nowS();
-  for (const e of document.querySelectorAll('[data-start]')) {
+  for (const e of root.querySelectorAll('[data-start]')) {
     const s = parseFloat(e.dataset.start);
     if (s) { const txt = fmtDur(t - s); if (e.textContent !== txt) { e.textContent = txt; if (e._t !== undefined) e._t = txt; } }
   }
-  for (const e of document.querySelectorAll('[data-end]')) {
+  for (const e of root.querySelectorAll('[data-end]')) {
     const rem = parseFloat(e.dataset.end) - t;
     const txt = rem > 30 ? `in ${fmtDur(rem)}` : 'any moment now';
     if (e.textContent !== txt) e.textContent = txt;
   }
-}, 1000);
+}
+setInterval(tickTimes, 1000);
 
 // running logs auto-refresh
 setInterval(() => {
@@ -2738,14 +3081,17 @@ const meterEl = $('#meters');
 const METERS = [['cpu', 'CPU'], ['ram', 'RAM'], ['swap', 'Swap']];
 meterEl.innerHTML = METERS.map(([k, l]) => `<div class="meter" data-k="${k}"><span class="m-l">${l}</span><span class="m-bar"><i></i></span><span class="m-v num">—</span></div>`).join('');
 const gb = (mb) => `${(mb / 1024).toFixed(mb >= 10240 ? 0 : 1)}`;
-function updateMeters(sys) {
-  meterEl.hidden = !sys;
-  if (!sys) return;
-  const rows = {
+function meterRows(sys) {
+  return {
     cpu: { pct: sys.cpu_pct, txt: `${Math.round(sys.cpu_pct)}%`, tip: `CPU ${sys.cpu_pct.toFixed(1)}% busy across ${sys.cpu_count} logical CPUs${sys.load1 == null ? '' : `\nLoad average (1 min): ${sys.load1.toFixed(2)}`}` },
     ram: { pct: sys.mem_total_mb ? (sys.mem_used_mb / sys.mem_total_mb) * 100 : 0, txt: `${gb(sys.mem_used_mb)}/${gb(sys.mem_total_mb)} GB`, tip: `RAM: ${(sys.mem_used_mb / 1024).toFixed(2)} GB used of ${(sys.mem_total_mb / 1024).toFixed(2)} GB (MemTotal − MemAvailable)` },
     swap: { pct: sys.swap_total_mb ? (sys.swap_used_mb / sys.swap_total_mb) * 100 : 0, txt: sys.swap_total_mb ? `${gb(sys.swap_used_mb)}/${gb(sys.swap_total_mb)} GB` : 'off', tip: sys.swap_total_mb ? `Swap: ${(sys.swap_used_mb / 1024).toFixed(2)} GB used of ${(sys.swap_total_mb / 1024).toFixed(2)} GB` : 'No swap configured' },
   };
+}
+function updateMeters(sys) {
+  meterEl.hidden = !sys;
+  if (!sys) return;
+  const rows = meterRows(sys);
   for (const el of meterEl.children) {
     const r = rows[el.dataset.k]; const p = Math.max(0, Math.min(100, r.pct));
     $('.m-bar i', el).style.width = `${p}%`;
