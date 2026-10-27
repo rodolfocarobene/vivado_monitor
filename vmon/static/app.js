@@ -2499,12 +2499,13 @@ function renderPop() {
     : '<div class="np-perm"><span>Get a desktop notification even when this tab is in the background.</span><button class="primary" data-act="perm">Enable browser notifications</button></div>';
   const box = (grp, k, lbl) => `<label class="np-opt"><input type="checkbox" data-grp="${grp}" data-k="${k}"${notif.cfg[grp][k] ? ' checked' : ''}><span>${lbl}</span>${grp === 'codes' && k !== 'other' ? `<code>${k}</code>` : ''}</label>`;
   const log = notif.log.length ? notif.log.map((e, i) => `<div class="nl lvl-${esc(e.level)}${e.read ? '' : ' unread'}" data-act="nlog" data-i="${i}"><span class="nl-dot"></span><div class="nl-b"><div class="nl-t">${esc(e.evTitle)}<span class="nl-fw">${esc(e.fwName)}</span><span class="nl-when" title="${new Date(e.t * 1000).toLocaleString()}">${new Date(e.t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · ${fmtAgo(e.t)}</span></div><div class="nl-m">${esc(e.body)}</div></div></div>`).join('')
-    : '<div class="none">Nothing yet. Events that match your choices above are collected here.</div>';
-  const html = `<div class="np-head"><b>Notifications</b></div>${permRow}
+    : '<div class="none">Nothing yet. Events that match your settings below are collected here.</div>';
+  const html = `<div class="np-head"><b>Notifications</b></div>
+    <div class="np-loghead"><b>Recent</b>${notif.log.length ? '<button class="rawbtn" data-act="nclear">clear</button>' : ''}</div><div class="np-log">${log}</div>
+    <div class="np-settings"><div class="np-loghead"><b>Settings</b></div>${permRow}
     <div class="np-cols"><div><div class="np-h">Notify me when a…</div>${EVENT_KINDS.map(([k, l]) => box('kinds', k, l)).join('')}</div>
     <div><div class="np-h">…or an alert of type</div>${ALERT_CODES.map(([k, l]) => box('codes', k, l)).join('')}</div></div>
-    ${outHTML()}
-    <div class="np-loghead"><b>Recent</b>${notif.log.length ? '<button class="rawbtn" data-act="nclear">clear</button>' : ''}</div><div class="np-log">${log}</div>`;
+    ${outHTML()}</div>`;
   if (popEl._h !== html) setHTML(popEl, html);
 }
 popEl.addEventListener('change', (ev) => {
