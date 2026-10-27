@@ -261,6 +261,14 @@ stack when the row is tight), the alert banner, then the selected stage's detail
 the rail already shows each stage's counts, timing chip, time and progress, the detail header keeps only the name,
 status, description, report chips, docs link and peak memory. Max width 1760px, 20px side padding.
 
+Below that header the stage detail is a **phase timeline**: one flat outline (chevron, status dot, name, message chips,
+Gantt bar, elapsed, peak memory; 16px indent per level, memory hidden below 1000px, bars below 700px) over one shared
+time axis, with a "Whole step" root row, and a single **inspector** under it (breadcrumb, status, counts, time, then the
+Messages / Log / Reports / Timing / Congestion / Convergence tabs that apply to the selected row). The outline scrolls
+at most ~460px, so the inspector stays in view. Running bars are striped with a "now" line, expected ones dashed. The
+running or failed row is selected and its ancestors opened by themselves; a manual selection is pinned. Hints fold to
+one line ("CHECK title · N suggested actions"). The outline is an ARIA tree (arrows, Enter) and rows are patched in place.
+
 The recap card stays compact: the start time sits under the elapsed readout, message counts are small chips, and Top
 issues is one summary line ("2 critical warnings · 1 warning") that expands on click (remembered). Opening anything in
 the right column (a step, a detail tab, a report, a message or path row, Build info) that ends below the window

@@ -24,7 +24,7 @@ def test_real_server_renders_firmware_stages_messages_and_report(page, real_url)
 
     page.keyboard.press("f")
     page.locator(".stg", has=page.locator(".label", has_text=re.compile(r"^\s*Route\s*$"))).click()
-    page.locator(".stagedetail > .main > .body .dtabs").first.get_by_role("button", name=re.compile("^Reports")).click()
+    page.locator(".stagedetail .itabs").get_by_role("button", name=re.compile("^Reports")).click()
     pane = page.locator(".stagedetail .pane-reports").first
     pane.locator(".rsel .rchip", has_text="Timing").click()
     expect(pane.locator("section.report header b")).to_have_text("Timing")

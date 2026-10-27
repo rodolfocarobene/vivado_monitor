@@ -248,3 +248,40 @@ def test_eta_sizes_never_seen_step_by_catalog_weight():
     assert out["method"] == "history"
     assert out["remaining_s"] == 200 + 400 + 2 * (400 / 4)
     assert out["confidence"] == "low"
+
+
+def _expected_fw():
+    from vmon.model import Firmware, Flow, Node
+    place = Node("impl_1/place_design", "place_design", "step", status="running", estimate={"weight": 10.0})
+    placer = Node("p/placer", "Placer", "task", status="running")
+    done = Node("p/ph1", "1 Init", "phase", status="done", elapsed_s=5.0, estimate={"weight": 1.0})
+    run = Node("p/ph2", "2 Global Placement", "phase", status="running", estimate={"weight": 3.0})
+    pend = Node("p/ph3", "3 Detail Placement", "phase", status="pending", expected=True, estimate={"weight": 4.0})
+    placer.children = [done, run, pend]
+    place.children = [placer]
+    route = Node("impl_1/route_design", "route_design", "step", status="pending", estimate={"weight": 20.0})
+    return Firmware("f", "f", "project", "/x", flows=[Flow("impl_1", "impl_1", [place, route])]), place, run, pend, route
+
+
+def test_expected_s_from_history_medians():
+    from vmon.eta import annotate_expected
+    fw, place, run, pend, route = _expected_fw()
+    hist = [{"steps": {"place_design": 100.0, "route_design": 400.0}, "phases": {"place_design": {"global placement": 30.0, "detail placement": 50.0}}},
+            {"steps": {"place_design": 200.0, "route_design": 600.0}, "phases": {"place_design": {"global placement": 50.0, "detail placement": 70.0}}}]
+    annotate_expected(fw, hist)
+    assert (place.expected_s, route.expected_s) == (150.0, 500.0)
+    assert (run.expected_s, pend.expected_s) == (40.0, 60.0)
+    assert place.children[0].children[0].expected_s is None      # finished phases keep their real elapsed time
+    assert fw.flows[0].to_dict()["stages"][0]["expected_s"] == 150.0
+
+
+def test_expected_s_falls_back_to_catalog_weights():
+    from vmon.eta import annotate_expected
+    fw, place, run, pend, route = _expected_fw()
+    annotate_expected(fw, [{"steps": {"place_design": 100.0}, "phases": {}}])
+    assert place.expected_s == 100.0
+    assert route.expected_s == 200.0                              # 10 s per weight unit from place_design
+    assert (run.expected_s, pend.expected_s) == (100.0 * 3 / 8, 100.0 * 4 / 8)   # share of the weighted siblings
+    fw, place, run, pend, route = _expected_fw()
+    annotate_expected(fw, [])
+    assert place.expected_s is None and pend.expected_s is None and route.expected_s is None

@@ -171,6 +171,72 @@ class _Work:
         return all(any(s in b["steps"] for b in builds) for s in wanted)
 
 
+def _median_by_key(builds, step_id, name):
+    samples = [b["phases"][step_id][name] for b in builds if name in (b.get("phases") or {}).get(step_id, {})]
+    return statistics.median(samples) if samples else None
+
+
+def _open_node(node):
+    return node.status in ("pending", "queued", "running")
+
+
+def _weighted_targets(children):
+    """Children carrying a catalog weight at the first level that has any (steps often hide phases under a task)."""
+    direct = [c for c in children if c.estimate and c.estimate.get("weight")]
+    if direct:
+        return direct
+    for child in children:
+        found = _weighted_targets(child.children)
+        if found:
+            return found
+    return []
+
+
+def _fill_children(node, total, builds, step_id):
+    """Node.expected_s of the unfinished descendants: the history median of the phase, else its catalog weight
+    as a share of `total` (the parent's expected duration)."""
+    for child in node.children:
+        if _open_node(child) and child.kind == "phase":
+            child.expected_s = _median_by_key(builds, step_id, normalize(child.label))
+    if total:
+        targets = _weighted_targets(node.children)
+        weight_sum = sum(t.estimate["weight"] for t in targets)
+        for target in targets:
+            if _open_node(target) and target.expected_s is None and weight_sum:
+                target.expected_s = total * target.estimate["weight"] / weight_sum
+    for child in node.children:
+        sub = child.expected_s
+        if sub is None and child.kind == "task" and not (child.estimate or {}).get("weight"):
+            sub = total      # a task wrapper passes its parent's duration down to the phases inside it
+        _fill_children(child, sub, builds, step_id)
+
+
+def annotate_expected(fw, history):
+    """Set Node.expected_s on the pending and running nodes of the last flow, from build history first, else catalog
+    weights (a step with no history gets its weight at the seconds-per-weight of the steps that have it).
+    Left None when unknown."""
+    if not fw.flows:
+        return
+    builds = list(history or [])
+    stages = fw.flows[-1].stages
+    per_weight = []
+    for stage in stages:
+        weight = (stage.estimate or {}).get("weight")
+        samples = [b["steps"][_step_id(stage)] for b in builds if _step_id(stage) in b["steps"]]
+        if samples and weight:
+            per_weight.append(statistics.median(samples) / weight)
+    rate = statistics.median(per_weight) if per_weight else None
+    for stage in stages:
+        step_id = _step_id(stage)
+        samples = [b["steps"][step_id] for b in builds if step_id in b["steps"]]
+        weight = (stage.estimate or {}).get("weight")
+        if _open_node(stage):
+            stage.expected_s = statistics.median(samples) if samples else weight * rate if weight and rate else None
+        if stage.kind == "group":
+            continue      # synthesis runs (OOC and top) are not phases of the history store
+        _fill_children(stage, stage.expected_s, builds, step_id)
+
+
 def _band(per_build, remaining, cfg):
     if len(per_build) >= cfg["quantile_min_builds"]:
         low, high = quantile(per_build, cfg["low_quantile"]), quantile(per_build, cfg["high_quantile"])

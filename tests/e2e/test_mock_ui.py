@@ -1,4 +1,4 @@
-"""Drill-down, follow-live, Reports tab and a few regressions, on the mock data (index.html?mock=1)."""
+"""Phase timeline, inspector, follow-live, Reports tab and a few regressions, on the mock data (index.html?mock=1)."""
 import re
 
 import pytest
@@ -23,12 +23,13 @@ def stage_card(page, name):
     return stage(page, name).locator(".card")
 
 
-def node_card(page, text):
-    return page.locator(".stagedetail .card[role=button]", has_text=re.compile(r"^\s*" + re.escape(text)))
+def row(page, text):
+    """A row of the stage's phase timeline (the outline), by the start of its label."""
+    return page.locator(".stagedetail .orow", has_text=re.compile(r"^\s*" + re.escape(text)))
 
 
 def active_tab(page):
-    return page.locator(".stagedetail .dtab.on").first
+    return page.locator(".stagedetail .itabs .dtab.on").first
 
 
 def test_stage_rail_lists_stages_and_card_selects(page, mock_url):
@@ -42,31 +43,49 @@ def test_stage_rail_lists_stages_and_card_selects(page, mock_url):
     expect(page.locator(".stagedetail > .main > .card .label")).to_contain_text("opt_design")
 
 
-def test_nested_nodes_expand_and_collapse(page, mock_url):
+def test_outline_rows_expand_and_collapse(page, mock_url):
     open_mock(page, mock_url, "fw=lockin&sel=impl_1/place_design")
-    placer = node_card(page, "Placer")
-    expect(placer).to_have_attribute("aria-expanded", "false")
-    placer.click()
-    expect(placer).to_have_attribute("aria-expanded", "true")
-    phase1 = node_card(page, "Phase 1 Placer Initialization")
-    phase1.click()
+    placer, phase1 = row(page, "Placer"), row(page, "Phase 1 Placer Initialization")
+    expect(page.get_by_role("tree")).to_be_visible()
+    expect(placer).to_have_attribute("aria-expanded", "true")          # ancestors of the running phase open by themselves
     expect(phase1).to_have_attribute("aria-expanded", "true")
-    phase13 = node_card(page, "Phase 1.3 Build Placer")
-    phase13.click()
-    expect(phase13).to_have_attribute("aria-expanded", "true")
-    phase13.click()
-    expect(phase13).to_have_attribute("aria-expanded", "false")
+    phase1.locator(".ochev").click()
+    expect(phase1).to_have_attribute("aria-expanded", "false")
+    expect(row(page, "Phase 1.1")).to_have_count(0)
+    placer.locator(".ochev").click()
+    expect(placer).to_have_attribute("aria-expanded", "false")
+    expect(row(page, "Phase 2 Global Placement")).to_have_count(0)
+    placer.locator(".ochev").click()
+    expect(row(page, "Phase 2 Global Placement")).to_be_visible()
+    expect(row(page, "Phase 1.1")).to_have_count(0)                    # the manual collapse of Phase 1 is kept
+
+
+def test_row_selection_drives_one_inspector_and_keeps_the_tab(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin&sel=impl_1/place_design")
+    expect(page.locator(".stagedetail .insp")).to_have_count(1)
+    expect(row(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-selected", "true")      # the running leaf
+    expect(page.locator(".insp .icrumbs .cur")).to_contain_text("Phase 1.3 Build Placer")
+    page.locator(".insp .dtab", has_text="Log").click()
+    row(page, "Phase 1.2").click()
+    expect(row(page, "Phase 1.2")).to_have_attribute("aria-selected", "true")
+    expect(page.locator(".insp .icrumbs .cur")).to_contain_text("Phase 1.2")
+    expect(active_tab(page)).to_contain_text("Log")                    # the chosen tab follows the selection
+    page.clock.run_for(8000)                                           # a manual selection stays pinned while the phase advances
+    expect(row(page, "Phase 1.2")).to_have_attribute("aria-selected", "true")
+    expect(page.locator(".insp .icrumbs .cur")).to_contain_text("Phase 1.2")
 
 
 def test_detail_tabs_switch_panes(page, mock_url):
     open_mock(page, mock_url, "fw=lockin&sel=impl_1/place_design")
-    tabs = page.locator(".stagedetail > .main > .body .dtabs").first
-    for label, pane in (("Messages", "messages"), ("Log", "log"), ("Reports", "reports"), ("Timing", "timing"), ("Steps", "flow")):
+    row(page, "Whole step").click()
+    tabs = page.locator(".stagedetail .itabs")
+    for label, pane in (("Messages", "messages"), ("Log", "log"), ("Reports", "reports"), ("Timing", "timing")):
         tabs.get_by_role("button", name=re.compile("^" + label)).click()
         expect(active_tab(page)).to_contain_text(label)
-        visible = page.locator(".stagedetail > .main > .body .panel > .pane:not([hidden])")
+        visible = page.locator(".stagedetail .insp > .pane:not([hidden])")
         expect(visible).to_have_count(1)
         expect(visible).to_have_class(re.compile("pane-" + pane))
+    expect(tabs.get_by_role("button", name=re.compile("^Steps"))).to_have_count(0)
 
 
 def test_keyboard_navigation(page, mock_url):
@@ -78,12 +97,45 @@ def test_keyboard_navigation(page, mock_url):
     expect(stage_card(page, "phys_opt_design")).to_have_attribute("aria-pressed", "true")
     page.keyboard.press("k")
     expect(stage_card(page, "place_design")).to_have_attribute("aria-pressed", "true")
-    node_card(page, "Placer").click()
-    expect(node_card(page, "Placer")).to_have_attribute("aria-expanded", "true")
+    expect(row(page, "Placer")).to_have_attribute("aria-expanded", "true")
     page.keyboard.press("Escape")
-    expect(node_card(page, "Placer")).to_have_attribute("aria-expanded", "true")
+    expect(row(page, "Placer")).to_have_attribute("aria-expanded", "true")
     page.keyboard.press("c")
-    expect(node_card(page, "Placer")).to_have_attribute("aria-expanded", "false")
+    expect(row(page, "Placer")).to_have_attribute("aria-expanded", "false")
+    expect(row(page, "Phase 1 Placer Initialization")).to_have_count(0)
+
+
+def test_outline_tree_keyboard(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin&sel=impl_1/place_design")
+    expect(page.locator(".orow[tabindex='0']")).to_have_count(1)       # one row in the tab order (roving tabindex)
+    placer = row(page, "Placer")
+    placer.focus()
+    page.keyboard.press("ArrowDown")
+    expect(row(page, "Phase 1 Placer Initialization")).to_be_focused()
+    page.keyboard.press("ArrowLeft")                                   # collapses the open row
+    expect(row(page, "Phase 1 Placer Initialization")).to_have_attribute("aria-expanded", "false")
+    page.keyboard.press("ArrowLeft")                                   # then goes to its parent
+    expect(placer).to_be_focused()
+    page.keyboard.press("ArrowLeft")
+    expect(placer).to_have_attribute("aria-expanded", "false")
+    page.keyboard.press("ArrowRight")
+    expect(placer).to_have_attribute("aria-expanded", "true")
+    page.keyboard.press("Enter")
+    expect(placer).to_have_attribute("aria-selected", "true")
+    expect(page.locator(".insp .icrumbs .cur")).to_have_text("Placer")
+    page.keyboard.press("End")
+    expect(page.locator(".orow").last).to_be_focused()
+
+
+def test_outline_keeps_focus_and_scroll_across_live_updates(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin&sel=impl_1/place_design")
+    placer = row(page, "Placer")
+    placer.focus()
+    page.evaluate("document.querySelector('.stagedetail .otree').scrollTop = 20")
+    page.evaluate("document.querySelectorAll('.stagedetail .orow').forEach((e) => { e._mark = 1; })")
+    page.clock.run_for(3000)                                           # several mock ticks re-render the outline
+    expect(placer).to_be_focused()
+    assert page.evaluate("[...document.querySelectorAll('.stagedetail .orow')].every((e) => e._mark === 1)")   # patched, not rebuilt
 
 
 def test_follow_live_selects_running_stage_and_can_be_toggled(page, mock_url):
@@ -92,8 +144,8 @@ def test_follow_live_selects_running_stage_and_can_be_toggled(page, mock_url):
     expect(follow).to_have_attribute("aria-pressed", "true")
     expect(stage_card(page, "place_design")).to_have_attribute("aria-pressed", "true")
     for label in ("Placer", "Phase 1 Placer Initialization"):
-        expect(node_card(page, label)).to_have_attribute("aria-expanded", "true")
-    expect(node_card(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-expanded", "false")   # the running leaf
+        expect(row(page, label)).to_have_attribute("aria-expanded", "true")
+    expect(row(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-selected", "true")           # the running leaf
     stage_card(page, "opt_design").click()
     expect(follow).to_have_attribute("aria-pressed", "false")
     expect(stage_card(page, "opt_design")).to_have_attribute("aria-pressed", "true")
@@ -104,13 +156,15 @@ def test_follow_live_selects_running_stage_and_can_be_toggled(page, mock_url):
 
 def test_follow_live_tracks_the_running_phase(page, mock_url):
     open_mock(page, mock_url, "fw=lockin")
-    running = page.locator('.node[data-status="running"] > .main > .card', has_text="Phase 1.3 Build Placer")
+    running = page.locator('.orow[data-status="running"]', has_text="Phase 1.3 Build Placer")
     expect(running).to_be_visible()
+    expect(running).to_have_attribute("aria-selected", "true")
     page.clock.run_for(8000)        # the mock finishes the running phase every 8th tick and starts the next
-    running = page.locator('.node[data-status="running"] > .main > .card', has_text="Phase 1.4 Constrain")
+    running = page.locator('.orow[data-status="running"]', has_text="Phase 1.4 Constrain")
     expect(running).to_be_visible()
-    expect(running).to_have_attribute("aria-expanded", "false")
-    expect(node_card(page, "Phase 1 Placer Initialization")).to_have_attribute("aria-expanded", "true")
+    expect(running).to_have_attribute("aria-selected", "true")                                       # the selection follows it
+    expect(row(page, "Phase 1.3 Build Placer")).to_have_attribute("aria-selected", "false")
+    expect(row(page, "Phase 1 Placer Initialization")).to_have_attribute("aria-expanded", "true")
     expect(stage_card(page, "place_design")).to_have_attribute("aria-pressed", "true")
 
 
@@ -124,7 +178,7 @@ def test_follow_off_stays_on_the_chosen_stage_when_the_phase_changes(page, mock_
 
 def open_timing_report(page, mock_url):
     open_mock(page, mock_url, "fw=top&sel=impl_1/route_design")
-    page.locator(".stagedetail > .main > .body .dtabs").first.get_by_role("button", name=re.compile("^Reports")).click()
+    page.locator(".stagedetail .itabs").get_by_role("button", name=re.compile("^Reports")).click()
     pane = page.locator(".stagedetail .pane-reports").first
     expect(pane.locator("tr.prow").first).to_be_visible()
     return pane
@@ -349,17 +403,14 @@ def test_narrow_layout_hosts_the_detail_under_the_selected_stage(page, mock_url)
     assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
 
 
-def test_ooc_runs_are_not_chained_by_rail_lines(page, mock_url):
-    """OOC runs are independent: no connector between them, while the stage's own children stay connected."""
+def test_ooc_runs_run_in_parallel_on_the_time_axis(page, mock_url):
+    """OOC runs are independent: their bars overlap in time, none waits for the previous one."""
     open_mock(page, mock_url, "fw=top&sel=synth")
-    node_card(page, "IP out-of-context").click()
-    rails = page.locator(".pane-flow.parallel > .node > .rail")
-    expect(rails.first).to_be_visible()
-    assert rails.count() == 12
-    shown = rails.evaluate_all("els => els.map(e => getComputedStyle(e, '::after').display + getComputedStyle(e, '::before').display)")
-    assert set(shown) == {"nonenone"}
-    first = page.locator(".stagedetail > .main > .body .pane-flow > .node > .rail").first
-    assert first.evaluate("e => getComputedStyle(e, '::after').display") != "none"
+    row(page, "IP out-of-context").locator(".ochev").click()
+    runs = page.locator(".stagedetail .orow[aria-level='3']")
+    expect(runs).to_have_count(12)
+    spans = runs.evaluate_all("els => els.map(e => { const r = e.querySelector('.gb').getBoundingClientRect(); return [r.left, r.right]; })")
+    assert all(b[0] < a[1] for a, b in zip(spans, spans[1:]))         # each starts before the previous one ends
 
 
 def test_alerts_can_be_dismissed_and_shown_again(page, mock_url):
