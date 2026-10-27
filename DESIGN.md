@@ -286,8 +286,8 @@ stage's detail opens directly under its own card, and the list is hidden in the 
 
 **Mobile (below 700px).** The nested tree gives way to drill-in navigation, one screen per level, so text keeps the full
 width at any depth. A compact sticky top bar holds the logo, a firmware switcher (status dot, name, state; it opens a
-bottom sheet listing every firmware with state, progress, WNS and alert count, plus the CPU/RAM/Swap meters, Explore and
-Theme) and the notifications bell. The Build tab is the firmware screen: a compact hero (progress ring, status, current
+bottom sheet listing every firmware with state, progress, WNS and alert count, led by an "All builds" entry, plus the
+CPU/RAM/Swap meters, Explore and Theme) and the notifications bell; the logo, with its attention badge, also opens All builds. The Build tab is the firmware screen: a compact hero (progress ring, status, current
 step, elapsed and ETA, the verdict line, WNS/TNS/WHS tiles, message counts), the same Needs attention list (three rows,
 Fix fold-outs, dismiss), then the stages as full-width rows. Tapping a row pushes that node's screen: a back button, a
 scrollable breadcrumb, its status and counts, and its children as flat rows (status, name, chips, duration; no indentation
@@ -351,10 +351,39 @@ transparent card: an entry not yet written.
 - **Focus:** border turns Signal Blue with a 3px soft blue ring.
 
 ### Navigation (firmware tabs)
-- One tab stop for the strip (roving tabindex): arrow keys and Home/End move between firmwares, Delete stops watching;
-  the × is a mouse affordance outside the tab order. The strip fades at the edge that hides more tabs.
-- Folder-style tabs with 10px top corners on a panel-to-page gradient strip. Each tab shows the name (600/13.5px),
-  a muted sub-line and a status dot. The active tab joins the page background and has a 2px Signal Blue line on top.
+- One tab stop for the strip (roving tabindex): arrow keys and Home/End move between the visible firmwares, Delete stops
+  watching; the × is a mouse affordance outside the tab order.
+- Folder-style tabs with 10px top corners on a panel-to-page gradient strip. A tab is compact: status dot, name
+  (600/15px), a small host marker for a remote firmware and the alert count. The current step, elapsed time and path are in
+  its tooltip, so a tab keeps its width between polls. Tabs that do not fit are hidden, never scrolled: a **+N** pill at the
+  end of the strip opens a menu of them (arrows, Home/End, Enter, Esc). The selected tab is always one of the visible
+  ones, and a red dot on the pill says that a hidden tab has errors. The active tab joins the page background and has a
+  2px Signal Blue line on top.
+- The **logo** is a real button named "All builds" (key `0`, URL `#home`): it opens the All builds page, which is not a
+  tab, so no tab is selected and the logo takes the active tint. Its red badge counts the builds that need attention.
+
+### All builds page
+- A responsive grid (340px minimum) of **build cards** in three groups: Running, Needs attention (failed, stopped,
+  timing not met, or errors; a running build with errors sits here with its Running pill) and Finished. A card is one
+  button: status dot, name, host marker, attempt and status pill; the current step with its ETA (or how it ended); the
+  same build strip as the firmware hero, bars only; then Elapsed/Duration, WNS with its estimate/final/incomplete tag,
+  worst utilization, error and critical-warning counts, and the Vivado CPU/RAM when known. A coloured left edge repeats
+  the state; a red or ochre line spells out why it needs attention.
+- **Wall display** is the same page fullscreen (when the browser allows it) with no top bar or tab bar, a clock, and
+  larger type and bars (460px cards). Esc, or its button, leaves it. On a phone the cards are one per row and the wall
+  button is not offered.
+
+### History trends and the Reports menu
+- Above the table, with one firmware selected, three small charts (WNS, duration, worst utilization) share one **evenly
+  spaced** x axis: one slot per build in date order (the last 40), dates labelled at the ends and the middle. Builds come
+  in bursts, so a calendar axis would stack the points of a busy day on top of each other and make them impossible to
+  click, and would spend the width on quiet weeks; one slot per build keeps every point a button and the order readable.
+  WNS is coloured by sign (red only for a final failure, amber for an estimate), utilization by the usual 80/90 steps,
+  with a dashed 80% line; a point scrolls to its row and flashes it. With "All firmwares" a one-line hint replaces them.
+  Stacked on a phone.
+- The row's report links, bitstream and Markdown export live in one **Reports ▾** menu next to a **Summary** button
+  (printable HTML). The menu is a fixed popup under its button with arrow keys, Home/End and Esc; it closes on a click
+  outside or when the page scrolls, not when its own list does.
 
 ### Alerts
 - Listed once, in the hero's **Needs attention** list together with the top message groups and the suggested actions

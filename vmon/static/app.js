@@ -114,6 +114,7 @@ let selected = lsGet('vmon.tab');
 let ctabs = []; // comparison tabs (shown after the firmware tabs): {cmp, key, fwA, a, fwB, b, label, title, tab, data, error, busy}
 let selectedCmp = null; // key of the comparison tab being shown, null = the firmware tab
 let firstLoad = true;
+const home = { on: false, wall: false, root: $('#home'), built: false };   // the All builds page: not a tab, opened by the logo, key 0 or #home
 const ui = {
   open: new Map(),        // `${fw}|${node}` -> bool (explicit user choice)
   flow: new Map(),        // fw id -> selected flow id
@@ -145,6 +146,7 @@ function parseHash() {
     const i = t.lastIndexOf(':');
     if (i > 0) hashTab.set(t.slice(0, i), t.slice(i + 1));
   }
+  home.on = p.has('home'); if (p.get('wall') === '1') { home.on = true; home.wall = true; }   // #home&wall=1 shows the wall layout without asking for fullscreen
   hashFw = p.get('fw'); hashFx = p.get('fx') ? new Set(p.get('fx').split(',')) : null;
   hashSel = p.get('sel'); hashSelPending = !!hashSel;
   hashScroll = p.get('scroll') != null ? +p.get('scroll') : null; hashDebug = p.get('debug'); hashShift = p.get('shift') != null ? +p.get('shift') : null; hashView = p.get('view'); hashMobNode = p.get('mnode'); hashMsg = p.get('msg'); hashExcerpt = p.get('excerpt') === '1';
@@ -154,7 +156,7 @@ function parseHash() {
     const [x, y] = p.get('cmp').split(',').map((k) => [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)]);
     if (x && y && x[0] && y[0]) selectCmp(addCmpTab(x[0], x[1], y[0], y[1]).key);
   }
-  if (p.get('page') === 'history' && typeof hist !== 'undefined') { hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hdone')) hist.done = p.get('hdone') === '1'; if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
+  if (p.get('page') === 'history' && typeof hist !== 'undefined') { home.on = false; hist.on = true; hist.fwName = p.get('hfw'); hist.cmpHash = (p.get('hcmp') || '').split(',').filter(Boolean); if (p.get('hdone')) hist.done = p.get('hdone') === '1'; if (p.get('hmsg')) hist.cmpTab = p.get('hmsg'); }
   if (p.get('theme')) applyTheme(p.get('theme'));
   if (p.get('popover') === 'notif' && typeof openPop === 'function') openPop();
   if (p.get('popover') === 'explore' && typeof openExplore === 'function') openExplore(p.get('path'));
@@ -504,7 +506,7 @@ function checkAlerts() {
 
 function openEntry(e) {
   if (!state.firmwares.some((f) => f.id === e.fw)) return;
-  hist.on = false; selectCmp(null); selected = e.fw; lsSet('vmon.tab', selected);
+  leaveHome(); hist.on = false; selectCmp(null); selected = e.fw; lsSet('vmon.tab', selected);
   closePop();
   const fw = curFw();
   if (e.node_id) gotoNode(fw, e.node_id); else { ui.view.set(fw.id, 'flow'); render(); }
@@ -514,18 +516,61 @@ function openEntry(e) {
 const tabsEl = $('#tabs');
 const mainEl = $('#main');
 
-// Fade the strip edge where more tabs are hidden, so a clipped firmware tab reads as "scroll for more".
-function syncTabsOverflow() {
-  const more = tabsEl.scrollWidth - tabsEl.clientWidth;
-  tabsEl.dataset.more = more <= 1 ? '' : [tabsEl.scrollLeft > 1 ? 'left' : '', tabsEl.scrollLeft < more - 1 ? 'right' : ''].join(' ').trim();
+// Compact tabs: status dot, name, host marker, alert badge. Step, elapsed and path live in the tooltip, so a tab keeps
+// its width between polls. Tabs that do not fit are hidden and listed in the "+N" menu; the selected tab always stays.
+const moreEl = h('button', 'tabmore', '<span class="tm-n"></span><i class="tm-dot" aria-hidden="true"></i>');
+moreEl.type = 'button'; moreEl.hidden = true; moreEl.dataset.act = 'tabmore';
+moreEl.setAttribute('aria-haspopup', 'menu'); moreEl.setAttribute('aria-expanded', 'false');
+tabsEl.appendChild(moreEl);
+const tabMenu = h('div', 'pmenu'); tabMenu.id = 'tabmenu'; tabMenu.setAttribute('role', 'menu'); tabMenu.hidden = true;
+document.body.appendChild(tabMenu);
+
+function fitTabs() {
+  const tabs = [...tabsEl.querySelectorAll(':scope > .tab')];
+  for (const t of tabs) t.hidden = false;
+  moreEl.hidden = true;
+  const cs = getComputedStyle(tabsEl);
+  const avail = tabsEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  if (avail <= 0 || !tabs.length) return;                      // not laid out (hidden page): keep everything
+  const gap = parseFloat(cs.columnGap) || 6;
+  const w = tabs.map((t) => t.offsetWidth);
+  if (w.reduce((a, b) => a + b, 0) + gap * (tabs.length - 1) > avail) {
+    moreEl.hidden = false;
+    const room = avail - moreEl.offsetWidth - gap;
+    const keep = new Set(), sel = tabs.findIndex((t) => t.classList.contains('active'));
+    let used = 0, full = false;
+    if (sel >= 0) { keep.add(sel); used = w[sel]; }
+    tabs.forEach((t, i) => {
+      if (keep.has(i) || full) return;
+      if (used + gap + w[i] <= room) { keep.add(i); used += gap + w[i]; } else full = true;
+    });
+    tabs.forEach((t, i) => { t.hidden = !keep.has(i); });
+  }
+  const hid = tabs.filter((t) => t.hidden);
+  moreEl.hidden = !hid.length;
+  setText($('.tm-n', moreEl), `+${hid.length}`);
+  setAttr(moreEl, 'data-level', hid.some((t) => t._lvl === 'error') ? 'error' : '');
+  setAttr(moreEl, 'aria-label', `${hid.length} more tab${hid.length === 1 ? '' : 's'}${hid.some((t) => t._lvl === 'error') ? ', some with errors' : ''}`);
+  if (!hid.length) closeMenus(); else if (!tabMenu.hidden) renderTabMenu();
 }
-tabsEl.addEventListener('scroll', syncTabsOverflow, { passive: true });
-window.addEventListener('resize', syncTabsOverflow);
+window.addEventListener('resize', fitTabs);
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fitTabs).observe(tabsEl);
+
+function renderTabMenu() {
+  const hid = [...tabsEl.querySelectorAll(':scope > .tab')].filter((t) => t.hidden);
+  setHTML(tabMenu, hid.map((t) => {
+    const r = t._r;
+    const lead = r.dot ? `<i class="sdot" data-status="${esc(r.dot.getAttribute('data-status'))}"></i>` : `<span class="cmpic">${CMP_ICON}</span>`;
+    const host = r.host && !r.host.hidden ? `<span class="hbadge">${esc(r.host.textContent)}</span>` : '';
+    const ab = r.ab && !r.ab.hidden ? `<span class="abadge" data-level="${esc(r.ab.getAttribute('data-level'))}">${esc(r.ab.textContent)}</span>` : '';
+    return `<button type="button" role="menuitem" data-act="tabmore-pick" data-key="${esc(t._key)}" title="${esc(t.title)}">${lead}<span class="pm-name">${esc(r.name.textContent)}</span>${host}${ab}</button>`;
+  }).join(''));
+}
 
 function createTab(fw) {
-  const el = h('div', 'tab', '<span class="sdot"></span><span class="t-main"><span class="t-name"></span><span class="t-sub"></span></span><span class="hbadge" hidden></span><span class="abadge" hidden></span><button class="t-x" title="Stop watching (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>');
+  const el = h('div', 'tab', '<span class="sdot"></span><span class="t-name"></span><span class="hbadge" hidden></span><span class="abadge" hidden></span><button class="t-x" title="Stop watching (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>');
   el.setAttribute('role', 'tab'); el.tabIndex = -1;
-  el._r = { dot: $('.sdot', el), name: $('.t-name', el), sub: $('.t-sub', el), ab: $('.abadge', el), host: $('.hbadge', el), x: $('.t-x', el) };
+  el._r = { dot: $('.sdot', el), name: $('.t-name', el), ab: $('.abadge', el), host: $('.hbadge', el), x: $('.t-x', el) };
   el.dataset.act = 'tab';
   return el;
 }
@@ -539,38 +584,37 @@ function updateTab(el, fw) {
   r.host.hidden = !fw.host; setText(r.host, fw.host || '');
   let sub;
   if (stale) sub = `unreachable${stale.last_ok ? ` · ${fmtClock(stale.last_ok)}` : ''}`;
-  else if (fw.status === 'running') {
-    const cur = fw.current ? esc(fw.current.label) : 'running';
-    sub = `${cur} · <span data-start="${fw.started_at ?? ''}">${fmtDur(fw.started_at ? nowS() - fw.started_at : fw.elapsed_s)}</span>${fw.resources ? ` · <span class="t-res" title="Vivado CPU / RSS">${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</span>` : ''}`;
-  } else sub = `${oc.label} · ${fmtDur(fw.elapsed_s)}`;
-  if (fw.attempt && fw.attempt.n > 1) sub = `<span class="t-att">attempt ${fw.attempt.n}</span> · ${sub}`;
-  setHTML(r.sub, sub);
+  else if (fw.status === 'running') sub = `${fw.current ? fw.current.label : 'running'} · ${fmtDur(fw.started_at ? nowS() - fw.started_at : fw.elapsed_s)}`;
+  else sub = `${oc.label} · ${fmtDur(fw.elapsed_s)}`;
+  if (fw.attempt && fw.attempt.n > 1) sub = `attempt ${fw.attempt.n} · ${sub}`;
   const al = fwAlerts(fw); const lvl = topLevel(al);
+  el._lvl = lvl;
   r.ab.hidden = !al.length; setText(r.ab, String(al.length)); setAttr(r.ab, 'data-level', lvl || 'warning');
-  const on = fw.id === selected && !shownCmpTab();
+  const on = fw.id === selected && !shownCmpTab() && !home.on;
   el.classList.toggle('active', on); setAttr(el, 'aria-selected', String(on));
   el.tabIndex = on ? 0 : -1; // roving tabindex: one tab stop for the whole strip
   setAttr(el, 'aria-keyshortcuts', fw.live ? '' : 'Delete');
   r.x.hidden = !!fw.live;
-  el.title = `${fw.host ? `${fw.host}: ` : ''}${fw.path || fw.name}`;
+  setAttr(el, 'aria-label', `${fw.name}${fw.host ? ` on ${fw.host}` : ''}, ${stale ? 'unreachable' : oc.label}${al.length ? `, ${al.length} alert${al.length === 1 ? '' : 's'}` : ''}`);
+  el.title = `${fw.host ? `${fw.name} on ${fw.host}` : fw.name}\n${sub}\n${fw.path || ''}`.trim();
 }
 
 const CMP_ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5h9M9 3l2.5 2.5L9 8M13.5 10.5h-9M7 8l-2.5 2.5L7 13"/></svg>';
 function createCmpTab() {
-  const el = h('div', 'tab ctab', `<span class="cmpic">${CMP_ICON}</span><span class="t-main"><span class="t-name"></span><span class="t-sub"></span></span><button class="t-x" title="Close the comparison (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>`);
+  const el = h('div', 'tab ctab', `<span class="cmpic">${CMP_ICON}</span><span class="t-name"></span><button class="t-x" title="Close the comparison (Delete)" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>`);
   el.setAttribute('role', 'tab'); el.tabIndex = -1;
-  el._r = { name: $('.t-name', el), sub: $('.t-sub', el), x: $('.t-x', el) };
+  el._r = { name: $('.t-name', el), x: $('.t-x', el) };
   el.dataset.act = 'tab';
   return el;
 }
 function updateCmpTab(el, t) {
-  const on = t.key === selectedCmp && !hist.on;
-  setText(el._r.name, t.label); setText(el._r.sub, cmpHasLive(t) ? 'comparison · live' : 'comparison');
-  if (on && !el.classList.contains('active')) el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); // it was just opened or picked
+  const on = t.key === selectedCmp && !hist.on && !home.on;
+  setText(el._r.name, t.label);
   el.classList.toggle('active', on); setAttr(el, 'aria-selected', String(on));
   el.tabIndex = on ? 0 : -1;
   setAttr(el, 'aria-keyshortcuts', 'Delete');
-  el.title = t.title;
+  setAttr(el, 'aria-label', `${t.label}, ${cmpHasLive(t) ? 'comparison, live' : 'comparison'}`);
+  el.title = `${t.title}\n${cmpHasLive(t) ? 'comparison · live' : 'comparison'}`;
 }
 
 /* ------------------------------------------------------------------ rendering: firmware header */
@@ -745,7 +789,7 @@ function stripSegs(flow) {
   return segs;
 }
 
-function stripHTML(fw, flow) {
+function stripHTML(fw, flow, compact = false) {   // compact: the bars alone, not interactive (a card on the All builds page)
   if (!flow || !flow.stages.length) return '';
   const segs = stripSegs(flow);
   const total = segs.reduce((a, o) => a + o.dur, 0) || 1;
@@ -757,10 +801,12 @@ function stripHTML(fw, flow) {
     const fill = running ? `<i class="pfill" style="width:${pct != null ? pct : 40}%"></i>${pct != null ? `<i class="pnow" style="left:${pct}%"><b>now</b></i>` : ''}` : '';
     const time = running ? `${pct != null ? pct + '% · ' : ''}${fmtDur(o.el)}` : o.est ? `${o.guess ? '' : '~'}${fmtDur(o.dur)}` : fmtDur(o.dur);
     const why = o.est ? (o.guess ? ' · no history, rough guess' : ' · expected duration') : '';
+    if (compact) return `<span class="pseg" data-status="${esc(n.status)}" style="flex-grow:${Math.max(o.dur, total * 0.06).toFixed(1)}" title="${esc(n.label)} · ${esc(statusInfo(n.status).label)}${why}"><span class="pbar${o.est ? ' est' : ''}">${fill}</span></span>`;
     return `<button type="button" class="pseg${n.id === sel ? ' sel' : ''}" data-act="hero-stage" data-id="${esc(n.id)}" data-status="${esc(n.status)}" style="flex-grow:${Math.max(o.dur, total * 0.06).toFixed(1)}" title="${esc(n.label)} · ${esc(statusInfo(n.status).label)}${why}" aria-label="${esc(n.label)}, ${esc(statusInfo(n.status).label)}">`
       + `<span class="pbar${o.est ? ' est' : ''}">${fill}</span>`
       + `<span class="pcap"><b>${lv ? `<em class="pwarn" data-lv="${lv}"></em>` : ''}<span class="pname">${esc(o.s)}</span></b><small class="num${o.est ? ' est' : ''}">${time}</small></span></button>`;
   }).join('');
+  if (compact) return `<div class="prow"><div class="pseglist">${body}</div></div>`;
   const endTxt = ep ? `<span class="pend" title="${esc(ep.tip)}"><small>ETA</small><b class="num">~${ep.clock}</b></span>` : fwFinished(fw) && endedAt(fw) ? `<span class="pend"><small>ended</small><b class="num">${fmtClock(endedAt(fw))}</b></span>` : '';
   const head = `<div class="ph"><span class="pt">Build progress</span>${pe != null ? `<span class="pp num">${Math.round(pe * 100)}% of the flow</span>` : ''}<span class="pk"><i class="d done"></i>done<i class="d run"></i>running<i class="d pend"></i>expected</span></div>`;
   return `${head}<div class="prow"><div class="pseglist">${body}</div>${endTxt}</div>`;
@@ -804,6 +850,8 @@ function verdictOf(fw, flow) {
   return { tone, html: parts.join('<i class="vsep">·</i>') };
 }
 
+const rowPct = (r) => r.pct ?? (r.available ? (r.used / r.available) * 100 : 0);
+const worstUtil = (fw) => ((fw.utilization && fw.utilization.rows) || []).reduce((b, r) => { const p = rowPct(r); return p > (b ? b.p : -1) ? { p, n: r.name } : b; }, null);
 // Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
 const utilClass = (pct) => (pct == null ? '' : pct > 100 ? 'over' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '');
 const UTIL_BADGE = { over: ['OVER CAPACITY', 'notmet'], crit: ['VERY HIGH', 'critb'], warn: ['HIGH', 'warnb'] };
@@ -1790,8 +1838,7 @@ function renderSummary(fw, flow) {
   setHTML(sr.tim, t ? `<i class="tdot"></i>${tv('wns', 'WNS')}${tv('whs', 'WHS')}` : '<span class="nil">timing —</span>');
   sr.tim.title = t ? `${timingBadge(t, tl)[0]} · ${t.stage || t.label || ''}${t.final ? ' · final' : ' · not final'}` : 'No timing data yet';
   sr.tim.title += t && t.carried ? Object.entries(t.carried).map(([k, c]) => `\n${k.toUpperCase()} ${carriedTip(c)}`).join('') : '';
-  const rows = (fw.utilization && fw.utilization.rows) || [];
-  const worst = rows.reduce((b, r) => { const p = r.pct ?? (r.available ? (r.used / r.available) * 100 : 0); return p > (b ? b.p : -1) ? { p, n: r.name } : b; }, null);
+  const worst = worstUtil(fw);
   sr.util.hidden = !worst;
   if (worst) { setAttr(sr.util, 'data-lv', utilClass(worst.p) || 'ok'); setHTML(sr.util, `util <b class="num">${worst.p.toFixed(0)}%</b> <small>${esc(worst.n)}</small>`); sr.util.title = `Highest utilization: ${worst.n} ${worst.p.toFixed(1)}%`; }
   const als = fwAlerts(fw); const lvl = topLevel(als) || (fw.health && fw.health !== 'ok' ? fw.health : '');
@@ -1809,6 +1856,200 @@ function renderSummary(fw, flow) {
 }
 function hideSummary() { if (headIO) { headIO.disconnect(); headIO = null; } setSumShown(false); }
 
+/* ------------------------------------------------------------------ popup menus (+N tabs, History "Reports")
+   Fixed-position menus placed under their button. Arrow keys, Home/End and Esc work; a click outside, a resize or a scroll
+   of the page closes them, but scrolling inside a menu does not. */
+const hxMenu = h('div', 'pmenu'); hxMenu.id = 'hxmenu'; hxMenu.setAttribute('role', 'menu'); hxMenu.hidden = true;
+document.body.appendChild(hxMenu);
+const menus = { open: null };   // { el, btn }
+function placeMenu(el, btn) {
+  const r = btn.getBoundingClientRect();
+  el.style.top = `${Math.round(r.bottom + 4)}px`;
+  el.style.left = 'auto'; el.style.right = `${Math.max(8, Math.round(window.innerWidth - r.right))}px`;
+  el.style.maxHeight = `${Math.max(160, window.innerHeight - r.bottom - 16)}px`;
+}
+function openMenu(el, btn, focusFirst = true) {
+  closeMenus();
+  menus.open = { el, btn };
+  el.hidden = false; placeMenu(el, btn);
+  btn.setAttribute('aria-expanded', 'true');
+  if (focusFirst) { const it = $('[role=menuitem]:not([aria-disabled="true"])', el); if (it) it.focus({ preventScroll: true }); }
+}
+function closeMenus(refocus = false) {
+  const m = menus.open;
+  if (!m) return false;
+  menus.open = null;
+  m.el.hidden = true; m.btn.setAttribute('aria-expanded', 'false');
+  if (m.el === hxMenu) hist.menu = null;
+  if (refocus && m.btn.isConnected) m.btn.focus({ preventScroll: true });
+  return true;
+}
+function menuKey(ev) {
+  const m = menus.open;
+  if (!m) return false;
+  const inMenu = m.el.contains(ev.target);
+  if (ev.key === 'Escape') { ev.preventDefault(); closeMenus(true); return true; }
+  if (ev.key === 'Tab') { closeMenus(); return false; }
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(ev.key) || !(inMenu || ev.target === m.btn)) return false;
+  const items = [...m.el.querySelectorAll('[role=menuitem]:not([aria-disabled="true"])')];
+  if (!items.length) return false;
+  ev.preventDefault();
+  const i = items.indexOf(document.activeElement);
+  const j = ev.key === 'Home' ? 0 : ev.key === 'End' ? items.length - 1 : ev.key === 'ArrowDown' ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1);
+  items[j].focus({ preventScroll: true });
+  return true;
+}
+document.addEventListener('keydown', (ev) => {
+  if (menus.open) { if (menuKey(ev)) ev.stopImmediatePropagation(); return; }
+  // arrow down on a closed menu button opens it
+  if (ev.key === 'ArrowDown' && ev.target.matches && ev.target.matches('[aria-haspopup="menu"]')) { ev.preventDefault(); ev.target.click(); }
+}, true);
+document.addEventListener('click', (ev) => { if (menus.open && !ev.target.closest('.pmenu, .tabmore, [data-act="hmenu"]')) closeMenus(); }, true);
+window.addEventListener('scroll', (ev) => { const t = ev.target; if (menus.open && !(t && t !== document && t.closest && t.closest('.pmenu'))) closeMenus(); }, true);
+window.addEventListener('resize', () => closeMenus());
+// A menu item acts, then the menu closes (after the document handler has read the item).
+for (const el of [tabMenu, hxMenu]) el.addEventListener('click', (ev) => { const it = ev.target.closest('[role=menuitem]'); if (it && it.getAttribute('aria-disabled') !== 'true') setTimeout(() => closeMenus(true), 0); });
+
+/* ------------------------------------------------------------------ All builds page (not a tab: the logo, key 0, #home)
+   One card per firmware, grouped Running / Needs attention / Finished, built from the same state, helpers and strip as the
+   firmware view. "Wall display" is the same page fullscreen with larger cards, for a screen across the room. */
+const brandEl = $('#brand'), brandBadge = $('#brand-badge');
+// Why a build wants a look. A running build with errors is listed under Needs attention too, with its Running pill.
+function attnReasons(fw) {
+  const out = [];
+  if (fw.status === 'failed') out.push('failed'); else if (fw.status === 'stopped') out.push('stopped');
+  if (outcomeOf(fw).key === 'done-fail') out.push('timing not met');
+  const e = (fw.counts && fw.counts.error) || 0;
+  if (e) out.push(`${fmtNum(e)} error${e === 1 ? '' : 's'}`);
+  return out;
+}
+const homeGroupOf = (fw) => (attnReasons(fw).length ? 'attention' : fw.status === 'running' || fw.status === 'queued' ? 'running' : 'finished');
+const HOME_GROUPS = [['running', 'Running'], ['attention', 'Needs attention'], ['finished', 'Finished']];
+const GROUP_RANK = { failed: 0, stopped: 1 };
+function homeSorted(list, g) {
+  const t = (f) => f.started_at || 0;
+  if (g === 'running') return list.sort((a, b) => t(a) - t(b));
+  if (g === 'attention') return list.sort((a, b) => (GROUP_RANK[a.status] ?? 2) - (GROUP_RANK[b.status] ?? 2) || t(b) - t(a));
+  return list.sort((a, b) => t(b) - t(a));
+}
+function syncBrand() {
+  const n = state.firmwares.filter((f) => homeGroupOf(f) === 'attention').length;
+  brandBadge.hidden = !n; setText(brandBadge, String(n));
+  setAttr(brandEl, 'title', n ? `All builds (0) · ${n} need${n === 1 ? 's' : ''} attention` : 'All builds (0)');
+  brandEl.classList.toggle('active', home.on);
+  if (home.on) setAttr(brandEl, 'aria-current', 'page'); else brandEl.removeAttribute('aria-current');
+}
+
+function hashHome(on) {
+  try {
+    if (on ? location.hash !== '#home' : location.hash === '#home' || location.hash === '#home&wall=1') history.replaceState(history.state, '', location.pathname + location.search + (on ? '#home' : ''));
+  } catch { /* ignore */ }
+}
+function leaveHome() {
+  if (!home.on) return;
+  home.on = false; wallOff(); hashHome(false);
+}
+function setHome(on) {
+  if (on === home.on) return;
+  if (!on) { leaveHome(); render(); return; }
+  closeMenus(); home.on = true; hist.on = false; hashHome(true);
+  window.scrollTo(0, 0); render();
+  const first = $('.hcard', home.root); if (first) first.focus({ preventScroll: true });
+}
+function wallOff() {
+  if (!home.wall) return;
+  home.wall = false; document.body.dataset.wall = '';
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+function setWall(on) {
+  if (!on) { wallOff(); render(); return; }
+  home.on = true; home.wall = true; hist.on = false;
+  const el = home.root;
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});   // refused (kiosk, iframe): the layout still switches
+  render();
+}
+// Esc in fullscreen is taken by the browser: its fullscreenchange is how the wall ends.
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && home.wall) { home.wall = false; render(); } });
+
+function homeCardHTML(fw) {
+  const oc = outcomeOf(fw), stale = staleRemote(fw), flow = flowOf(fw), why = attnReasons(fw);
+  const stages = flow ? flow.stages : [];
+  const bad = stages.find((n) => n.status === 'failed');
+  const ep = etaParts(fw), t = fw.timing, tl = fwTimingLevel(fw);
+  let step;
+  if (stale) step = `<b>${esc(staleText(stale))}</b>`;
+  else if (fw.status === 'running') step = `<b>${esc(fw.current ? fw.current.label : 'Running')}</b>${ep ? `<span class="hc-eta" title="${esc(ep.tip)}">ETA ~${ep.clock} <span data-end="${ep.end}">${ep.inTxt}</span></span>` : ''}`;
+  else if (fw.status === 'done') step = `<b>Finished</b>${endedAt(fw) ? `<span class="hc-eta">at ${fmtClock(endedAt(fw))}</span>` : ''}`;
+  else if (fw.status === 'failed') step = `<b>Failed${bad ? ` in ${esc(bad.label)}` : ''}</b>`;
+  else step = `<b>${esc(oc.label)}</b>`;
+  const running = fw.status === 'running' && fw.started_at && !stale;
+  const wns = t && t.wns != null ? `<span class="hc-st hc-wns ${slackTone(t.wns, tl)}"><i>WNS</i><b class="num">${fmtSigned(t.wns, 3)}</b><small>${t.final ? 'final' : tl === 'halted' ? 'incomplete' : 'estimate'}</small></span>` : '<span class="hc-st"><i>WNS</i><b class="num nil">—</b></span>';
+  const wu = worstUtil(fw);
+  const util = wu ? `<span class="hc-st hc-util ${utilClass(wu.p)}" title="Highest utilization: ${esc(wu.n)}"><i>${esc(wu.n)}</i><b class="num">${wu.p.toFixed(wu.p < 10 ? 1 : 0)}%</b></span>` : '';
+  const c = fw.counts || {};
+  const msgs = `<span class="hc-st hc-msgs">${SEVERITIES.slice(0, 2).map((s) => `<span class="mc ${(c[s.key] || 0) ? s.cls : 'zero'}" title="${s.label}"><b class="num">${fmtNum(c[s.key] || 0)}</b><small>${s.short}</small></span>`).join('')}</span>`;
+  const res = fw.resources && !stale ? `<span class="hc-st hc-res" title="Vivado process CPU (100% = one core) and resident memory"><i>CPU / RAM</i><b class="num">${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</b></span>` : '';
+  const att = fw.attempt && fw.attempt.n > 1 ? `<span class="hc-att" title="Attempt ${fw.attempt.n}">attempt ${fw.attempt.n}</span>` : '';
+  return `<span class="hc-top"><i class="sdot" data-status="${stale ? 'stale' : esc(oc.key)}"></i><b class="hc-name">${esc(fw.name)}</b>${fw.host ? `<span class="hbadge" title="Built on ${esc(fw.host)}">${esc(fw.host)}</span>` : ''}${att}<span class="pill" data-status="${stale ? 'stale' : esc(oc.key)}">${esc(stale ? 'stale' : oc.pill)}</span></span>`
+    + `<span class="hc-step">${step}</span>`
+    + `<span class="hc-strip">${stripHTML(fw, flow, true)}</span>`
+    + `<span class="hc-stats"><span class="hc-st"><i>${running ? 'Elapsed' : 'Duration'}</i><b class="num"${running ? ` data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</b></span>${wns}${util}${msgs}${res}</span>`
+    + (why.length ? `<span class="hc-why">${esc(why.join(' · '))}</span>` : '');
+}
+function homeCardLabel(fw) {
+  const oc = outcomeOf(fw), why = attnReasons(fw);
+  return `${fw.name}${fw.host ? ` on ${fw.host}` : ''}, ${staleRemote(fw) ? 'unreachable' : oc.label}${why.length ? `, needs attention: ${why.join(', ')}` : ''}`;
+}
+
+function buildHome() {
+  home.built = true;
+  home.root.innerHTML = `<div class="hx-head home-head"><h1>All builds</h1><span class="hx-n"></span><span class="wall-clock num" aria-hidden="true"></span>
+    <div class="hx-tools"><button type="button" class="hx-back" data-act="wall" aria-keyshortcuts="w" title="Fullscreen, larger cards, no tab bar (Esc leaves)">Wall display</button><button type="button" class="hx-back wall-x" data-act="wall-off" title="Leave the wall display (Esc)">Exit wall display</button></div></div>
+    <div class="home-empty" hidden><h2>No firmware runs yet</h2><p>Start a Vivado build, or pick a <code>.runs</code> directory, <code>.xpr</code> or log with Explore above.</p></div>
+    ${HOME_GROUPS.map(([k, label]) => `<section class="hg" data-group="${k}" aria-label="${label}"><h2 class="hg-h">${label} <span class="num"></span></h2><div class="hgrid"></div></section>`).join('')}`;
+}
+function createHomeCard() {
+  const el = h('button', 'hcard'); el.type = 'button'; el.dataset.act = 'home-open';
+  return el;
+}
+function updateHomeCard(el, fw) {
+  el.dataset.fw = fw.id;
+  setAttr(el, 'data-status', outcomeOf(fw).key);
+  setAttr(el, 'data-lv', fw.status === 'failed' || (fw.counts && fw.counts.error) ? 'error' : attnReasons(fw).length ? 'warn' : '');
+  setAttr(el, 'aria-label', homeCardLabel(fw));
+  setAttr(el, 'title', `Open ${fwLabel(fw)}\n${fw.path || ''}`.trim());
+  setHTML(el, stable(homeCardHTML(fw)));
+}
+function renderHome() {
+  if (!home.built) buildHome();
+  const r = home.root, fws = state.firmwares;
+  setText($('.hx-n', r), `${fws.length} build${fws.length === 1 ? '' : 's'}`);
+  $('.home-empty', r).hidden = !!fws.length;
+  for (const [k] of HOME_GROUPS) {
+    const sec = $(`.hg[data-group="${k}"]`, r);
+    const list = homeSorted(fws.filter((f) => homeGroupOf(f) === k), k);
+    sec.hidden = !list.length;
+    setText($('.hg-h .num', sec), String(list.length));
+    patchList($('.hgrid', sec), list, (f) => f.id, createHomeCard, updateHomeCard);
+  }
+  tickTimes(r);
+}
+const wallClock = () => { const c = $('.wall-clock', home.root); if (c && home.wall) setText(c, fmtClockS(nowS())); };
+setInterval(wallClock, 1000);
+
+function syncHomePage() {
+  syncBrand();
+  const on = home.on;
+  home.root.hidden = !on;
+  document.body.dataset.wall = on && home.wall ? '1' : '';
+  if (!on) return false;
+  document.body.dataset.page = 'home';
+  setAttr($('#history-btn'), 'aria-pressed', 'false');
+  mainEl.hidden = true; hist.root.hidden = true;
+  renderHome(); wallClock();
+  return true;
+}
+
 /* ------------------------------------------------------------------ render root */
 function render() { renderDesktop(); renderMobile(); }
 function renderDesktop() {
@@ -1822,7 +2063,8 @@ function renderDesktop() {
   if (fws.length) firstLoad = false;
   $('#follow-btn').hidden = true; // shown again by renderStageList, when there are stages to follow
   patchList(tabsEl, [...fws, ...ctabs], (it) => (it.cmp ? it.key : it.id), (it) => (it.cmp ? createCmpTab() : createTab(it)), (el, it) => (it.cmp ? updateCmpTab(el, it) : updateTab(el, it)));
-  syncTabsOverflow();
+  fitTabs();
+  if (syncHomePage()) return;
   if (syncHistoryPage()) return;
 
   const fw = curFw();
@@ -1901,6 +2143,7 @@ const mob = {
   stacks: new Map(),      // fw id -> ids of the screens pushed on the Build tab (a level per id)
   follow: new Set(),      // fw ids whose stack follows the running node; any manual navigation drops it
   hdepth: 0,              // depth of the browser history entry we are on, so the back button pops one level
+  afterPop: null,         // runs once the history traversal we started has landed
   sheet: null,            // 'fw' | 'node'
   sheetPushed: false, selfPop: false, sheetTab: null, det: null, dir: null, key: null,
 };
@@ -1911,6 +2154,7 @@ const M_ICON = {
   x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   folder: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
   theme: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
   Build: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
   Messages: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
   History: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7.5V12l3 2"/></svg>',
@@ -1920,9 +2164,11 @@ const M_TABS = ['Build', 'Messages', 'History'];
 // The tab is derived from the desktop state (History page open, or the Messages view), so Back, Esc and keyboard stay in step.
 const mobileTab = () => {
   const fw = curFw();
-  return hist.on || shownCmpTab() ? 'History' : fw && curView(fw) === 'messages' ? 'Messages' : 'Build';
+  return home.on ? 'Home' : hist.on || shownCmpTab() ? 'History' : fw && curView(fw) === 'messages' ? 'Messages' : 'Build';
 };
 function showMobileTab(tab) {
+  const fromHome = home.on;
+  leaveHome();
   selectCmp(null);
   const fw = curFw();
   if (tab === 'History') { setHistory(true); return; }
@@ -1994,6 +2240,7 @@ window.addEventListener('popstate', (e) => {
   if (!mobileOn()) return;
   const s = e.state && e.state.vmob ? e.state : { d: 0 };
   mob.hdepth = s.d;
+  if (mob.afterPop) { const f = mob.afterPop; mob.afterPop = null; f(); return; }
   if (mob.selfPop) { mob.selfPop = false; return; }   // our own closing of a sheet
   if (mob.sheet && !s.s) { mob.sheet = null; mob.sheetPushed = false; renderMobile(); return; }
   const fw = curFw();
@@ -2141,8 +2388,10 @@ function mFwSheetHTML() {
     const p = Math.max(0, Math.min(100, r.pct));
     return `<div class="m-mtr" data-level="${p >= 90 ? 'crit' : p >= 80 ? 'warn' : 'ok'}"><span>${k.toUpperCase()}</span><div><i style="width:${p}%"></i></div><b class="num">${r.txt}</b></div>`;
   }).join('') : '';
+  const nAttn = fws.filter((f) => homeGroupOf(f) === 'attention').length;
+  const all = `<button type="button" class="m-frow m-all${home.on ? ' on' : ''}" data-act="m-home" aria-current="${home.on}"><span class="m-allic">${M_ICON.grid}</span><span class="m-fmain"><b>All builds</b><span>${fws.length} build${fws.length === 1 ? '' : 's'}${nAttn ? ` · ${nAttn} need${nAttn === 1 ? 's' : ''} attention` : ''}</span></span></button>`;
   return `<div class="m-grab"></div><div class="m-sh-head"><h2>Firmwares</h2><button type="button" class="m-x" data-act="m-close" aria-label="Close">${M_ICON.x}</button></div>
-    <div class="m-sh-body">${rows || '<p class="m-none">No firmware yet.</p>'}
+    <div class="m-sh-body">${all}${rows || '<p class="m-none">No firmware yet.</p>'}
     ${meters ? `<div class="m-sys"><h3 class="m-h">This machine</h3>${meters}</div>` : ''}
     <div class="m-tools"><button type="button" data-act="m-explore">${M_ICON.folder} Explore</button><button type="button" data-act="m-theme">${M_ICON.theme} Theme</button></div></div>`;
 }
@@ -2178,8 +2427,8 @@ function renderMobile() {
   const fw = curFw();
   if (fw && hashMobNode) { const id = hashMobNode; hashMobNode = null; mobileGoto(fw, id); return; }
   const oc = fw ? outcomeOf(fw) : null;
-  setHTML(mEl.sw, fw ? `<i class="sdot" data-status="${esc(oc.key)}"></i><span class="m-sw-name">${esc(fw.name)}</span><span class="m-sw-st">${esc(oc.label)}</span>${M_ICON.down}` : `<span class="m-sw-name">No firmware</span>${M_ICON.down}`);
-  setAttr(mEl.sw, 'aria-label', `Firmware: ${fw ? fw.name : 'none'}. Switch firmware`);
+  setHTML(mEl.sw, home.on ? `<span class="m-allic">${M_ICON.grid}</span><span class="m-sw-name">All builds</span>${M_ICON.down}` : fw ? `<i class="sdot" data-status="${esc(oc.key)}"></i><span class="m-sw-name">${esc(fw.name)}</span><span class="m-sw-st">${esc(oc.label)}</span>${M_ICON.down}` : `<span class="m-sw-name">No firmware</span>${M_ICON.down}`);
+  setAttr(mEl.sw, 'aria-label', home.on ? 'All builds. Switch firmware' : `Firmware: ${fw ? fw.name : 'none'}. Switch firmware`);
   const tab = mobileTab();
   setHTML(mEl.tabs, M_TABS.map((k) => `<button type="button" data-act="m-tab" data-tab="${k}"${k === tab ? ' aria-current="page"' : ''}>${M_ICON[k]}<span>${k}</span></button>`).join(''));
   if (tab === 'Build') renderMobileBuild(fw);
@@ -2212,7 +2461,12 @@ function mobileAct(act, t) {
     selectCmp(null); hist.on = false;
     stackOf({ id: t.dataset.fw }).length = 0; mob.follow.delete(t.dataset.fw);
     openFirmware(t.dataset.fw);
-    showMobileTab(was === 'History' ? 'Build' : was);
+    showMobileTab(was === 'History' || was === 'Home' ? 'Build' : was);
+  } else if (act === 'm-home') {
+    const steps = mob.hdepth + (mob.sheetPushed ? 1 : 0);
+    mob.sheet = null; mob.sheetPushed = false; mob.hdepth = 0;
+    if (fw) { stackOf(fw).length = 0; mob.follow.delete(fw.id); }
+    if (steps > 0) { mob.afterPop = () => setHome(true); history.go(-steps); } else setHome(true);   // the URL hash is set once the traversal is done
   } else if (act === 'm-explore') { closeSheet(); openExplore(); }
   else if (act === 'm-theme') $('#theme-btn').click();
 }
@@ -2283,9 +2537,26 @@ document.addEventListener('click', async (ev) => {
       toast(`Stopped watching ${fw.name}. Add it again with Watch or Explore.`);
       return;
     }
-    hist.on = false;
+    leaveHome(); hist.on = false;
     if (el._key.startsWith('cmp:')) { selectCmp(el._key); window.scrollTo(0, 0); } else { selectCmp(null); selected = el._key; lsSet('vmon.tab', selected); }
     render();
+  } else if (act === 'home') {
+    setHome(true);
+  } else if (act === 'wall') {
+    setWall(true);
+  } else if (act === 'wall-off') {
+    setWall(false);
+  } else if (act === 'home-open') {
+    openFirmware(t.dataset.fw);
+  } else if (act === 'tabmore') {
+    if (menus.open && menus.open.btn === t) closeMenus(); else { renderTabMenu(); openMenu(tabMenu, t, ev.detail === 0); }
+  } else if (act === 'tabmore-pick') {
+    const el = [...tabsEl.querySelectorAll(':scope > .tab')].find((x) => x._key === t.dataset.key);
+    if (el) { el.click(); const on = tabsEl.querySelector('.tab.active'); if (on) on.focus(); }
+  } else if (act === 'hmenu') {
+    if (menus.open && menus.open.btn === t) closeMenus(); else openReportsMenu(t, ev.detail === 0);
+  } else if (act === 'hpoint') {
+    flashHistoryRow(t.dataset.fw, t.dataset.build);
   } else if (act === 'history' || act === 'history-close') {
     setHistory(act === 'history' ? !hist.on : false);
   } else if (act === 'hsort') {
@@ -2632,7 +2903,8 @@ function closeModal() {
   m.hidden = true; if (m._ret && m._ret.isConnected) m._ret.focus();
   return true;
 }
-const SHORTCUTS = `1-9   switch firmware tab
+const SHORTCUTS = `0     All builds (home)
+1-9   switch firmware tab
 f     Flow view
 m     Messages view
 t     Timing view (when available)
@@ -2661,18 +2933,20 @@ document.addEventListener('keydown', (ev) => {
   const role = ev.target.getAttribute && ev.target.getAttribute('role');
   if ((ev.key === 'Enter' || ev.key === ' ') && (role === 'button' || role === 'tab') && tag !== 'button') { ev.preventDefault(); ev.target.click(); return; }
   if (role === 'tab' && ['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Delete'].includes(ev.key)) {
-    const tabs = [...tabsEl.querySelectorAll('.tab')]; const i = tabs.indexOf(ev.target);
+    const tabs = [...tabsEl.querySelectorAll('.tab:not([hidden])')]; const i = tabs.indexOf(ev.target);
     if (ev.key === 'Delete') { if (!ev.target._r.x.hidden) ev.target._r.x.click(); ev.preventDefault(); return; }
     const j = ev.key === 'Home' ? 0 : ev.key === 'End' ? tabs.length - 1 : (i + (ev.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab')][j]; if (nt) nt.focus();
+    ev.preventDefault(); tabs[j].click(); const nt = [...tabsEl.querySelectorAll('.tab:not([hidden])')].find((x) => x._key === tabs[j]._key); if (nt) nt.focus();
     return;
   }
-  if (ev.key === 'Escape') { if (closeRules() || closeModal()) return; if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) setHistory(false); return; }
+  if (ev.key === 'Escape') { if (closeMenus(true) || closeRules() || closeModal()) return; if (home.wall) { setWall(false); return; } if (notif.open) { closePop(); notifyBtn.focus(); } else if (hist.on && !(xp.el && !xp.el.hidden)) setHistory(false); return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || ev.ctrlKey || ev.metaKey || ev.altKey || (xp.el && !xp.el.hidden)) return;
   const fw = curFw();
   if (/^[1-9]$/.test(ev.key)) {
     const f = state.firmwares[+ev.key - 1];
-    if (f) { hist.on = false; selectCmp(null); selected = f.id; lsSet('vmon.tab', selected); render(); }
+    if (f) { leaveHome(); hist.on = false; selectCmp(null); selected = f.id; lsSet('vmon.tab', selected); render(); }
+  } else if (ev.key === '0') {
+    setHome(true);
   } else if (ev.key === '?') {
     showModal('Keyboard shortcuts', SHORTCUTS);
   } else if (ev.key === 'h') {
@@ -2906,7 +3180,7 @@ const fwForPath = (path) => {
   const base = normPath(path).replace(/\.(xpr|log)$/, '');
   return state.firmwares.find((f) => normPath(f.path) === normPath(path) || normPath(f.path).startsWith(base) || normPath(path).startsWith(normPath(f.path)));
 };
-function openFirmware(id) { hist.on = false; selectCmp(null); selected = id; lsSet('vmon.tab', selected); render(); window.scrollTo({ top: 0 }); }
+function openFirmware(id) { leaveHome(); hist.on = false; selectCmp(null); selected = id; lsSet('vmon.tab', selected); render(); window.scrollTo({ top: 0 }); }
 // Watch a path (POST /api/watch), wait for its firmware to show up in the state, then switch to its tab.
 async function watchAndOpen(path) {
   const before = new Set(state.firmwares.map((f) => f.id));
@@ -3656,7 +3930,7 @@ function renderCongestion(pane, n) {
 }
 
 /* ------------------------------------------------------------------ build history page (GET /api/history) */
-const hist = { on: false, fw: null, fwName: null, asc: false, done: lsGet('vmon.histDone') === '1', pick: [], cmpTab: 'new', cmpHash: null, hintFor: null, latestOf: null, mockCmp: null, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
+const hist = { on: false, menu: null, fw: null, fwName: null, asc: false, done: lsGet('vmon.histDone') === '1', pick: [], cmpTab: 'new', cmpHash: null, hintFor: null, latestOf: null, mockCmp: null, data: null, error: null, sig: null, reqId: 0, root: $('#history'), mock: null };
 const HX_KIND = { timing_summary: 'Timing', utilization: 'Util', drc: 'DRC', methodology: 'Method', power: 'Power', route_status: 'Route', clock_utilization: 'Clocks', control_sets: 'Ctrl sets' };
 const HX_RESULT = {
   met: { key: 'done', text: 'Finished, timing met' }, timing_not_met: { key: 'done-fail', text: 'Finished, timing not met' },
@@ -3670,6 +3944,7 @@ const HX_GONE = 'Replaced by a later build';
 
 function setHistory(on) {
   if (on === hist.on) return;
+  if (on) leaveHome();
   hist.on = on;
   if (on) { hist.fw = null; hist.sig = null; hist.pick = []; hist.hintFor = null; hist.latestOf = null; window.scrollTo(0, 0); }
   render();
@@ -3740,32 +4015,40 @@ function hxUtil(b) {
     return `<span title="${esc(k)}: ${fmtInt(u[k].used)} of ${fmtInt(u[k].available)}"><i>${k}</i><b${cls}>${p == null ? '—' : p.toFixed(p < 10 ? 1 : 0)}%</b></span>`;
   }).join('') || '<span class="dim">—</span>';
 }
-function hxLinks(b) {
+// One "Reports" menu per build (report links, bitstream, Markdown) and a Summary button (printable HTML). The menu is built
+// when it opens, from the recorded build, so a row costs two buttons.
+const summaryUrl = (fw, build, fmt, dl) => `/api/history/summary?fw=${q(fw)}&build=${q(build)}&format=${fmt}${dl ? '&download=1' : ''}`;
+function hxActions(b) {
+  const ds = `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"`;
+  return `<div class="hx-acts"><button type="button" class="hx-chip hx-menubtn" data-act="hmenu" ${ds} aria-haspopup="menu" aria-expanded="${hist.menu && hxSame(hist.menu, b) ? 'true' : 'false'}" title="Reports, bitstream and Markdown summary of this build">Reports <span aria-hidden="true">▾</span></button>`
+    + `<a class="hx-chip" data-act="hexp" data-format="html" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'html', false))}" target="_blank" rel="noopener" title="Open the printable HTML summary in a new tab">Summary</a></div>`;
+}
+function reportsMenuHTML(b) {
   const art = b.artifacts || [];
-  const at = (a) => `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}" data-path="${esc(a.path)}"`;
+  const ds = `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"`;
   const reports = art.filter((a) => a.kind !== 'bitstream').map((a) => {
     const name = HX_KIND[a.kind] || a.label;
     const tip = a.current ? `Open ${a.label}${a.step ? ` (${a.step})` : ''}` : `${HX_GONE}: ${a.label}`;
-    return `<button type="button" class="hx-chip" data-act="hrep" ${at(a)} data-label="${esc(a.label)}" title="${esc(tip)}"${a.current ? '' : ' aria-disabled="true"'}>${esc(name)}</button>`;
+    return `<button type="button" role="menuitem" data-act="hrep" ${ds} data-path="${esc(a.path)}" data-label="${esc(a.label)}" title="${esc(tip)}"${a.current ? '' : ' aria-disabled="true"'}><span>${esc(name)}</span>${a.step ? `<small>${esc(a.step)}</small>` : ''}</button>`;
   }).join('');
   const bit = art.find((a) => a.kind === 'bitstream');
-  let bitHTML = '';
-  if (bit) {
+  let bitHTML;
+  if (bit && bit.current) {
     const href = `/api/history/artifact?fw=${q(b.fw_id)}&build=${q(b.build)}&path=${q(bit.path)}`;
-    bitHTML = bit.current
-      ? `<span class="hx-bitgrp"><a class="hx-chip bit" data-act="hbit" href="${esc(href)}" download title="Download ${esc(bit.path)} (${fmtMem(bit.size / 1048576)})">.bit</a><button type="button" class="hx-chip" data-act="copy" data-copy="${esc(bit.path)}" title="Copy the bitstream path" aria-label="Copy the bitstream path">${HX_ICON}</button></span>`
-      : `<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="${HX_GONE}">.bit</span>`;
-  } else bitHTML = '<span class="hx-chip bit" data-act="hbit" aria-disabled="true" title="No bitstream was recorded for this build">.bit</span>';
-  return `<div class="links">${reports || '<span class="dim">no reports</span>'}<span class="hx-bit"><span class="hx-sep"></span>${bitHTML}</span></div>`;
+    bitHTML = `<a role="menuitem" data-act="hbit" ${ds} href="${esc(href)}" download title="Download ${esc(bit.path)} (${fmtMem(bit.size / 1048576)})"><span>Download bitstream</span><small>.bit</small></a>`
+      + `<button type="button" role="menuitem" data-act="copy" data-copy="${esc(bit.path)}" title="${esc(bit.path)}"><span>Copy bitstream path</span>${HX_ICON}</button>`;
+  } else bitHTML = `<span role="menuitem" aria-disabled="true" title="${bit ? HX_GONE : 'No bitstream was recorded for this build'}"><span>Bitstream</span><small>${bit ? 'replaced' : 'none'}</small></span>`;
+  return `<div class="pm-h">Reports</div>${reports || '<span class="pm-none">no reports recorded</span>'}<div class="pm-sep" role="separator"></div><div class="pm-h">Bitstream</div>${bitHTML}<div class="pm-sep" role="separator"></div><div class="pm-h">Summary</div>`
+    + `<a role="menuitem" data-act="hexp" data-format="md" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'md', true))}" download title="Download the Markdown summary of this build"><span>Download Markdown</span><small>.md</small></a>`
+    + `<button type="button" role="menuitem" data-act="hexp-copy" ${ds} title="Copy the Markdown summary"><span>Copy Markdown</span>${HX_ICON}</button>`;
 }
-// Summary export: MD downloads, HTML opens printable in a tab, the clipboard button copies the Markdown.
-const summaryUrl = (fw, build, fmt, dl) => `/api/history/summary?fw=${q(fw)}&build=${q(build)}&format=${fmt}${dl ? '&download=1' : ''}`;
-function hxExport(b) {
-  const ds = `data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"`;
-  return `<div class="hx-exp" role="group" aria-label="Export build summary"><span class="dim">Summary</span>
-    <a class="hx-chip" data-act="hexp" data-format="md" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'md', true))}" download title="Download the Markdown summary of this build">MD</a>
-    <a class="hx-chip" data-act="hexp" data-format="html" ${ds} href="${esc(summaryUrl(b.fw_id, b.build, 'html', false))}" target="_blank" rel="noopener" title="Open the printable HTML summary in a new tab">HTML</a>
-    <button type="button" class="hx-chip" data-act="hexp-copy" ${ds} title="Copy the Markdown summary" aria-label="Copy the Markdown summary">${HX_ICON}Copy</button></div>`;
+function openReportsMenu(btn, focusFirst) {
+  const b = hist.data && hist.data.builds.find((x) => x.fw_id === btn.dataset.fw && x.build === btn.dataset.build);
+  if (!b) return;
+  hist.menu = { fw: b.fw_id, build: b.build };
+  hxMenu.innerHTML = reportsMenuHTML(b);
+  hxMenu._h = null;
+  openMenu(hxMenu, btn, focusFirst);
 }
 const MOCK_SUMMARY_FALLBACK = 'tp02_1759982000';
 function mockSummaryUrl(fw, build, fmt) {
@@ -3812,7 +4095,7 @@ function hxRow(b, loaded, hasPrev) {
   const ck = `<input type="checkbox" data-act="hpick" data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}"${picked ? ' checked' : ''} aria-label="Select the ${esc(b.firmware)} build of ${esc(fmtWhen(b.started_at))} to compare">`;
   const prev = hasPrev ? `<button type="button" class="hx-chip hx-prev" data-act="hprev" data-fw="${esc(b.fw_id)}" data-build="${esc(b.build)}" title="Compare with the previous ${esc(b.firmware)} build">vs previous</button>` : '';
   const liveTag = b.live ? '<span class="livebadge" title="Current state of a build that has not finished: numbers are provisional">live</span>' : '';
-  return `<tr class="go${picked ? ' picked' : ''}${b.live ? ' live' : ''}" data-act="hrow" ${ds} title="${esc(tip)}">
+  return `<tr class="go${picked ? ' picked' : ''}${b.live ? ' live' : ''}" data-act="hrow" data-build="${esc(b.build)}" ${ds} title="${esc(tip)}">
     <td class="pick" data-label="Compare">${ck}</td>
     <td class="when" data-label="Date">${fmtWhen(b.started_at)}${prev}</td>
     <td class="fw" data-label="Firmware"><button type="button" class="fwn hx-open" data-act="hopen" ${ds} title="${esc(tip)}">${esc(b.firmware)} <span aria-hidden="true">›</span></button>${liveTag}${b.host ? `<span class="hbadge" title="Built on ${esc(b.host)}">${esc(b.host)}</span>` : ''}${where ? `<span class="sub" title="${esc(where)}${b.vivado_version ? ` · Vivado ${esc(b.vivado_version)}` : ''}">${esc(where)}</span>` : ''}${b.project ? `<span class="sub path" title="${esc(b.project)}"><bdi>${esc(b.project)}</bdi></span>` : ''}</td>
@@ -3820,9 +4103,73 @@ function hxRow(b, loaded, hasPrev) {
     <td class="res" data-label="Result"><span class="pill" data-status="${res.key}">${res.text}</span>${why ? `<span class="sub" title="${esc(why)}">${esc(why)}</span>` : ''}</td>
     <td class="tm" data-label="WNS / WHS">${hxTiming(b)}</td>
     <td class="ut" data-label="Utilization">${hxUtil(b)}</td>
-    <td class="links-c" data-label="Reports">${b.live ? '<span class="dim">after it finishes</span>' : hxLinks(b) + hxExport(b)}</td></tr>`;
+    <td class="links-c" data-label="Reports">${b.live ? '<span class="dim">after it finishes</span>' : hxActions(b)}</td></tr>`;
 }
 
+/* ---- trends: WNS, duration and worst utilization across the selected firmware's builds.
+   The x axis is evenly spaced, one slot per build in date order, with dates labelled at the ends and the middle. A time axis
+   would be truer to the calendar, but builds come in bursts (five in an afternoon, then a gap of weeks): on a time axis the
+   bursts pile their points on top of each other, which makes them impossible to click, and the quiet weeks waste the width.
+   Slots keep every build one button wide, and the order is what matters when asking "did the last change help?". */
+const TREND_MAX = 40;
+const hxWorstUtil = (b) => {
+  const u = b.utilization;
+  if (!u) return null;
+  let best = null;
+  for (const [k, r] of Object.entries(u)) if (r && r.pct != null && (!best || r.pct > best.pct)) best = { name: k, pct: r.pct };
+  return best;
+};
+const TRENDS = [
+  { key: 'wns', title: 'WNS', get: (b) => (b.timing && b.timing.wns != null ? b.timing.wns : null), fmt: (v) => `${fmtSigned(v, 3)} ns`, axis: (v) => fmtSigned(v, 2),
+    zero: true, tone: (v, b) => (v >= 0 ? 'ok' : b.timing.final ? 'err' : 'warn'), note: (b) => (b.timing.final ? 'final' : 'not final') },
+  { key: 'dur', title: 'Duration', get: (b) => (b.duration_s != null ? b.duration_s : null), fmt: fmtDur, axis: fmtDur, floor0: true, tone: () => '', note: () => '' },
+  { key: 'util', title: 'Worst utilization', get: (b) => { const w = hxWorstUtil(b); return w ? w.pct : null; }, fmt: (v) => `${v.toFixed(v < 10 ? 1 : 0)}%`, axis: (v) => `${Math.round(v)}%`,
+    floor0: true, cap: 100, ref: 80, tone: (v) => ({ over: 'err', crit: 'crit', warn: 'warn' }[utilClass(v)] || ''), note: (b) => { const w = hxWorstUtil(b); return w ? w.name : ''; } },
+];
+const fmtDay = (t, year) => new Date(t * 1000).toLocaleDateString([], year ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' });
+function trendChartHTML(tr, builds, year) {
+  const n = builds.length;
+  const pts = builds.map((b, i) => ({ b, i, v: tr.get(b) })).filter((p) => p.v != null);
+  if (!pts.length) return `<figure class="tr" data-chart="${tr.key}" role="group" aria-label="${tr.title} trend"><figcaption><b>${tr.title}</b></figcaption><p class="tr-none">No ${tr.title.toLowerCase()} recorded for these builds.</p></figure>`;
+  const vals = pts.map((p) => p.v);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (tr.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  if (tr.floor0) lo = 0;
+  if (tr.cap) hi = Math.max(hi, tr.cap);   // a percentage axis ends at the device size
+  if (hi === lo) hi = lo + 1;
+  const pad = (hi - lo) * 0.1;
+  const top = tr.cap ? hi : hi + pad, bot = tr.floor0 ? lo : lo - pad;
+  const Y = (v) => ((top - v) / (top - bot)) * 100, X = (i) => ((i + 0.5) / n) * 100;
+  const last = pts[pts.length - 1];
+  const refs = [tr.zero ? 0 : null, tr.ref != null ? tr.ref : null].filter((v) => v != null);
+  const svg = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${refs.map((v) => `<line x1="0" x2="100" y1="${Y(v).toFixed(2)}" y2="${Y(v).toFixed(2)}" class="tr-ref${tr.ref != null && v === tr.ref ? ' warn' : ''}"/>`).join('')}`
+    + (pts.length > 1 ? `<polyline points="${pts.map((p) => `${X(p.i).toFixed(2)},${Y(p.v).toFixed(2)}`).join(' ')}" class="tr-line"/>` : '') + '</svg>';
+  const dots = pts.map((p) => {
+    const when = fmtWhen(p.b.started_at), note = tr.note(p.b);
+    const label = `${p.b.firmware} build of ${when}: ${tr.title} ${tr.fmt(p.v)}${note ? ` (${note})` : ''}. Show it in the table`;
+    return `<button type="button" class="tp" data-act="hpoint" data-fw="${esc(p.b.fw_id)}" data-build="${esc(p.b.build)}" data-tone="${tr.tone(p.v, p.b)}" style="left:${X(p.i).toFixed(2)}%;top:${Y(p.v).toFixed(2)}%" aria-label="${esc(label)}" title="${esc(`${when} · ${tr.fmt(p.v)}${note ? ` (${note})` : ''}`)}"></button>`;
+  }).join('');
+  const days = [0, ...(n >= 5 ? [Math.floor((n - 1) / 2)] : []), n - 1].filter((v, i, a) => a.indexOf(v) === i);
+  const xl = days.map((i, k) => `<span class="${k === 0 ? 'first' : i === n - 1 ? 'last' : 'mid'}">${esc(fmtDay(builds[i].started_at, year))}</span>`).join('');
+  const lastTone = tr.tone(last.v, last.b);
+  return `<figure class="tr" data-chart="${tr.key}" role="group" aria-label="${tr.title} trend, ${pts.length} builds"><figcaption><b>${tr.title}</b><span class="tr-last num" data-tone="${lastTone}">${esc(tr.fmt(last.v))}</span><small>latest</small></figcaption>
+    <div class="tr-grid"><div class="tr-ys num" aria-hidden="true"><span>${esc(tr.axis(top))}</span><span>${esc(tr.axis(bot))}</span></div><div class="tr-plot">${svg}${dots}</div><div class="tr-x" aria-hidden="true">${xl}</div></div></figure>`;
+}
+function trendsHTML(builds) {
+  if (!hist.fw) return '<div class="hx-trend-hint">Select a firmware above to see how its WNS, duration and utilization change from build to build.</div>';
+  const all = builds.filter((b) => b.fw_id === hist.fw && b.started_at != null).sort((a, b) => a.started_at - b.started_at);
+  if (all.length < 2) return `<div class="hx-trend-hint">Trends need at least two recorded builds of this firmware${all.length ? ' (one so far)' : ''}.</div>`;
+  const shown = all.slice(-TREND_MAX);
+  const year = new Date(shown[0].started_at * 1000).getFullYear() !== new Date(shown[shown.length - 1].started_at * 1000).getFullYear();
+  return `<section class="hx-trends" aria-label="Build trends"><div class="hx-tr-h"><h2>Trends</h2><span>${shown.length < all.length ? `last ${shown.length} of ${all.length} builds` : `${shown.length} builds`}, oldest to newest, evenly spaced</span></div><div class="tr-row">${TRENDS.map((tr) => trendChartHTML(tr, shown, year)).join('')}</div></section>`;
+}
+// A trend point leads to its row: scroll it to the middle of the window and flash it.
+function flashHistoryRow(fw, build) {
+  const row = [...hist.root.querySelectorAll('tr[data-build]')].find((r) => r.dataset.fw === fw && r.dataset.build === build);
+  if (!row) return;
+  row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  row.classList.add('flash'); clearTimeout(row._ft); row._ft = setTimeout(() => row.classList.remove('flash'), 2400);
+}
 function renderHistory() {
   const d = hist.data;
   if (!d && !hist.error) { setHTML(hist.root, '<div class="hx-empty">Loading…</div>'); return; }
@@ -3845,7 +4192,7 @@ function renderHistory() {
   const act = document.activeElement, keep = act && hist.root.contains(act) && act.dataset.act && act.dataset.build ? `[data-act="${act.dataset.act}"][data-build="${act.dataset.build}"][data-fw="${act.dataset.fw}"]` : null;
   setHTML(hist.root, `<div class="hx-head"><h1>Build history</h1><span class="hx-n">${builds.length} build${builds.length === 1 ? '' : 's'}</span>
     <div class="hx-tools"><span class="hx-hint" aria-live="polite">${hint}</span>${n ? '<button type="button" class="hx-back" data-act="hclear">Clear</button>' : ''}<button type="button" class="hx-go" data-act="hcompare"${n === 2 ? '' : ' disabled'} title="Compare the two selected builds">Compare</button><label class="hx-sel">Firmware <select id="hx-fw" aria-label="Filter by firmware">${opts}</select></label><label class="hx-sel hx-chk" title="Hide failed and stopped builds"><input type="checkbox" role="switch" id="hx-done"${hist.done ? ' checked' : ''}> Finished only</label><button type="button" class="hx-back" data-act="history-close" title="Back to the firmware (Esc)">Back</button></div></div>
-    ${d && d.unreachable && d.unreachable.length ? `<div class="hx-note">Not included: ${esc(d.unreachable.join(', '))} unreachable</div>` : ''}<div class="hx-wrap">${body}</div>`);
+    ${d && d.unreachable && d.unreachable.length ? `<div class="hx-note">Not included: ${esc(d.unreachable.join(', '))} unreachable</div>` : ''}${hist.error ? '' : trendsHTML(d ? d.builds.filter((b) => !hist.done || !HX_UNFINISHED.has(b.result)) : [])}<div class="hx-wrap">${body}</div>`);
   if (focusId) $('#' + focusId, hist.root).focus();
   else if (keep) { const k = $(keep, hist.root); if (k) k.focus(); }
 }
@@ -3893,7 +4240,7 @@ function mockCrossCompare(fw, a, fwB, b) {
 }
 /* ---- comparison tabs: one per open pair, kept after the firmware tabs and in localStorage */
 const cmpKey = (fwA, a, fwB, b) => `cmp:${fwA}:${a},${fwB}:${b}`;
-const shownCmpTab = () => (hist.on ? null : ctabs.find((t) => t.key === selectedCmp) || null); // the History page covers it
+const shownCmpTab = () => (hist.on || home.on ? null : ctabs.find((t) => t.key === selectedCmp) || null); // the History page covers it
 const cmpHasLive = (t) => t.a === 'live' || t.b === 'live';
 function selectCmp(key) { selectedCmp = key; lsSet('vmon.cmp', key || ''); }
 function persistCmp() {
@@ -3942,7 +4289,7 @@ function restoreCmpTabs() {
 }
 function openCompare(fw, a, b, fwB = fw, heads) {
   const t = addCmpTab(fw, a, fwB, b, heads);
-  hist.on = false; hist.pick = []; hist.hintFor = null;
+  leaveHome(); hist.on = false; hist.pick = []; hist.hintFor = null;
   selectCmp(t.key); window.scrollTo(0, 0); render();
 }
 function closeCmp(key) {
@@ -3977,6 +4324,7 @@ setInterval(() => {
 // Unfiltered: the other side is often another firmware id (the same project copied to another folder).
 function openHistoryFor(fw) {
   const live = !HX_FINISHED.has(fw.status);
+  leaveHome();
   Object.assign(hist, { on: true, fw: '', sig: null, data: null, pick: live ? [{ fw: fw.id, build: 'live' }] : [], latestOf: live ? null : fw.id,
     hintFor: live ? { key: { fw: fw.id, build: 'live' }, text: `${fw.name} (live)` } : null });
   window.scrollTo(0, 0); render();

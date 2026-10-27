@@ -278,6 +278,7 @@ def compare_two_lockin_builds(page, mock_url):
 
 
 def test_comparison_tab_survives_switching_reload_and_closes(page, mock_url):
+    page.set_viewport_size({"width": 2000, "height": 1000})     # wide: every tab fits, so the unselected comparison tab stays clickable
     history = compare_two_lockin_builds(page, mock_url)
     tab = cmp_tabs(page).first
     expect(tab).to_have_attribute("aria-selected", "true")
@@ -324,7 +325,7 @@ def test_live_rows_and_live_comparison(page, mock_url):
     expect(history.locator(".cmp-card").first).to_be_visible()
     expect(history.locator(".cmp-live .livebadge")).to_have_count(1)
     expect(history.locator(".cmp-live")).to_contain_text("as of")
-    expect(cmp_tabs(page).first).to_contain_text("live")
+    expect(cmp_tabs(page).first).to_have_attribute("aria-label", re.compile("comparison, live"))      # the tab itself is compact: the word lives in its name and tooltip
     page.get_by_role("button", name="History").click()
     history.get_by_role("switch", name="Finished only").check()
     expect(history.locator("tbody tr.live")).to_have_count(0)
@@ -587,3 +588,156 @@ def test_phone_tabs_open_messages_and_the_real_history_page(page, mock_url):
     assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
     page.locator("[data-act='m-tab'][data-tab='Build']").click()
     expect(page.locator(".m-hero")).to_be_visible()
+
+
+# ---- All builds home, compact tabs, history trends and the Reports menu
+
+def logo(page):
+    return page.get_by_role("button", name="All builds", exact=True)
+
+
+def test_logo_opens_the_all_builds_home_and_key_0_and_the_hash_restore_it(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin")
+    home = page.locator("#home")
+    expect(home).to_be_hidden()
+    logo(page).click()
+    expect(home).to_be_visible()
+    expect(logo(page)).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#tabs [role=tab][aria-selected=true]")).to_have_count(0)        # not a tab: none is selected
+    assert page.evaluate("location.hash") == "#home"
+    groups = home.locator(".hg:not([hidden])")
+    expect(groups.locator(".hg-h")).to_contain_text(["Running", "Needs attention", "Finished"])
+    attention = home.locator(".hg[data-group=attention] .hcard")
+    expect(attention.filter(has_text="radar_dsp")).to_have_count(1)                        # timing not met, though finished
+    expect(page.locator("#brand-badge")).to_have_text(str(attention.count()))
+    card = home.locator(".hcard", has_text="lockin")
+    expect(card.locator(".pseg")).to_have_count(7)                                         # the build strip, compact
+    expect(card).to_contain_text("WNS")
+    page.locator("#tabs [role=tab]:not(.ctab)").first.click()                             # a tab leaves it
+    expect(home).to_be_hidden()
+    assert page.evaluate("location.hash") == ""
+    page.keyboard.press("0")
+    expect(home).to_be_visible()
+    open_mock(page, mock_url, "home", ready=".hcard")                                      # a reload with the hash
+    expect(page.locator("#home")).to_be_visible()
+    expect(logo(page)).to_have_class(re.compile(r"\bactive\b"))
+
+
+def test_home_card_opens_its_firmware(page, mock_url):
+    open_mock(page, mock_url, "home", ready=".hcard")
+    page.locator(".hcard[data-fw=tp02]").click()          # "top"
+    expect(page.locator("#home")).to_be_hidden()
+    expect(page.locator("#tabs [role=tab].active")).to_contain_text("top")
+    expect(page.locator(".verdict")).to_contain_text("Finished")
+
+
+def test_wall_display_hides_the_tabs_and_escape_leaves_it(page, mock_url):
+    open_mock(page, mock_url, "home&wall=1", ready=".hcard")                               # the hash skips the fullscreen request
+    expect(page.locator("#tabs")).to_be_hidden()
+    expect(page.get_by_role("button", name="Exit wall display")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator("#tabs")).to_be_visible()
+    expect(page.locator("#home")).to_be_visible()
+    expect(page.get_by_role("button", name="Wall display", exact=True)).to_be_visible()
+
+
+def test_tabs_that_do_not_fit_go_into_a_plus_n_menu(page, mock_url):
+    page.set_viewport_size({"width": 2400, "height": 1000})                                 # wide enough for any font
+    open_mock(page, mock_url, "fw=lockin")
+    expect(page.locator(".tabmore")).to_be_hidden()                                        # everything fits
+    page.set_viewport_size({"width": 900, "height": 700})
+    more = page.locator(".tabmore")
+    expect(more).to_be_visible()
+    expect(more).to_contain_text("+")
+    expect(more).to_have_attribute("data-level", "error")                                  # a hidden tab has errors
+    expect(page.locator("#tabs [role=tab].active")).to_be_visible()                        # the selected tab never hides
+    hidden = page.locator("#tabs > .tab[hidden]").count()
+    assert hidden >= 1 and more.inner_text() == "+%d" % hidden
+    more.click()
+    menu = page.locator("#tabmenu")
+    items = menu.get_by_role("menuitem")
+    expect(items).to_have_count(hidden)
+    page.keyboard.press("ArrowDown")
+    expect(items.first).to_be_focused()
+    page.keyboard.press("ArrowDown")
+    expect(items.nth(1)).to_be_focused()
+    page.keyboard.press("Escape")
+    expect(menu).to_be_hidden()
+    expect(more).to_be_focused()
+    page.keyboard.press("ArrowDown")                                                       # arrow down on the button opens it
+    expect(menu).to_be_visible()
+    name = items.first.locator(".pm-name").inner_text()
+    page.keyboard.press("Enter")
+    expect(menu).to_be_hidden()
+    expect(page.locator("#tabs [role=tab].active")).to_contain_text(name)                  # the chosen tab is now selected and visible
+    expect(page.locator("#tabs [role=tab].active")).to_be_visible()
+
+
+def test_history_trend_points_lead_to_their_row(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=lockin", ready="table.hx")
+    trends = page.locator(".hx-trends")
+    expect(trends.locator(".tr")).to_have_count(3)
+    expect(trends.locator("[data-chart=wns] .tr-x span").first).to_have_text(re.compile(r"[A-Z][a-z]{2} \d+"))
+    point = trends.locator("[data-chart=dur] .tp").nth(1)
+    build = point.get_attribute("data-build")
+    point.click()
+    expect(page.locator("tr[data-build='%s']" % build)).to_have_class(re.compile(r"\bflash\b"))
+
+
+def test_history_of_all_firmwares_shows_a_hint_instead_of_trends(page, mock_url):
+    open_mock(page, mock_url, "page=history&hfw=all", ready="table.hx")
+    expect(page.locator(".hx-trends")).to_have_count(0)
+    expect(page.locator(".hx-trend-hint")).to_contain_text("Select a firmware")
+
+
+def test_reports_menu_has_keys_and_survives_scrolling_inside_it(page, mock_url):
+    page.set_viewport_size({"width": 1440, "height": 560})
+    open_mock(page, mock_url, "page=history&hfw=lockin", ready="table.hx")
+    row_ = page.locator("tbody tr:not(.live)").first
+    expect(row_.get_by_role("link", name="Summary")).to_have_attribute("href", re.compile("format=html"))
+    button = row_.get_by_role("button", name=re.compile("^Reports"))
+    menu = page.locator("#hxmenu")
+    button.click()
+    expect(menu).to_be_visible()
+    expect(button).to_have_attribute("aria-expanded", "true")
+    expect(menu.get_by_role("menuitem", name=re.compile("Download Markdown"))).to_have_count(1)
+    expect(menu.get_by_role("menuitem", name=re.compile("Copy Markdown"))).to_have_count(1)
+    page.keyboard.press("ArrowDown")
+    items = menu.locator("[role=menuitem]:not([aria-disabled=true])")
+    expect(items.first).to_be_focused()
+    page.keyboard.press("End")
+    expect(items.last).to_be_focused()
+    page.keyboard.press("ArrowUp")
+    expect(items.nth(items.count() - 2)).to_be_focused()
+    menu.evaluate("e => { e.scrollTop = 60; }")                                            # scrolling inside the menu keeps it open
+    page.wait_for_timeout(100)
+    expect(menu).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(menu).to_be_hidden()
+    expect(button).to_be_focused()
+    button.click()
+    expect(menu).to_be_visible()
+    page.evaluate("window.scrollTo(0, 120)")                                               # scrolling the page closes it
+    expect(menu).to_be_hidden()
+
+
+def test_phone_home_cards_one_per_row_switcher_entry_and_trends_fit(page, mock_url):
+    open_phone(page, mock_url)
+    logo(page).click()
+    expect(page.locator("#home")).to_be_visible()
+    cards = page.locator(".hcard")
+    expect(cards.first).to_be_visible()
+    lefts = cards.evaluate_all("els => els.map(e => Math.round(e.getBoundingClientRect().left))")
+    assert len(set(lefts)) == 1                                                            # one column
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    page.locator("[data-act='m-tab'][data-tab='History']").click()
+    expect(page.locator("#home")).to_be_hidden()
+    expect(page.locator(".hx-trends .tr")).to_have_count(3)
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    assert page.evaluate("[...document.querySelectorAll('.hx-trends .tr')].every(e => e.getBoundingClientRect().right <= innerWidth)")
+    page.locator("#m-switch").click()
+    page.locator("#m-sheet .m-all").click()                                                # the first entry of the switcher
+    expect(page.locator("#home")).to_be_visible()
+    expect(page.locator("#m-sheet")).to_be_hidden()
+    page.locator(".hcard[data-fw=tp02]").click()          # "top"
+    expect(page.locator("#m-switch .m-sw-name")).to_have_text("top")

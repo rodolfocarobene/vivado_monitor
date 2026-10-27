@@ -9,10 +9,10 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">
+  <button type="button" id="brand" class="brand" data-act="home" aria-label="All builds" aria-keyshortcuts="0" title="All builds (0)">
     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--accent)"/><path d="M5 13h3l2-6 4 11 2-5h3" stroke="var(--on-accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>vmon</span>
-  </div>
+    <span>vmon</span><span id="brand-badge" class="brand-badge" aria-hidden="true" hidden></span>
+  </button>
   <button type="button" id="m-switch" class="m-switch" data-act="m-switcher" aria-haspopup="dialog"></button>
   <div id="conn" class="conn" data-state="connecting" title="Connection"><i></i><span>connecting</span></div>
   <div class="liveinfo">
@@ -37,6 +37,7 @@
 <nav id="tabs" class="tabs" role="tablist"></nav>
 <div id="sumbar" class="sumbar" aria-label="Build summary"></div>
 <main id="main"><div class="empty loading"><h2>Connecting to the vmon backend…</h2><p>Build status appears here as soon as the first update arrives.</p></div></main>
+<section id="home" class="homepage" aria-label="All builds" hidden></section>
 <section id="history" class="histpage" aria-label="Build history" hidden></section>
 <div id="m-app" class="m-app">
   <nav id="m-nav" class="m-nav" aria-label="Location in the build" hidden></nav>
