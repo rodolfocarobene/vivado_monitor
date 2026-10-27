@@ -642,8 +642,9 @@ def test_wall_display_hides_the_tabs_and_escape_leaves_it(page, mock_url):
 
 
 def test_tabs_that_do_not_fit_go_into_a_plus_n_menu(page, mock_url):
+    page.set_viewport_size({"width": 2400, "height": 1000})                                 # wide enough for any font
     open_mock(page, mock_url, "fw=lockin")
-    expect(page.locator(".tabmore")).to_be_hidden()                                        # everything fits at 1440
+    expect(page.locator(".tabmore")).to_be_hidden()                                        # everything fits
     page.set_viewport_size({"width": 900, "height": 700})
     more = page.locator(".tabmore")
     expect(more).to_be_visible()
