@@ -318,7 +318,7 @@ function mockLogAround(fw, log, line) {
 }
 
 /* ------------------------------------------------------------------ alerts */
-// Alerts dismissed from the banner, per build (a new build of the firmware shows its alerts again). The key leaves out
+// Alerts and hints dismissed from the attention list, per build (a new build of the firmware shows its alerts again). The key leaves out
 // the message, so an alert whose numbers change (WNS -0.12 -> -0.10) stays dismissed.
 const alertKey = (a) => `${a.level}|${a.code || ''}|${a.node_id || ''}`;
 const dismissed = (() => { try { return new Map(Object.entries(JSON.parse(lsGet('vmon.alDismissed') || '{}')).map(([k, v]) => [k, new Set(v)])); } catch { return new Map(); } })();
@@ -625,80 +625,35 @@ function cellClass(key, v) {
   return v < 0 ? 'neg' : 'pos';
 }
 
-function timingFrom(fw) {
-  const t = fw.timing; if (!t) return null;
-  let found = null;
-  for (const f of fw.flows || []) walk(f.stages, (n) => { if (n.timing && n.timing.label === t.label && n.timing.wns === t.wns) found = n; });
-  return found;
-}
-
-function timingCardHTML(fw) {
-  const t = fw.timing;
-  const tl = fwTimingLevel(fw);
-  const [bl, bc] = timingBadge(t, tl);
-  const badge = `<span class="met-badge ${bc}">${bl}</span>`;
-  const cells = TIMING_FIELDS.map(([k, lbl]) => {
-    const c = carriedOf(t, k);
-    return `<div class="tc-cell${c ? ' carried' : ''}"${c ? ` title="${esc(carriedTip(c))}"` : ''}><div class="k">${lbl}${c ? '<i class="ctag">stale</i>' : ''}</div><div class="v num ${cellClass(k, t ? t[k] : null)}">${fmtNs(t ? t[k] : null)}</div></div>`;
-  }).join('');
-  const hn = latestHistory(fw);
-  const sp = hn ? `<span title="WNS history · ${esc(hn.label)}">${spark(hn.timing.history.map((x) => x.wns), 110, 30, { warn: tl !== 'fail' })}</span>` : '';
-  const from = timingFrom(fw);
-  const stage = t ? (t.stage || t.label || '') : '';
-  const src = t ? `${t.source === 'report' ? 'Report' : 'Log'} · ${esc(t.label || '')}${from ? ' · ' + esc(from.label) : ''}` : 'No timing data yet';
-  const stageRow = t ? `<div class="tc-stage"><b>${esc(stage)}</b><span class="fin ${t.final ? 'is' : ''}">${t.final ? 'final' : 'not final'}</span></div>` : '';
-  const nums = `${t && t.wns != null && t.wns < 0 ? `WNS ${fmtNs(t.wns)} ns` : ''}${t && t.whs != null && t.whs < 0 ? `${t.wns != null && t.wns < 0 ? ', ' : ''}WHS ${fmtNs(t.whs)} ns` : ''}`;
-  const verdict = tl === 'fail' ? `<div class="tc-verdict">Final timing fails${from ? ' at <b>' + esc(from.label) + '</b>' : ''}${nums ? ' — ' + nums : ''}</div>`
-    : tl === 'warn' ? `<div class="tc-verdict soft">Failing for now${nums ? ': ' + nums : ''} — later steps may still fix it</div>`
-    : tl === 'halted' ? `<div class="tc-verdict soft">Build ${fw.status === 'stopped' ? 'stopped' : 'failed'} before final timing${nums ? '; last estimate ' + nums : ''}</div>` : '';
-  const pc = t && t.report && t.path_counts && t.path_counts.total ? t.path_counts : null;
-  const plural = (n, w) => `${fmtInt(n)} ${w}${n === 1 ? '' : 's'}`;
-  const pathLine = !pc ? '' : pc.failing
-    ? `<div class="tc-paths bad"><b>${plural(pc.failing, 'failing path')}</b> in ${plural(pc.failing_clocks, 'clock')} <button class="linkbtn" data-act="paths-open" data-failing="1">view →</button></div>`
-    : `<div class="tc-paths">Worst slack: setup <b class="num ${slackCls(pc.worst_setup)}">${fmtSlack(pc.worst_setup)}</b> · hold <b class="num ${slackCls(pc.worst_hold)}">${fmtSlack(pc.worst_hold)}</b> <button class="linkbtn" data-act="paths-open">view paths →</button></div>`;
-  return { tl, html: `<div class="tc-top"><span class="tc-title">Timing · ns</span>${badge}</div>${stageRow}${verdict}${pathLine}<div class="tc-grid">${cells}</div><div class="tc-foot"><span class="src" title="${src}">${src}</span>${sp}</div>` };
-}
-
-function countsHTML(c) {
-  return `<div class="counts">${SEVERITIES.map((s) => {
-    const v = (c && c[s.key]) || 0;
-    return `<span class="cbadge ${s.cls}${v === 0 ? ' zero' : ''}" title="${s.label}"><b>${fmtNum(v)}</b><small>${s.short}</small></span>`;
-  }).join('')}</div>`;
-}
-
 let head = null;
 let infoOpen = lsGet('vmon.infoOpen') === '1'; // closed by default: keeps the stage flow above the fold
 function buildView() {
   mainEl.innerHTML = '';
-  head = h('section', 'fw-head', `
-    <div class="fwl">
-      <div class="fw-title"><h1></h1><span class="pill"></span>
-        <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div>
-</div>
-      <div class="fw-path mono"></div>
-      <div class="fw-host" hidden></div>
-      <div class="fw-attempt" hidden></div>
-      <div class="now">
-        <div class="cur"></div>
-        <div class="now-run">
-          <div class="kv"><div class="k">Elapsed</div><div class="v num el"></div><div class="sub2 started-wrap">started <span class="st num"></span></div></div>
-          <div class="now-bar"><div class="eprog" hidden><i></i></div><span class="est" hidden></span></div>
-          <div class="kv eta-wrap"><div class="k etak">Expected end</div><div class="v num eta"></div><div class="sub2 etasub"></div></div>
+  head = h('section', 'fw-head hero', `
+    <div class="hero-top">
+      <div class="hero-id">
+        <div class="fw-title"><h1></h1><span class="pill"></span>
+          <div class="seg viewseg" role="group" aria-label="View"><button data-act="view" data-view="flow" title="Flow (f)">Flow</button><button data-act="view" data-view="messages" title="Messages (m)">Messages</button><button data-act="view" data-view="timing" title="Timing (t)">Timing</button></div>
+        </div>
+        <div class="fw-path mono"></div>
+        <div class="fw-host" hidden></div>
+        <div class="fw-attempt" hidden></div>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="hx-chip fw-cmpbtn" data-act="fw-compare" hidden>Compare</button>
+        <button type="button" class="hx-chip hinfo-btn" data-act="info-toggle" aria-expanded="false" title="Show or hide build info">Build info${CHEV}</button>
+        <div class="hmenuwrap" hidden>
+          <button type="button" class="hx-chip hmore" data-act="hero-menu" aria-haspopup="menu" aria-expanded="false" aria-label="More actions" title="Export this build"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="12.5" cy="8" r="1.4"/></svg></button>
+          <div class="hmenu" role="menu" hidden><button type="button" role="menuitem" data-act="hexp" data-format="md" title="Download a Markdown summary of this build">Export summary (Markdown)</button><a role="menuitem" data-act="hexp" data-format="html" target="_blank" rel="noopener" title="Open a printable HTML summary of this build in a new tab">Open printable HTML</a></div>
         </div>
       </div>
-      <div class="fw-meta">
-        <div class="kv counts-wrap"><div class="k">Messages</div><div class="cnt"></div></div>
-        <div class="kv res-wrap"><div class="k">Vivado</div><div class="v sm num res"></div></div>
-        <button type="button" class="hx-chip fw-cmpbtn" data-act="fw-compare" hidden>Compare</button>
-        <span class="fw-exp" hidden><button type="button" class="hx-chip" data-act="hexp" data-format="md" title="Download a Markdown summary of this build">Export summary</button><a class="hx-chip" data-act="hexp" data-format="html" target="_blank" rel="noopener" title="Open a printable HTML summary of this build in a new tab">HTML</a></span>
-      </div>
-      <div class="topissues" hidden></div>
-      <div class="hintbar" hidden></div>
     </div>
-    <div class="cards"><div class="timing-card"></div><div class="util-card"></div></div>
-    <div class="fwinfo" hidden><button class="infotoggle" data-act="info-toggle" aria-expanded="true" title="Show or hide build info">Build info${CHEV}</button><div class="info-grid"></div></div>`);
-  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), host: $('.fw-host', head), att: $('.fw-attempt', head), el: $('.el', head), cur: $('.cur', head), est: $('.est', head), eprog: $('.eprog', head), epbar: $('.eprog i', head), cnt: $('.cnt', head), tc: $('.timing-card', head), uc: $('.util-card', head), res: $('.res', head), resWrap: $('.res-wrap', head), st: $('.st', head), stWrap: $('.started-wrap', head), eta: $('.eta', head), etak: $('.etak', head), etasub: $('.etasub', head), etaWrap: $('.eta-wrap', head), info: $('.fwinfo', head), infoTog: $('.infotoggle', head), infoGrid: $('.info-grid', head), top: $('.topissues', head), hints: $('.hintbar', head), seg: $('.viewseg', head), exp: $('.fw-exp', head), cmp: $('.fw-cmpbtn', head) };
-  const banner = h('div', 'banner');
+    <div class="verdict" data-tone="ok"><i class="vdot"></i><span class="vtext"></span></div>
+    <div class="strip"></div>
+    <div class="tiles"></div>
+    <div class="attn"></div>
+    <div class="fwinfo" hidden><div class="info-grid"></div></div>`);
+  head._r = { name: $('h1', head), pill: $('.pill', head), path: $('.fw-path', head), host: $('.fw-host', head), att: $('.fw-attempt', head), verdict: $('.verdict', head), vtext: $('.vtext', head), strip: $('.strip', head), tiles: $('.tiles', head), attn: $('.attn', head), info: $('.fwinfo', head), infoGrid: $('.info-grid', head), infoBtn: $('.hinfo-btn', head), menuWrap: $('.hmenuwrap', head), menu: $('.hmenu', head), menuBtn: $('.hmore', head), seg: $('.viewseg', head), cmp: $('.fw-cmpbtn', head) };
   // The stage list is a permanent left rail (sticky beside everything else), so the right column never repeats it.
   const rail = h('aside', 'stagecol', `<div class="sl-head"><span>Stages</span></div><div class="segwrap"></div><div class="stagelist"></div>`);
   setAttr(rail, 'aria-label', 'Stages');
@@ -712,67 +667,8 @@ function buildView() {
   const tv = h('section', 'tview');
   tv.hidden = true;
   mainEl.classList.add('railed');
-  mainEl.append(rail, head, banner, split, mv, tv);
-  mainEl._r = { banner, rail, seg: $('.segwrap', rail), split, stages: $('.stagelist', rail), detail: $('.detail', split), followBtn: $('#follow-btn'), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
-}
-
-// Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
-const utilClass = (pct) => (pct == null ? '' : pct > 100 ? 'over' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '');
-const UTIL_BADGE = { over: ['OVER CAPACITY', 'notmet'], crit: ['VERY HIGH', 'critb'], warn: ['HIGH', 'warnb'] };
-function utilCardHTML(fw) {
-  const u = fw.utilization;
-  if (!u || !(u.rows || []).length) return `<div class="tc-top"><span class="tc-title">Utilization</span></div><div class="uc-none">${fw.kind === 'hls' ? 'No resource estimate yet — shown after C synthesis' : 'No utilization report yet — shown after placement'}</div>`;
-  const step = String(u.step || '').split('/').pop().replace(/_design$/, '').replace(/_/g, ' ');
-  const src = `Report · ${step ? step.charAt(0).toUpperCase() + step.slice(1) + ' · ' : ''}${u.label || u.report || ''}`;
-  const rows = u.rows.map((r) => {
-    const pct = r.pct ?? (r.available ? (r.used / r.available) * 100 : null);
-    const cls = utilClass(pct);
-    return `<div class="uc-row" title="${esc(r.name)}: ${fmtVal(r.used)} of ${fmtVal(r.available)}"><span class="un">${esc(r.name)}</span><div class="ubar ${cls}"><i style="width:${Math.min(100, pct || 0)}%"></i></div><span class="uv num">${fmtNum(r.used)}<span class="dim"> / ${fmtNum(r.available)}</span></span><span class="up num ${cls}">${pct == null ? '—' : pct.toFixed(pct < 10 ? 1 : 0) + '%'}</span></div>`;
-  }).join('');
-  const worst = Math.max(...u.rows.map((r) => r.pct ?? 0));
-  const wb = UTIL_BADGE[utilClass(worst)];
-  return `<div class="tc-top"><span class="tc-title">Utilization</span>${wb ? `<span class="met-badge ${wb[1]}">${wb[0]}</span>` : ''}</div><div class="uc-rows">${rows}</div><div class="tc-foot"><span class="src" title="${esc(src)}">${esc(src)}</span></div>`;
-}
-
-function topIssuesHTML(fw) {
-  const all = fw.top_messages || [];
-  const tm = all.slice(0, TOP_ISSUES_SHOWN);
-  if (!tm.length) return '';
-  const more = all.length > tm.length ? `<button class="linkbtn ti-more" data-act="view" data-view="messages">all messages →</button>` : '';
-  // Collapsed by default to one summary line; the full rows are one click away and the choice is remembered.
-  const bySev = SEVERITIES.map((sv) => [sv, tm.filter((g) => g.severity === sv.key).length]).filter(([, n]) => n);
-  const summary = bySev.map(([sv, n]) => `<span class="ti-sum ${sv.cls}">${n} ${esc(sv.label.toLowerCase().replace(/s$/, n === 1 ? '' : 's'))}</span>`).join('');
-  const head = `<div class="ti-h"><button class="infotoggle" data-act="issues-toggle" aria-expanded="${issuesOpen}">Top issues${CHEV}</button>${issuesOpen ? '' : summary}${more}</div>`;
-  if (!issuesOpen) return head;
-  return `${head}${tm.map((g) => `<div class="ti" data-act="topissue" data-id="${esc(g.id)}" title="${esc(g.text)}"><span class="spill ${sevInfo(g.severity).cls}">${esc(SEV_WORD[g.severity] || g.severity)}</span><span class="gid mono">${esc(g.id)}</span><span class="ti-t">${esc(g.text)}</span>${g.new ? '<span class="ntag">NEW</span>' : ''}<span class="ti-c mono">${fmtNum(g.count)}</span></div>`).join('')}`;
-}
-const TOP_ISSUES_SHOWN = 3;
-let issuesOpen = lsGet('vmon.issuesOpen') === '1';
-const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
-
-// Suggested actions: rule-based hints (flows.toml [[hints]]). Amber for warnings, accent for info; never red.
-let hintsOpen = lsGet('vmon.hintsOpen') === '1';
-const HINT_WORD = { warning: 'CHECK', info: 'TIP' };
-function hintHTML(h, withGoto) {
-  const acts = (h.actions || []).map((a) => `<li class="hact"><span class="hat">${esc(a.text)}</span>${a.doc_url ? docBtn(a.doc_url, `${h.title} documentation`) : ''}${a.command ? `<div class="hcmd"><code class="mono">${esc(a.command)}</code>${copyBtn(a.command, 'command')}</div>` : ''}</li>`).join('');
-  const go = withGoto && h.node_id ? `<button class="linkbtn hgo" data-act="goto" data-node="${esc(h.node_id)}">show stage →</button>` : '';
-  return `<div class="hint" data-sev="${esc(h.severity)}"><div class="hint-h"><span class="hpill">${HINT_WORD[h.severity] || 'TIP'}</span><b class="hint-t">${esc(h.title)}</b>${go}</div>${h.evidence ? `<div class="hint-ev mono">${esc(h.evidence)}</div>` : ''}<div class="hint-x">${esc(h.text)}</div>${acts ? `<ul class="hacts">${acts}</ul>` : ''}</div>`;
-}
-function hintsBarHTML(fw) {
-  const hs = fw.hints || [];
-  if (!hs.length) return '';
-  const first = hs[0];
-  const sum = hintsOpen ? '' : `<span class="ti-sum hsum" data-sev="${esc(first.severity)}" title="${esc(first.title)}">${esc(first.title)}</span>`;
-  const head = `<div class="ti-h"><button class="infotoggle" data-act="hints-toggle" aria-expanded="${hintsOpen}">Suggested actions<span class="hcount mono">${hs.length}</span>${CHEV}</button>${sum}</div>`;
-  return hintsOpen ? `${head}<div class="hintlist">${hs.map((h) => hintHTML(h, true)).join('')}</div>` : head;
-}
-const hintsUnfolded = new Set();   // keys of the stage hints the user unfolded, kept across re-renders
-const hintKey = (fw, n, h) => `${fw.id}|${n.id}|${h.title}`;
-document.addEventListener('toggle', (ev) => { const d = ev.target; if (d.classList && d.classList.contains('hdet')) (d.open ? hintsUnfolded.add(d.dataset.key) : hintsUnfolded.delete(d.dataset.key)); }, true);
-function stageHintsHTML(fw, n) {
-  const hs = (fw.hints || []).filter((h) => h.node_id === n.id);
-  // one line per hint ("CHECK <title> · N suggested actions"); the evidence and commands unfold on click
-  return hs.length ? `<div class="hintlist folded">${hs.map((h) => { const k = hintKey(fw, n, h); const nact = (h.actions || []).length; return `<details class="hdet" data-key="${esc(k)}" data-sev="${esc(h.severity)}"${hintsUnfolded.has(k) ? ' open' : ''}><summary><span class="hpill">${HINT_WORD[h.severity] || 'TIP'}</span><b class="hint-t">${esc(h.title)}</b><span class="hmore">${nact} suggested action${nact === 1 ? '' : 's'}${CHEV}</span></summary>${hintHTML(h, false)}</details>`; }).join('')}</div>` : '';
+  mainEl.append(rail, head, split, mv, tv);
+  mainEl._r = { rail, seg: $('.segwrap', rail), split, stages: $('.stagelist', rail), detail: $('.detail', split), followBtn: $('#follow-btn'), mv, mvChips: $('.mv-chips', mv), mvQ: $('.mv-q', mv), mvHint: $('.mv-hint', mv), mvList: $('.mv-list', mv), tv, fwId: null, selId: null, selFlow: null, detEl: null };
 }
 
 function etaParts(fw) {
@@ -811,8 +707,215 @@ function attemptLineHTML(a) {
   if (a.previous_failure) parts.push(`<span class="prev">previous attempt ${CRASH_RE.test(a.previous_failure) ? 'crashed' : 'failed'}: ${esc(a.previous_failure)}</span>`);
   return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span>${parts.join(' · ')}</span>`;
 }
+/* ------------------------------------------------------------------ hero band: verdict, build strip, metric tiles, one attention list */
+const TOP_ISSUES_SHOWN = 3;
+const ATTN_SHOWN = 3;
+const SEV_WORD = { error: 'ERROR', critical: 'CRITICAL', warning: 'WARNING', info: 'INFO' };
+const HINT_WORD = { warning: 'CHECK', info: 'TIP' };
+const shortStage = (n) => n.id.split('/').pop().replace(/_design$/, '').replace(/^write_/, '');
+const STAGE_VERB = { synth: 'Synthesizing', init: 'Initializing', opt: 'Optimizing', place: 'Placing', phys_opt: 'Physically optimizing', route: 'Routing', bitstream: 'Writing bitstream' };
+const STRIP_GUESS_S = 60;   // width of a pending stage with no expected_s and nothing to compare with
+const fwFinished = (fw) => ['done', 'failed', 'stopped'].includes(fw.status);
+let attnAll = false, heroMenu = false;
+const fixOpen = new Set();   // attention rows whose Fix is unfolded, kept across re-renders
+
+// One segment per top-level stage, sized by real time: what a stage took, or is taking, else what history says it
+// should take (expected_s). A running stage is projected to max(elapsed, expected).
+function stripSegs(flow) {
+  const t = nowS();
+  const segs = flow.stages.map((n) => {
+    const o = { n, s: shortStage(n), dur: null, el: null, est: false, frac: null };
+    const started = n.started_at && n.status !== 'pending';
+    if (n.status === 'running' && started) {
+      o.el = Math.max(0, t - n.started_at);
+      o.dur = Math.max(o.el, n.expected_s || 0);
+      const p = n.progress && n.progress.total ? n.progress.done / n.progress.total : null;
+      if (!n.expected_s && p > 0.05) o.dur = Math.max(o.el, o.el / p);
+      o.frac = Math.min(0.99, o.el / (o.dur || 1));
+    } else if (n.elapsed_s != null && n.status !== 'pending') o.dur = n.elapsed_s;
+    else { o.est = true; o.dur = n.expected_s; }
+    return o;
+  });
+  const known = segs.filter((o) => o.dur != null).map((o) => o.dur).sort((a, b) => a - b);
+  const guess = known.length ? Math.max(5, known[Math.floor(known.length / 2)] * 0.5) : STRIP_GUESS_S;
+  for (const o of segs) { if (o.dur == null) { o.dur = guess; o.guess = true; } }
+  return segs;
+}
+
+function stripHTML(fw, flow) {
+  if (!flow || !flow.stages.length) return '';
+  const segs = stripSegs(flow);
+  const total = segs.reduce((a, o) => a + o.dur, 0) || 1;
+  const sel = mainEl._r && mainEl._r.selId;
+  const ep = etaParts(fw), pe = fw.progress_estimate;
+  const body = segs.map((o) => {
+    const n = o.n, lv = nodeLevel(n), running = n.status === 'running';
+    const pct = running && o.frac != null ? Math.round(o.frac * 100) : null;
+    const fill = running ? `<i class="pfill" style="width:${pct != null ? pct : 40}%"></i>${pct != null ? `<i class="pnow" style="left:${pct}%"><b>now</b></i>` : ''}` : '';
+    const time = running ? `${pct != null ? pct + '% · ' : ''}${fmtDur(o.el)}` : o.est ? `${o.guess ? '' : '~'}${fmtDur(o.dur)}` : fmtDur(o.dur);
+    const why = o.est ? (o.guess ? ' · no history, rough guess' : ' · expected duration') : '';
+    return `<button type="button" class="pseg${n.id === sel ? ' sel' : ''}" data-act="hero-stage" data-id="${esc(n.id)}" data-status="${esc(n.status)}" style="flex-grow:${Math.max(o.dur, total * 0.06).toFixed(1)}" title="${esc(n.label)} · ${esc(statusInfo(n.status).label)}${why}" aria-label="${esc(n.label)}, ${esc(statusInfo(n.status).label)}">`
+      + `<span class="pbar${o.est ? ' est' : ''}">${fill}</span>`
+      + `<span class="pcap"><b>${lv ? `<em class="pwarn" data-lv="${lv}"></em>` : ''}<span class="pname">${esc(o.s)}</span></b><small class="num${o.est ? ' est' : ''}">${time}</small></span></button>`;
+  }).join('');
+  const endTxt = ep ? `<span class="pend" title="${esc(ep.tip)}"><small>ETA</small><b class="num">~${ep.clock}</b></span>` : fwFinished(fw) && endedAt(fw) ? `<span class="pend"><small>ended</small><b class="num">${fmtClock(endedAt(fw))}</b></span>` : '';
+  const head = `<div class="ph"><span class="pt">Build progress</span>${pe != null ? `<span class="pp num">${Math.round(pe * 100)}% of the flow</span>` : ''}<span class="pk"><i class="d done"></i>done<i class="d run"></i>running<i class="d pend"></i>expected</span></div>`;
+  return `${head}<div class="prow"><div class="pseglist">${body}</div>${endTxt}</div>`;
+}
+
+// One sentence: is it OK, and when is it done. Timing wording follows the severity rule (red only for final failures)
+// and never promises that later steps may fix a build that has no later steps.
+function verdictOf(fw, flow) {
+  const t = fw.timing, tl = fwTimingLevel(fw), fin = fwFinished(fw);
+  const parts = []; let tone = 'ok';
+  const stages = flow ? flow.stages : [];
+  const run = stages.find((n) => n.status === 'running');
+  const bad = stages.find((n) => n.status === 'failed');
+  const ep = etaParts(fw);
+  if (fw.status === 'running') {
+    parts.push(`<b>${esc(run ? STAGE_VERB[shortStage(run)] || run.label : 'Running')}</b>`);
+    parts.push(ep ? `expected to finish <b class="num">~${ep.clock}</b> <span class="vd-dim">(<span data-end="${ep.end}">${ep.inTxt}</span>)</span>` : '<span class="vd-dim">no finish estimate yet</span>');
+    tone = 'run';
+  } else if (fw.status === 'done') {
+    parts.push(`<b>Finished</b>${endedAt(fw) ? ` at <span class="num">${fmtClock(endedAt(fw))}</span>` : ''}${fw.elapsed_s != null ? ` in <span class="num">${fmtDur(fw.elapsed_s)}</span>` : ''}`);
+  } else if (fw.status === 'failed') {
+    parts.push(`<b>Failed</b>${bad ? ` in ${esc(bad.label)}` : ''}${fw.elapsed_s != null ? ` <span class="vd-dim">after ${fmtDur(fw.elapsed_s)}</span>` : ''}`); tone = 'err';
+  } else if (fw.status === 'stopped') {
+    parts.push(`<b>Stopped</b>${fw.elapsed_s != null ? ` <span class="vd-dim">after ${fmtDur(fw.elapsed_s)}</span>` : ''}`); tone = 'warn';
+  } else if (fw.status === 'queued') parts.push('<b>Queued</b> <span class="vd-dim">waiting to start</span>');
+  else if (fw.status === 'idle') parts.push('<b>Idle</b> <span class="vd-dim">no build running</span>');
+  else parts.push(`<b>${esc(statusInfo(fw.status).label)}</b>`);
+  if (t && t.wns != null) {
+    const w = fmtNs(Math.abs(t.wns)), hls = fw.kind === 'hls';
+    if (tl === 'fail') { parts.push(`<span class="vd-bad">timing not met, WNS ${fmtNs(t.wns)} ns</span>`); tone = 'err'; }
+    else if (tl === 'warn') {
+      const txt = hls ? `estimated timing fails by ${w} ns` : fin ? `timing failing by ${w} ns (last estimate, no final report)` : `timing failing by ${w} ns (estimate)`;
+      parts.push(`<span class="vd-warn">${txt}</span>`);
+      if (tone === 'ok') tone = 'warn'; else if (tone === 'run') tone = 'runwarn';
+    } else if (tl === 'halted') parts.push(`<span class="vd-dim">last timing estimate ${fmtNs(t.wns)} ns, no final timing</span>`);
+    else if (tl === 'ok') parts.push('<span class="vd-ok">timing met</span>');
+    else if (tl === 'track') parts.push(`<span class="vd-ok">${fin ? 'timing met (estimate)' : 'timing on track'}</span>`);
+  } else if (fw.status === 'running') parts.push('<span class="vd-dim">no timing data yet</span>');
+  if (fw.counts && fw.counts.error) { parts.push(`<span class="vd-bad">${fmtNum(fw.counts.error)} error${fw.counts.error === 1 ? '' : 's'}</span>`); tone = 'err'; }
+  if (fw.kind === 'log') parts.push('<span class="vd-dim">log only, steps inferred</span>');
+  return { tone, html: parts.join('<i class="vsep">·</i>') };
+}
+
+// Red is kept for a device that is actually over capacity; high-but-fitting utilization is a warning, not a failure.
+const utilClass = (pct) => (pct == null ? '' : pct > 100 ? 'over' : pct >= 90 ? 'crit' : pct >= 80 ? 'warn' : '');
+const UTIL_BADGE = { over: ['OVER CAPACITY', 'notmet'], crit: ['VERY HIGH', 'critb'], warn: ['HIGH', 'warnb'] };
+function tilesHTML(fw) {
+  const t = fw.timing, tl = fwTimingLevel(fw);
+  const out = [];
+  const hn = latestHistory(fw);
+  const sp = hn && hn.timing.history.length > 1 ? spark(hn.timing.history.map((x) => x.wns), 64, 26, { warn: tl !== 'fail' }) : '';
+  const wcls = t && t.wns != null ? (t.wns < 0 ? (tl === 'fail' ? 'neg' : tl === 'halted' ? 'dim' : 'soft') : 'pos') : 'nil';
+  const badge = !t ? '' : t.final ? '<span class="tbadge final">FINAL</span>' : tl === 'halted' ? '<span class="tbadge">INCOMPLETE</span>' : '<span class="tbadge est">ESTIMATE</span>';
+  const stale = (k) => (carriedOf(t, k) ? ' <i class="ctag">stale</i>' : '');
+  out.push(`<button type="button" class="tile t-timing" data-tl="${tl}" data-act="view" data-view="timing" title="${esc(t ? `${timingBadge(t, tl)[0]} · ${t.stage || t.label || ''}${t.final ? ' · final' : ' · not final'}. ` : '')}Open the timing view">`
+    + `<div class="tk"><span>WNS</span>${badge}</div>`
+    + `<div class="tv"><b class="num ${wcls}">${t ? fmtSigned(t.wns, 3) : '—'}</b><small>ns</small>${sp ? `<span class="tspark" title="WNS history · ${esc(hn.label)}">${sp}</span>` : ''}</div>`
+    + `<div class="ts num">${t ? `<span>TNS ${fmtNs(t.tns)}</span><span>WHS ${fmtSigned(t.whs, 3)}${stale('whs')}</span>` : 'No timing data yet'}</div></button>`);
+  const rows = ((fw.utilization && fw.utilization.rows) || []).map((r) => ({ ...r, p: r.pct ?? (r.available ? (r.used / r.available) * 100 : 0) })).sort((a, b) => b.p - a.p);
+  if (rows.length) {
+    const w = rows[0], wc = utilClass(w.p), ub = UTIL_BADGE[wc];
+    out.push(`<div class="tile t-util" data-lv="${wc || 'ok'}"><div class="tk"><span>Utilization</span>${ub ? `<span class="tbadge ${ub[1]}">${ub[0]}</span>` : ''}</div>`
+      + `<div class="tv"><b class="num ${wc}">${w.p.toFixed(w.p < 10 ? 1 : 0)}%</b><small>${esc(w.name)}</small></div>`
+      + `<div class="mbars">${rows.slice(0, 3).map((r) => `<div class="mb" title="${esc(r.name)}: ${fmtVal(r.used)} of ${fmtVal(r.available)}"><span>${esc(r.name)}</span><div class="ubar ${utilClass(r.p)}"><i style="width:${Math.min(100, r.p)}%"></i></div><span class="num">${r.p.toFixed(0)}%</span></div>`).join('')}</div></div>`);
+  } else out.push(`<div class="tile t-util"><div class="tk"><span>Utilization</span></div><div class="tv"><b class="num nil">—</b></div><div class="ts">${fw.kind === 'hls' ? 'After C synthesis' : 'Shown after placement'}</div></div>`);
+  const running = fw.status === 'running' && fw.started_at && !staleRemote(fw);
+  const ep = etaParts(fw), pe = fw.progress_estimate;
+  out.push(`<div class="tile t-time"><div class="tk"><span>Elapsed</span>${pe != null ? `<span class="tbadge" title="Estimated share of the whole flow completed, from step weights">${['failed', 'stopped'].includes(fw.status) ? 'reached ' : ''}~${Math.round(pe * 100)}%</span>` : ''}</div>`
+    + `<div class="tv"><b class="num" ${running ? `data-start="${fw.started_at}"` : ''}>${fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s)}</b></div>`
+    + (pe != null ? `<div class="eprog" data-status="${esc(fw.status)}"><i style="width:${Math.round(pe * 100)}%"></i></div>` : '')
+    + `<div class="ts num">${fw.started_at ? `<span>started ${fmtClock(fw.started_at)}</span>` : ''}${ep ? `<span data-end="${ep.end}">${ep.inTxt}</span>` : ''}</div></div>`);
+  const c = fw.counts || {};
+  out.push(`<button type="button" class="tile t-msgs" data-act="view" data-view="messages" title="Open the messages view"><div class="tk"><span>Messages</span></div>`
+    + `<div class="mcs">${SEVERITIES.map((s) => `<span class="mc ${(c[s.key] || 0) ? s.cls : 'zero'}" title="${s.label}"><b class="num">${fmtNum(c[s.key] || 0)}</b><small>${s.short}</small></span>`).join('')}</div>`
+    + `<div class="stack">${SEVERITIES.map((s) => (c[s.key] ? `<i style="flex-grow:${Math.sqrt(c[s.key]).toFixed(2)};background:var(${s.var})"></i>` : '')).join('')}</div>`
+    + `<div class="ts">${fw.resources ? `<span title="Vivado process CPU (100% = one core) and resident memory">Vivado ${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}</span>` : '<span>by severity</span>'}</div></button>`);
+  return out.join('');
+}
+
+// Needs attention: alerts, top message groups and suggested actions in one list, de-duplicated. A hint that explains an
+// alert (same step, id starts with the alert code) becomes that row's Fix; a message group already quoted by an alert's
+// text is folded into that row.
+const SEV_RANK = { error: 0, critical: 1, warning: 2, tip: 3 };
+function attentionItems(fw) {
+  const items = [];
+  const hints = fw.hints || [];
+  const msgs = (fw.top_messages || []).slice(0, TOP_ISSUES_SHOWN);
+  const usedH = new Set(), usedM = new Set();
+  const stepOf = (nid) => { const pn = nid && findPath(fw, nid); return pn ? pn.chain[pn.chain.length - 1].label : ''; };
+  for (const a of fwAlerts(fw)) {
+    const hint = hints.find((x) => !usedH.has(x.id) && a.code && x.node_id === a.node_id && x.id.startsWith(a.code));
+    if (hint) usedH.add(hint.id);
+    const g = msgs.find((m) => a.message.includes(m.id));
+    if (g) usedM.add(g.id);
+    items.push({ key: alertKey(a), sev: a.level === 'error' ? 'error' : a.code === 'critical_warning' ? 'critical' : 'warning', title: alertName(a), desc: a.message, step: stepOf(a.node_id), node: a.node_id, hint, msg: g });
+  }
+  for (const m of msgs) {
+    if (usedM.has(m.id)) continue;
+    const more = (m.nodes || []).length > 1 ? ` +${m.nodes.length - 1}` : '';
+    items.push({ key: `msg|${m.id}`, sev: m.severity === 'error' ? 'error' : m.severity === 'critical' ? 'critical' : 'warning', title: m.id, desc: m.text, step: m.nodes && m.nodes[0] ? m.nodes[0].label + more : '', msgId: m.id, count: m.count, isNew: m.new, mono: true });
+  }
+  for (const x of hints) if (!usedH.has(x.id)) items.push({ key: `hint|${x.id}`, sev: x.severity === 'warning' ? 'warning' : 'tip', title: x.title, desc: x.text, step: stepOf(x.node_id), node: x.node_id, hint: x });
+  return items.map((it, i) => ({ ...it, i })).sort((a, b) => SEV_RANK[a.sev] - SEV_RANK[b.sev] || a.i - b.i);
+}
+function fixBodyHTML(hn) {
+  const acts = (hn.actions || []).map((a) => `<li class="hact"><span class="hat">${esc(a.text)}</span>${a.doc_url ? docBtn(a.doc_url, `${hn.title} documentation`) : ''}${a.command ? `<div class="hcmd"><code class="mono">${esc(a.command)}</code>${copyBtn(a.command, 'command')}</div>` : ''}</li>`).join('');
+  return `<div class="afix-body"><div class="hint-x">${esc(hn.text)}</div>${hn.evidence ? `<div class="hint-ev mono">${esc(hn.evidence)}</div>` : ''}${acts ? `<ul class="hacts">${acts}</ul>` : ''}</div>`;
+}
+const X_SVG = '<svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+function attentionHTML(fw) {
+  const all = attentionItems(fw);
+  if (!all.length) return '';
+  const gone = dismissedOf(fw);
+  const shown = all.filter((x) => !gone.has(x.key));
+  const nGone = all.length - shown.length;
+  const chip = (sev, one, many) => { const n = all.filter((x) => x.sev === sev).length; return n ? `<span class="asum" data-sev="${sev}">${n} ${n === 1 ? one : many}</span>` : ''; };
+  const head = `<div class="attn-h"><span class="attn-t">Needs attention</span><span class="attn-n num" title="Dismissed items stay counted">${all.length}</span>${chip('error', 'error', 'errors')}${chip('critical', 'critical', 'critical')}${chip('warning', 'warning', 'warnings')}${chip('tip', 'tip', 'tips')}`
+    + `${nGone ? `<button class="al-restore" data-act="al-restore" title="Show the dismissed items again">${nGone} dismissed · show</button>` : ''}<button class="linkbtn attn-all" data-act="view" data-view="messages">all messages →</button></div>`;
+  if (!shown.length) return head;
+  const vis = attnAll ? shown : shown.slice(0, ATTN_SHOWN);
+  const rows = vis.map((x) => {
+    const open = fixOpen.has(x.key);
+    const act = x.msgId ? `data-act="topissue" data-id="${esc(x.msgId)}"` : `data-act="goto" data-node="${esc(x.node || '')}"`;
+    const idChip = x.msg ? `<span class="aid mono">${esc(x.msg.id)} ×${fmtNum(x.msg.count)}</span>` : '';
+    return `<div class="arow" data-sev="${x.sev}" data-key="${esc(x.key)}" ${act}>`
+      + `<span class="asev">${SEV_WORD[x.sev] || 'TIP'}</span>`
+      + `<div class="atxt"><b class="atitle${x.mono ? ' mono' : ''}">${esc(x.title)}</b>${x.count ? `<span class="acount mono">×${fmtNum(x.count)}</span>` : ''}${x.isNew ? '<span class="ntag">NEW</span>' : ''}${idChip}<span class="adesc" title="${esc(x.desc)}">${esc(x.desc)}</span></div>`
+      + `${x.step ? `<span class="astep" title="Step this belongs to">${esc(x.step)}</span>` : ''}`
+      + `${x.hint ? `<button type="button" class="afix" data-act="fix-toggle" data-key="${esc(x.key)}" aria-expanded="${open}" title="Suggested actions for this">Fix${CHEV}</button>` : '<span class="afix-ph"></span>'}`
+      + `<button type="button" class="al-x" data-act="al-dismiss" data-key="${esc(x.key)}" title="Dismiss (it stays counted)" aria-label="Dismiss">${X_SVG}</button>`
+      + `${x.hint && open ? fixBodyHTML(x.hint) : ''}</div>`;
+  }).join('');
+  const more = shown.length > ATTN_SHOWN ? `<button type="button" class="linkbtn attn-more" data-act="attn-more" aria-expanded="${attnAll}">${attnAll ? 'Show fewer' : `Show ${shown.length - ATTN_SHOWN} more`}</button>` : '';
+  return `${head}<div class="alist">${rows}</div>${more}`;
+}
+
+// The stage detail does not repeat the fix: it points at the hero row, which owns the explanation and the commands.
+const hintRowKey = (fw, hintId) => { const it = attentionItems(fw).find((x) => x.hint && x.hint.id === hintId); return it ? it.key : null; };
+function stageHintsHTML(fw, n) {
+  const hs = (fw.hints || []).filter((x) => x.node_id === n.id);
+  if (!hs.length) return '';
+  return `<div class="hintlinks">${hs.map((x) => { const k = (x.actions || []).length; return `<button type="button" class="hlink" data-act="hint-goto" data-hint="${esc(x.id)}" data-sev="${esc(x.severity)}"><span class="hpill">${HINT_WORD[x.severity] || 'TIP'}</span><b class="hint-t">${esc(x.title)}</b><span class="hlk-n">${k} suggested action${k === 1 ? '' : 's'} → Needs attention</span></button>`; }).join('')}</div>`;
+}
+function hintGoto(fw, hintId) {
+  const key = hintRowKey(fw, hintId);
+  if (!key) return;
+  dismissedOf(fw).delete(key); saveDismissed();
+  fixOpen.add(key); attnAll = true;
+  render();
+  const row = [...mainEl.querySelectorAll('.arow')].find((e) => e.dataset.key === key);
+  if (!row) return;
+  row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 2200);
+  window.scrollTo({ top: Math.max(0, row.getBoundingClientRect().top + window.scrollY - topbarEl.offsetHeight - 24), behavior: 'smooth' });
+}
+
 function renderHeader(fw) {
   const r = head._r;
+  const flow = fw.flows.find((f) => f.id === ui.flow.get(fw.id)) || fw.flows[0];
   setText(r.name, fw.name);
   const oc = outcomeOf(fw);
   const stale = staleRemote(fw);
@@ -824,46 +927,29 @@ function renderHeader(fw) {
   const at = fw.attempt && fw.attempt.n > 1 ? fw.attempt : null;
   r.att.hidden = !at;
   setHTML(r.att, at ? attemptLineHTML(at) : '');
-  const running = fw.status === 'running' && fw.started_at && !stale;
-  r.el.dataset.start = running ? fw.started_at : '';
-  if (!running) delete r.el.dataset.start;
-  setText(r.el, fmtDur(running ? nowS() - fw.started_at : fw.elapsed_s));
-  r.cur.hidden = !fw.current; // without a current step the status pill already says it all
-  setText(r.cur, fw.current ? fw.current.label : '');
-  r.resWrap.hidden = !fw.resources;
-  if (fw.resources) { r.res.title = 'Vivado process CPU (100% = one core) and resident memory'; setText(r.res, `${Math.round(fw.resources.cpu_pct)}% · ${fmtMem(fw.resources.rss_mb)}`); }
-  setHTML(r.cnt, countsHTML(fw.counts));
-  const fin = ['done', 'failed', 'stopped'].includes(fw.status);
-  r.stWrap.hidden = !fw.started_at; setText(r.st, fmtClock(fw.started_at));
-  const ep = etaParts(fw);
-  r.etaWrap.hidden = !(ep || (fin && endedAt(fw)));
-  if (ep) {
-    setText(r.etak, 'Expected end'); setText(r.eta, `~${ep.clock}`);
-    setHTML(r.etasub, `${ep.band ? `<span class="band nwb">${ep.band}</span>` : ''}<span class="nw"><span data-end="${ep.end}">${ep.inTxt}</span>${ep.how ? ` · <span class="how">${esc(ep.how)}</span>` : ''}</span>`);
-    r.etaWrap.title = `Estimated finish time. ${ep.tip}`;
-  } else if (fin && endedAt(fw)) { setText(r.etak, 'Ended'); setText(r.eta, fmtClock(endedAt(fw))); setHTML(r.etasub, ''); r.etaWrap.title = ''; }
+  const vd = verdictOf(fw, flow);
+  setAttr(r.verdict, 'data-tone', vd.tone);
+  setHTML(r.vtext, vd.html);
+  setHTML(r.strip, stripHTML(fw, flow));
+  setHTML(r.tiles, tilesHTML(fw));
+  setHTML(r.attn, attentionHTML(fw));
+  r.attn.hidden = !r.attn.innerHTML;
   const ih = infoHTML(fw);
-  r.info.hidden = !ih; setHTML(r.infoGrid, ih);
-  r.info.classList.toggle('closed', !infoOpen); setAttr(r.infoTog, 'aria-expanded', String(infoOpen));
-  const pe = fw.progress_estimate;
-  r.eprog.hidden = r.est.hidden = pe == null;
-  if (pe != null) { r.epbar.style.width = `${Math.round(pe * 100)}%`; setText(r.est, `${['failed', 'stopped'].includes(fw.status) ? 'reached ' : ''}~${Math.round(pe * 100)}%`); r.eprog.title = r.est.title = 'Estimated share of the whole flow completed, from step weights'; setAttr(r.eprog, 'data-status', fw.status); }
-  setAttr(head, 'data-health', fw.health || topLevel(fwAlerts(fw)) || 'ok');
-  const tc = timingCardHTML(fw);
-  setAttr(r.tc, 'data-tl', tc.tl);
-  setHTML(r.tc, tc.html);
-  setHTML(r.uc, utilCardHTML(fw));
-  const ti = topIssuesHTML(fw);
-  r.top.hidden = !ti; setHTML(r.top, ti);
-  const hb = hintsBarHTML(fw);
-  r.hints.hidden = !hb; setHTML(r.hints, hb);
+  r.infoBtn.hidden = !ih;
+  r.info.hidden = !ih || !infoOpen; setHTML(r.infoGrid, ih);
+  r.infoBtn.classList.toggle('on', infoOpen); setAttr(r.infoBtn, 'aria-expanded', String(infoOpen));
   r.cmp.hidden = fw.started_at == null;
   setAttr(r.cmp, 'title', HX_FINISHED.has(fw.status) ? 'Compare the latest recorded build of this firmware with another build' : 'Compare this run as it is now (provisional) with a recorded build');
-  r.exp.hidden = !['done', 'failed', 'stopped'].includes(fw.status) || fw.started_at == null;
-  if (!r.exp.hidden) for (const c of r.exp.children) { const build = String(Math.floor(fw.started_at)); c.dataset.fw = fw.id; c.dataset.build = build; if (c.tagName === 'A') c.href = summaryUrl(fw.id, build, 'html', false); }
+  const canExp = fwFinished(fw) && fw.started_at != null;
+  r.menuWrap.hidden = !canExp;
+  if (canExp) for (const c of r.menu.children) { const build = String(Math.floor(fw.started_at)); c.dataset.fw = fw.id; c.dataset.build = build; if (c.tagName === 'A') c.href = summaryUrl(fw.id, build, 'html', false); }
+  r.menu.hidden = !(heroMenu && canExp); setAttr(r.menuBtn, 'aria-expanded', String(heroMenu && canExp));
+  setAttr(head, 'data-health', fw.health || topLevel(fwAlerts(fw)) || 'ok');
   const view = curView(fw);
   for (const b of r.seg.children) { b.classList.toggle('on', b.dataset.view === view); setAttr(b, 'aria-pressed', String(b.dataset.view === view)); if (b.dataset.view === 'timing') b.hidden = !hasTimingView(fw) && view !== 'timing'; }
 }
+document.addEventListener('click', (e) => { if (heroMenu && !e.target.closest('.hmore') && head && curFw()) { heroMenu = false; renderHeader(curFw()); } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && heroMenu && head && curFw()) { heroMenu = false; renderHeader(curFw()); head._r.menuBtn.focus(); } });
 
 /* ------------------------------------------------------------------ rendering: flow nodes */
 function createNode() {
@@ -1013,7 +1099,7 @@ function renderDetail(el, n, fw) {
   if (el._r.dattempts._h !== atl) { setHTML(el._r.dattempts, atl); scrollExcerpts(el._r.dattempts); }
   const hh = stageHintsHTML(fw, n);
   if (el._r.dhints._h !== hh) setHTML(el._r.dhints, hh);
-  setHTML(el._r.alerts, ''); // the firmware banner above already lists these; the stage card keeps its alert icon
+  setHTML(el._r.alerts, ''); // the hero's attention list already lists these; the stage card keeps its alert icon
 }
 
 function scrollExcerpts(root) {
@@ -1062,6 +1148,8 @@ function renderFlowView(fw, flow) {
     const prev = v.selId && v.selFlow === flow.id && stages.find((s) => s.id === v.selId);
     if (prev) resetNode(fw, prev);
     v.selId = selStage.id; v.selFlow = flow.id;
+    // the hero strip was drawn before this pass picked the stage: mark it now, not one tick later
+    for (const b of document.querySelectorAll('.pseg')) b.classList.toggle('sel', b.dataset.id === selStage.id);
     v.detail.innerHTML = '';
     v.detEl = createDetail();
     v.detail.appendChild(v.detEl);
@@ -1734,15 +1822,6 @@ function render() {
   const v = mainEl._r;
   if (v.fwId !== fw.id) { v.fwId = fw.id; v.stages.innerHTML = ''; v.detail.innerHTML = ''; v.detEl = null; v.selId = null; v.mvList._h = null; v.mvList.innerHTML = ''; v.tv._h = null; v.tv.innerHTML = ''; v.mvQ.value = mvOf(fw).q; }
   renderHeader(fw);
-  const als = fwAlerts(fw);
-  const gone = dismissedOf(fw), shown = als.filter((a) => !gone.has(alertKey(a)));
-  const nDismissed = als.length - shown.length;
-  setHTML(v.banner, als.length ? `<div class="alerts${topLevel(als) === 'error' && shown.length ? '' : ' compact'}" data-level="${topLevel(als)}"><div class="al-h">${als.filter((a) => a.level === 'error').length} error${als.filter((a) => a.level === 'error').length === 1 ? '' : 's'}, ${als.filter((a) => a.level !== 'error').length} warning${als.filter((a) => a.level !== 'error').length === 1 ? '' : 's'} need attention${nDismissed ? ` <button class="al-restore" data-act="al-restore" title="Show the dismissed alerts again">${nDismissed} dismissed · show</button>` : ''}</div>${shown.map((a) => {
-    const pn = a.node_id && findPath(fw, a.node_id);
-    const where = pn ? pn.chain.map((n) => n.label).slice(-2).join(' / ') : '';
-    return `<div class="alert lvl-${esc(a.level)}" data-act="goto" data-node="${esc(a.node_id || '')}">${alertIcon(a.level)}<span class="acode" title="${esc(a.code || a.level)}">${esc(alertName(a))}</span><span class="amsg" title="${esc(a.message)}">${esc(a.message)}</span>${where ? `<span class="awhere">${esc(where)}</span>` : ''}<button class="al-x" data-act="al-dismiss" data-key="${esc(alertKey(a))}" title="Dismiss this alert (it stays counted above)" aria-label="Dismiss alert"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>`;
-  }).join('')}</div>` : '');
-
   const view = curView(fw);
   v.split.hidden = view !== 'flow'; v.mv.hidden = view !== 'messages'; v.tv.hidden = view !== 'timing';
   v.detail.hidden = view !== 'flow'; // may live inside the stage list on narrow windows
@@ -1807,8 +1886,7 @@ function revealFinder(act, t, nodeEl) {
   const d = t.dataset;
   if (['dtab', 'rchip', 'rsel', 'att-toggle', 'fail-log'].includes(act) && nodeEl) return () => ({ ctrl: nodeCard(nodeEl) || nodeEl, region: nodeEl });
   if (act === 'info-toggle') return () => { const r = $('.fwinfo', mainEl); return r && { ctrl: r, region: r }; };
-  if (act === 'issues-toggle') return () => { const r = $('.topissues', mainEl); return r && { ctrl: r, region: r }; };
-  if (act === 'hints-toggle') return () => { const r = $('.hintbar', mainEl); return r && { ctrl: r, region: r }; };
+  if (act === 'fix-toggle') return () => { const c = mainEl.querySelector(`.arow[data-key="${css(d.key)}"]`); return c && { ctrl: c, region: c }; };
   const q = (sel) => mainEl.querySelector(sel);
   if (act === 'mv-row') return () => { const c = q(`[data-act="mv-row"][data-id="${css(d.id)}"]`); return c && { ctrl: c, region: c.closest('.mrow') || c }; };
   if (act === 'grp') return () => { const c = q(`[data-act="grp"][data-gid="${css(d.gid)}"]`); return c && { ctrl: c, region: c.parentElement }; };
@@ -1975,10 +2053,16 @@ document.addEventListener('click', async (ev) => {
     if (cur && cur.follow) ui.sel.set(fw.id, { id: mainEl._r.selId, follow: false }); // toggle off: pin the stage being shown
     else { ui.sel.set(fw.id, { id: null, follow: true }); for (const f of fw.flows || []) for (const s of f.stages) resetNode(fw, s); }   // following again: unpin the row and forget manual opens too
     render();
-  } else if (act === 'issues-toggle') {
-    issuesOpen = !issuesOpen; lsSet('vmon.issuesOpen', issuesOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
-  } else if (act === 'hints-toggle') {
-    hintsOpen = !hintsOpen; lsSet('vmon.hintsOpen', hintsOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
+  } else if (act === 'fix-toggle') {
+    fixOpen.has(t.dataset.key) ? fixOpen.delete(t.dataset.key) : fixOpen.add(t.dataset.key); renderHeader(curFw());
+  } else if (act === 'attn-more') {
+    attnAll = !attnAll; renderHeader(curFw());
+  } else if (act === 'hero-menu') {
+    heroMenu = !heroMenu; renderHeader(curFw());
+  } else if (act === 'hero-stage') {
+    const fw = curFw(); ui.sel.set(fw.id, { id: t.dataset.id, follow: false }); ui.view.set(fw.id, 'flow'); render();
+  } else if (act === 'hint-goto') {
+    hintGoto(curFw(), t.dataset.hint);
   } else if (act === 'info-toggle') {
     infoOpen = !infoOpen; lsSet('vmon.infoOpen', infoOpen ? '1' : '0'); renderHeader(curFw()); syncOffsets();
   } else if (act === 'sumstage') {

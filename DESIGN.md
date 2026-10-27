@@ -249,15 +249,16 @@ The scale lives in `style.css` as `--fs-*` custom properties; every `font-size` 
 **The No Webfonts Rule.** Only system stacks. The tool must render identically offline.
 
 **The Keys Shout, Headings Speak Rule.** Uppercase letter-spaced micro type is for data keys and tags. Section headings
-(Top issues, Stages, Timing, Utilization, Build info) are sentence case at Small 600.
+(Needs attention, Build progress, Stages, Build info) are sentence case at Small 600.
 
 ## Layout
 
 Two columns under the sticky top bar and the firmware tab strip. On the left, a 290px **stage rail**: the stage list
 (Synthesis … write_bitstream) with the "follow live" switch on top. It is sticky beside everything else and scrolls
 on its own when long, so the stages and follow-live are always in view, in every view (Flow, Messages, Timing). On
-the right: the build header (name, status pill, "now" block, messages, top issues, timing and utilization cards that
-stack when the row is tight), the alert banner, then the selected stage's detail or the Messages/Timing view. Because
+the right: the **hero** (name, status pill and path with Compare, Build info and an overflow menu for exports; a one-line
+verdict tinted by tone; the build progress strip; four metric tiles that go 2x2 below 1250px; the one Needs attention
+list), then the selected stage's detail or the Messages/Timing view. Because
 the rail already shows each stage's counts, timing chip, time and progress, the detail header keeps only the name,
 status, description, report chips, docs link and peak memory. Max width 1760px, 20px side padding.
 
@@ -279,7 +280,7 @@ The flow node is a two-column grid: a 36px rail gutter and the card. The rail's 
 through every icon center.
 
 Density is high but evenly spaced: gaps of 5–6px inside chip rows, 10–14px between cards, 18–22px between major
-blocks. Below 1000px the layout stacks into one column (header, banner, then the stage list as a single tree: the selected
+blocks. Below 1000px the layout stacks into one column (hero, then the stage list as a single tree: the selected
 stage's detail opens directly under its own card, and the list is hidden in the Messages and Timing views). Top-bar breakpoints at
 1520, 1360, 1180 and 1100px progressively hide secondary items rather than shrinking type.
 
@@ -329,7 +330,7 @@ transparent card: an entry not yet written.
 - **Background:** Slate Page; Slate Raised on hover.
 - **Shadow Strategy:** Ambient; the running card swaps to the running glow.
 - **Border:** 1px Graphite Rule. Red (error alert) or amber (warning alert) 1px border; dashed on pending/skipped/queued.
-- **Internal Padding:** 10px 14px (cards), 18px 20px (header).
+- **Internal Padding:** 10px 14px (cards), 14px 18px (hero).
 
 ### Inputs / Fields
 - **Style:** Slate Raised fill, 1px Graphite Rule border, 8px radius, 13px text.
@@ -342,8 +343,14 @@ transparent card: an entry not yet written.
   a muted sub-line and a status dot. The active tab joins the page background and has a 2px Signal Blue line on top.
 
 ### Alerts
-- Listed once, in the firmware banner (compact strip when only warnings), each row jumping to its step. The stage
-  detail does not repeat them; the stage card carries the alert icon and border.
+- Listed once, in the hero's **Needs attention** list together with the top message groups and the suggested actions
+  (a hint that explains an alert becomes that row's *Fix* fold-out; duplicates are merged). Worst first, three rows then
+  "Show N more"; each row jumps to its step and has a dismiss x (dismissed items stay counted, "N dismissed · show"
+  restores them). The stage detail does not repeat them: the stage card carries the alert icon and border, and a hint
+  of the stage is one line ("N suggested actions → Needs attention") that opens its row, so the fix text has one owner.
+- The verdict never says later steps may fix timing on a finished or HLS build; red is for final failures only.
+- **Build progress strip:** one segment per top-level stage, width = actual time (done, running) or `expected_s`
+  (pending, and the running stage's projected end), with a minimum width; the running one is striped with NOW and %.
 - Each row names the alert in words (Timing, Critical warnings, Step failed…), never the internal code; the code stays
   in the tooltip.
 
