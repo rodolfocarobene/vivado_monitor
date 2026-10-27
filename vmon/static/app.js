@@ -2117,7 +2117,8 @@ function renderMobileBuild(fw) {
   setHTML(mEl.screen, stable(html));
   scrollExcerpts(mEl.screen);
   mEl.nav.hidden = !chain.length;
-  if (chain.length) {
+  if (!chain.length) setHTML(mEl.nav, '');     // no stale crumbs left behind the hidden bar
+  else {
     const nav = stable(mCrumbsHTML(fw, chain));
     const changed = mEl.nav._h !== nav;
     setHTML(mEl.nav, nav);
