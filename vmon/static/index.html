@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>vmon · Vivado monitor</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%236ea8ff'/%3E%3Cpath d='M5 13h3l2-6 4 11 2-5h3' stroke='%230d1117' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
@@ -13,6 +13,7 @@
     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--accent)"/><path d="M5 13h3l2-6 4 11 2-5h3" stroke="var(--on-accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span>vmon</span>
   </div>
+  <button type="button" id="m-switch" class="m-switch" data-act="m-switcher" aria-haspopup="dialog"></button>
   <div id="conn" class="conn" data-state="connecting" title="Connection"><i></i><span>connecting</span></div>
   <div class="liveinfo">
     <span id="updated" class="updated" title="Time since the backend last produced a snapshot">updated —</span>
@@ -37,6 +38,13 @@
 <div id="sumbar" class="sumbar" aria-label="Build summary"></div>
 <main id="main"><div class="empty loading"><h2>Connecting to the vmon backend…</h2><p>Build status appears here as soon as the first update arrives.</p></div></main>
 <section id="history" class="histpage" aria-label="Build history" hidden></section>
+<div id="m-app" class="m-app">
+  <nav id="m-nav" class="m-nav" aria-label="Location in the build" hidden></nav>
+  <div id="m-screen" class="m-screen"></div>
+</div>
+<nav id="m-tabs" class="m-tabs" aria-label="Sections"></nav>
+<div id="m-scrim" class="m-scrim" data-act="m-close" hidden></div>
+<section id="m-sheet" class="m-sheet" role="dialog" aria-modal="true" aria-label="Details" hidden></section>
 <div id="toast" class="toast" hidden role="status"></div>
 <div id="sr-live" class="sr-only" aria-live="polite"></div>
 <script>window.addEventListener("error",function(e){var d=document.createElement("pre");d.style.cssText="position:fixed;bottom:0;left:0;right:0;background:#600;color:#fff;padding:8px;margin:0;z-index:99;font-size:12px";d.textContent="JS error: "+e.message+" ("+(e.filename||"").split("/").pop()+":"+e.lineno+")";document.body.appendChild(d);});</script>
