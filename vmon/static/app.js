@@ -1148,6 +1148,8 @@ function renderFlowView(fw, flow) {
     const prev = v.selId && v.selFlow === flow.id && stages.find((s) => s.id === v.selId);
     if (prev) resetNode(fw, prev);
     v.selId = selStage.id; v.selFlow = flow.id;
+    // the hero strip was drawn before this pass picked the stage: mark it now, not one tick later
+    for (const b of document.querySelectorAll('.pseg')) b.classList.toggle('sel', b.dataset.id === selStage.id);
     v.detail.innerHTML = '';
     v.detEl = createDetail();
     v.detail.appendChild(v.detEl);
