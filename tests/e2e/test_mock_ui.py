@@ -413,23 +413,88 @@ def test_ooc_runs_run_in_parallel_on_the_time_axis(page, mock_url):
     assert all(b[0] < a[1] for a, b in zip(spans, spans[1:]))         # each starts before the previous one ends
 
 
-def test_alerts_can_be_dismissed_and_shown_again(page, mock_url):
-    """The banner keeps its colour and counts; only the rows go, and 'show' brings them back."""
+def test_attention_rows_can_be_dismissed_and_shown_again(page, mock_url):
+    """One list holds alerts, top issues and hints: the counts stay when rows are dismissed, 'show' brings them back."""
     open_mock(page, mock_url, "fw=lockin")
-    banner = page.locator(".alerts")
-    head = banner.locator(".al-h")
-    counts = head.inner_text()
-    rows = banner.locator(".alert")
+    attn = page.locator(".attn")
+    rows = attn.locator(".arow")
+    count = attn.locator(".attn-n")
+    total = count.inner_text()
+    expect(rows).to_have_count(3)                    # three by default, the rest behind "Show N more"
+    attn.get_by_role("button", name=re.compile(r"^Show \d+ more")).click()
     n = rows.count()
-    assert n >= 2
+    assert n >= 4
+    assert int(total) == n
     rows.first.locator(".al-x").click()
     expect(rows).to_have_count(n - 1)
     while rows.count():
         rows.first.locator(".al-x").click()
     expect(rows).to_have_count(0)
-    expect(head).to_contain_text(counts.split(" need attention")[0])
-    expect(banner).to_have_attribute("data-level", re.compile("warning|error"))
+    expect(count).to_have_text(total)
     page.clock.run_for(3000)                         # live updates keep them dismissed
     expect(rows).to_have_count(0)
-    head.get_by_role("button", name=re.compile("dismissed")).click()
+    attn.get_by_role("button", name=re.compile("dismissed")).click()
     expect(rows).to_have_count(n)
+
+
+def test_hint_fix_lives_in_the_attention_list_and_the_stage_links_to_it(page, mock_url):
+    """The fix text is owned by the hero row; the stage detail only has a one-line link that opens it."""
+    open_mock(page, mock_url, "fw=lockin&sel=impl_1/place_design")
+    expect(page.locator(".afix-body")).to_have_count(0)
+    expect(page.locator(".stagedetail .hint-x")).to_have_count(0)          # no second copy in the stage detail
+    link = page.locator(".stagedetail .hlink")
+    expect(link).to_have_count(1)
+    expect(link).to_contain_text("suggested actions")
+    link.click()
+    fix = page.locator(".arow .afix[aria-expanded=true]")
+    expect(fix).to_have_count(1)
+    expect(page.locator(".afix-body")).to_contain_text("AltSpreadLogic_high")
+    fix.click()
+    expect(page.locator(".afix-body")).to_have_count(0)
+
+
+def test_build_strip_has_a_segment_per_stage_and_selects_it(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin")
+    segs = page.locator(".pseg")
+    expect(segs).to_have_count(7)
+    expect(segs.nth(3)).to_have_attribute("data-status", "running")
+    expect(segs.nth(3).locator(".pnow")).to_have_count(1)
+    expect(segs.nth(6)).to_have_attribute("data-status", "pending")
+    segs.nth(2).click()
+    expect(stage_card(page, "opt_design")).to_have_attribute("aria-pressed", "true")
+    expect(segs.nth(2)).to_have_class(re.compile(r"\bsel\b"))
+
+
+def test_hero_verdict_and_metric_tiles(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin")
+    expect(page.locator(".verdict")).to_contain_text("expected to finish")
+    expect(page.locator(".verdict")).to_contain_text("timing failing")
+    expect(page.locator(".t-timing .tbadge")).to_have_text("ESTIMATE")
+    expect(page.locator(".tile")).to_have_count(4)
+    page.locator(".t-msgs").click()                                         # a tile opens its view
+    expect(page.locator(".msgview")).to_be_visible()
+
+
+def test_hero_verdict_of_a_finished_build_never_promises_a_fix(page, mock_url):
+    open_mock(page, mock_url, "fw=top")
+    expect(page.locator(".verdict")).to_contain_text("Finished")
+    expect(page.locator(".verdict")).to_contain_text("timing met")
+    expect(page.locator(".verdict")).not_to_contain_text("later steps")
+    expect(page.locator(".t-timing .tbadge")).to_have_text("FINAL")
+
+
+def test_running_build_has_no_export_menu(page, mock_url):
+    open_mock(page, mock_url, "fw=lockin")
+    expect(page.locator(".hmenuwrap")).to_be_hidden()                       # a running build has nothing to export
+
+
+def test_export_menu_of_a_finished_build(page, mock_url):
+    open_mock(page, mock_url, "fw=top")
+    more = page.get_by_role("button", name="More actions")
+    menu = page.locator(".hmenu")
+    expect(menu).to_be_hidden()
+    more.click()
+    expect(menu.get_by_role("menuitem")).to_have_text(["Export summary (Markdown)", "Open printable HTML"])
+    page.keyboard.press("Escape")
+    expect(menu).to_be_hidden()
+    expect(more).to_be_focused()
