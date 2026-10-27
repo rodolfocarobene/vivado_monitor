@@ -521,6 +521,7 @@ def test_phone_hides_the_desktop_chrome_and_never_scrolls_sideways(page, mock_ur
 
 
 def test_phone_drill_in_pushes_a_level_and_back_pops_it(page, mock_url):
+    page.emulate_media(reduced_motion="reduce")      # no slide-in: row positions are measured below
     open_phone(page, mock_url)
     page.locator(".m-row", has_text="place_design").click()
     crumbs = page.locator(".m-crumbs button")
