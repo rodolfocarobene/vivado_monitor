@@ -18,6 +18,8 @@ from .paths import cache_dir, canon, path_key, write_atomic
 from .eta import DurationStore, estimate, phase_durations, settings as eta_settings, step_durations
 from .expected import CatalogSet
 from .discovery import Discovery
+from .hls import resolve as resolve_hls
+from .hls_source import HlsSource
 from .project import LogSource, ProjectSource
 from .reports import ReportCache
 from .sysstats import Sampler
@@ -33,7 +35,7 @@ _DIGITS = re.compile(r"-?\d+(\.\d+)?")
 
 
 def resolve_path(text):
-    """Map a user path to ('project', runs_dir) | ('log', file) | None."""
+    """Map a user path to ('project', runs_dir) | ('hls', vitis_hls.log) | ('log', file) | None."""
     path = Path(text).expanduser()
     try:
         path = path.resolve()
@@ -47,13 +49,15 @@ def resolve_path(text):
         runs = sorted(p for p in path.glob("*.runs") if p.is_dir())
         if runs:
             return "project", canon(runs[0])
-        return None
+        hls = resolve_hls(path)
+        return ("hls", hls) if hls else None
     if path.is_file():
         if path.suffix == ".xpr":
             return "project", canon(path.parent / (path.stem + ".runs"))
         if path.parent.parent.name.endswith(".runs"):
             return "project", canon(path.parent.parent)
-        return "log", canon(path)
+        hls = resolve_hls(path)
+        return ("hls", hls) if hls else ("log", canon(path))
     return None
 
 
@@ -106,7 +110,7 @@ class Monitor:
 
     # ------------------------------------------------------------------ paths
     def _make_source(self, kind, path):
-        cls = ProjectSource if kind == "project" else LogSource
+        cls = {"project": ProjectSource, "hls": HlsSource}.get(kind, LogSource)
         return cls(path, self.cfg, self.reports, self.catalog, self.recent_file.parent / "attempts")
 
     def add_path(self, text):

@@ -1,5 +1,5 @@
 # vmon catalog: every step / phase / task a Vivado 2023.2 project-mode run can go through.
-# Mined from 8 impl logs (.vdi, UltraScale+ RFSoC parts) and ~400 synth logs (.vds), plus
+# Mined from 8 impl logs (.vdi, UltraScale+ RFSoC parts), 3 tiny 7-series logs (xc7a35t, xc7z020) and ~400 synth logs (.vds), plus
 # Vivado's own strategy file (strategies/VDI2023.psg) and the generated run tcl files.
 # See README.md for the schema. Phase NUMBERS are not stable (they shift with directive and
 # device), so everything is matched on the phase NAME, never on the number.
@@ -13,8 +13,18 @@
 [catalog]
 schema = 1
 vivado = "2023.2"
-families_seen = ["zynquplus-rfsoc"]       # xczu48dr, xczu49dr, xczu28dr
-logs_mined = { impl = 8, synth = 400 }
+families_seen = ["ultrascale+", "7series"]   # ultrascale+: xczu48dr, xczu49dr, xczu28dr; 7series: xc7a35t, xc7z020
+logs_mined = { impl = 8, synth = 400, impl_7series = 3, synth_7series = 3 }
+# Part name (lower-case regex, first match wins) -> device family. Used to hide phases/steps that do not
+# exist on the firmware's family (`families` on phases/tasks/sections, `device_families` on steps).
+# Verified on real parts only for 7series (xc7a, xc7z) and ultrascale+ (xczu); the rest is from AMD part naming.
+family_map = [
+  { match = '^xc7[akvsz]', family = "7series" },
+  { match = '^xc(ku|vu)\d+p', family = "ultrascale+" },     # xcku5p, xcvu9p, xcvu13p...
+  { match = '^xc(ku|vu)\d{3}', family = "ultrascale" },      # xcku040, xcvu095, xcvu440 (no "p" suffix)
+  { match = '^xc(zu|au|k2[46])', family = "ultrascale+" },    # Zynq US+ / RFSoC, Artix US+, Kria
+  { match = '^xcv[cemph]\d', family = "versal" },
+]
 
 # ---------------------------------------------------------------------------------------------
 # Step-level notes
@@ -202,7 +212,7 @@ phases = [
   { n = "1.4", name = "Constrain Clocks/Macros", level = 2, parent = "Placer Initialization", optional = false, desc = "Applies clock and macro placement constraints." },
   { n = "2", name = "Global Placement", level = 1, optional = false, weight = 25, desc = "Coarse placement: floorplanning then global placement of all cells." },
   { n = "2.1", name = "Floorplanning", level = 2, parent = "Global Placement", optional = false, desc = "Partition-driven floorplan across clock regions." },
-  { n = "2.1.1", name = "Partition Driven Placement", level = 3, parent = "Floorplanning", optional = false, desc = "PBP: iterative bisection placement." },
+  { n = "2.1.1", name = "Partition Driven Placement", families = ["ultrascale", "ultrascale+"], level = 3, parent = "Floorplanning", optional = false, desc = "PBP: iterative bisection placement." },
   { n = "2.1.1.1", name = "PBP: Partition Driven Placement", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
   { n = "2.1.1.2", name = "PBP: Clock Region Placement", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
   { n = "2.1.1.3", name = "PBP: Discrete Incremental", level = 4, parent = "Partition Driven Placement", optional = false, desc = "" },
@@ -219,13 +229,15 @@ phases = [
   { n = "3", name = "Detail Placement", level = 1, optional = false, weight = 12, desc = "Legalises and refines the placement." },
   { n = "3.1", name = "Commit Multi Column Macros", level = 2, parent = "Detail Placement", optional = false, desc = "" },
   { n = "3.2", name = "Commit Most Macros & LUTRAMs", level = 2, parent = "Detail Placement", optional = false, desc = "" },
-  { n = "3.3", name = "Small Shape DP", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "3.3", name = "Area Swap Optimization", level = 2, parent = "Detail Placement", families = ["7series"], evidence = "log", optional = false, desc = "7-series detail placement: swaps slice contents to reduce area." },
+  { n = "3.5", name = "Small Shape Detail Placement", level = 2, parent = "Detail Placement", families = ["7series"], evidence = "log", optional = false, desc = "7-series counterpart of UltraScale+ Small Shape DP." },
+  { n = "3.3", name = "Small Shape DP", families = ["ultrascale", "ultrascale+"], level = 2, parent = "Detail Placement", optional = false, desc = "" },
   { n = "3.3.1", name = "Small Shape Clustering", level = 3, parent = "Small Shape DP", optional = false, desc = "" },
   { n = "3.3.2", name = "Slice Area Swap", level = 3, parent = "Small Shape DP", optional = false, desc = "" },
   { n = "3.3.2.1", name = "Slice Area Swap Initial", level = 4, parent = "Slice Area Swap", optional = false, desc = "" },
   { n = "3.4", name = "Re-assign LUT pins", level = 2, parent = "Detail Placement", optional = false, desc = "Swaps LUT inputs for timing." },
-  { n = "3.5", name = "Pipeline Register Optimization", level = 2, parent = "Detail Placement", optional = false, desc = "" },
-  { n = "3.6", name = "Fast Optimization", level = 2, parent = "Detail Placement", optional = false, desc = "" },
+  { n = "3.5", name = "Pipeline Register Optimization", level = 2, parent = "Detail Placement", repeat = true, optional = false, desc = "" },
+  { n = "3.6", name = "Fast Optimization", families = ["ultrascale", "ultrascale+"], level = 2, parent = "Detail Placement", optional = false, desc = "" },
   { n = "4", name = "Post Placement Optimization and Clean-Up", level = 1, optional = false, weight = 56, desc = "Timing-driven optimisation of the placed design (longest phase) and final cleanup." },
   { n = "4.1", name = "Post Commit Optimization", level = 2, parent = "Post Placement Optimization and Clean-Up", optional = false, desc = "" },
   { n = "4.1.1", name = "Post Placement Optimization", level = 3, parent = "Post Commit Optimization", optional = false, desc = "" },
@@ -337,9 +349,9 @@ phases = [
   { n = "2", name = "Router Initialization", level = 1, optional = false, weight = 17, desc = "Fixes topology constraints, routes global clocks, updates timing." },
   { n = "2.1", name = "Fix Topology Constraints", level = 2, parent = "Router Initialization", optional = false, desc = "" },
   { n = "2.2", name = "Pre Route Cleanup", level = 2, parent = "Router Initialization", optional = false, desc = "" },
-  { n = "2.3", name = "Global Clock Net Routing", level = 2, parent = "Router Initialization", optional = false, desc = "Routes clock nets first (prints node overlaps)." },
+  { n = "2.3", name = "Global Clock Net Routing", families = ["ultrascale", "ultrascale+"], level = 2, parent = "Router Initialization", optional = false, desc = "Routes clock nets first (prints node overlaps)." },
   { n = "2.4", name = "Update Timing", level = 2, parent = "Router Initialization", optional = false, desc = "First timing update (prints an Intermediate Timing Summary)." },
-  { n = "2.5", name = "Update Timing for Bus Skew", level = 2, parent = "Router Initialization", optional = false, desc = "" },
+  { n = "2.5", name = "Update Timing for Bus Skew", families = ["ultrascale", "ultrascale+"], level = 2, parent = "Router Initialization", optional = false, desc = "" },
   { n = "2.5.1", name = "Update Timing", level = 3, parent = "Update Timing for Bus Skew", optional = false, desc = "" },
   { n = "3", name = "Initial Routing", level = 1, optional = false, weight = 6, desc = "First routing pass (usually with overlaps)." },
   { n = "3.1", name = "Global Routing", level = 2, parent = "Initial Routing", optional = false, desc = "" },
@@ -354,6 +366,7 @@ phases = [
   { n = "5.2", name = "Clock Skew Optimization", level = 2, parent = "Delay and Skew Optimization", optional = false, desc = "" },
   { n = "6", name = "Post Hold Fix", level = 1, optional = false, weight = 3, desc = "Fixes hold violations introduced or left over." },
   { n = "6.1", name = "Hold Fix Iter", level = 2, parent = "Post Hold Fix", optional = false, desc = "" },
+  { n = "6.1.1", name = "Update Timing", level = 3, parent = "Hold Fix Iter", optional = true, evidence = "log", desc = "Timing update inside the hold-fix iteration (seen on 7-series)." },
   { n = "7", name = "Route finalize", level = 1, optional = false, weight = 0, desc = "Final routing status (prints Router Utilization Summary). Appears twice when other phases run in between." },
   { n = "8", name = "Verifying routed nets", level = 1, optional = false, weight = 0, desc = "Checks all nets are legally routed." },
   { n = "9", name = "Leaf Clock Prog Delay Opt", level = 1, optional = true, weight = 0, desc = "Leaf-clock programmable delay optimisation (UltraScale+ clock skew); runs only for some designs. Has sub-phases Optimize Skews / Post SkewOpt Delay Cleanup / Post SkewOpt Hold Fix." },
@@ -362,8 +375,8 @@ phases = [
   { n = "9.2", name = "Post SkewOpt Delay Cleanup", level = 2, parent = "Leaf Clock Prog Delay Opt", optional = true, desc = "" },
   { n = "9.3", name = "Post SkewOpt Hold Fix", level = 2, parent = "Leaf Clock Prog Delay Opt", optional = true, desc = "" },
   { n = "9", name = "Depositing Routes", level = 1, optional = false, weight = 1, desc = "Writes routes into the design database." },
-  { n = "10", name = "Resolve XTalk", level = 1, optional = false, weight = 0, desc = "Crosstalk resolution." },
-  { n = "11", name = "Route finalize", level = 1, optional = false, weight = 0, occurrence = 2, desc = "Second finalisation." },
+  { n = "10", name = "Resolve XTalk", families = ["ultrascale", "ultrascale+"], level = 1, optional = false, weight = 0, desc = "Crosstalk resolution." },
+  { n = "11", name = "Route finalize", level = 1, families = ["ultrascale", "ultrascale+"], optional = false, weight = 0, occurrence = 2, desc = "Second finalisation." },
   { n = "12", name = "Post Router Timing", level = 1, optional = false, weight = 7, desc = "Final timing update (prints Post Routing Timing Summary)." },
   { n = "13", name = "Post-Route Event Processing", level = 1, optional = false, weight = 1, desc = "Run-time events after routing." },
   { n = "14", name = "Physical Synthesis in Router", level = 1, optional = true, weight = 0, desc = "In-router phys_opt (some directives)." },
@@ -408,6 +421,7 @@ description = "Runs a final DRC, then generates the .bit programming file (plus 
 optional = false
 enable = "STEPS.WRITE_BITSTREAM.IS_ENABLED"
 default_enabled = true
+device_families = ["7series", "ultrascale", "ultrascale+"]     # Versal writes a device image instead (write_device_image)
 plan_mode = "static"
 weight = 4
 weight_src = "measured"

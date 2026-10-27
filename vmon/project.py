@@ -19,12 +19,14 @@ from . import failure as failure_mod
 from .attempts import AttemptStore
 from .config import StepDef
 from .discovery import in_scratch, pid_alive
+from .textio import decode
 from .resume import scan_session
+from .tclscript import plan_steps, script_commands, substitute
 from .docs import DocLinks
 from . import info as info_mod
 from .logparse import LogParser, SEVERITIES
 from .logtail import LogTail, file_identity
-from .paths import path_key
+from .paths import canon, path_key
 from .model import Firmware, Flow, Node, Timing, compute_met, counts_dict
 
 PID_RE = re.compile(r'Pid="(\d+)"')
@@ -40,18 +42,20 @@ def fw_id(path):
 
 
 class ParsedLog:
+    parser_cls = LogParser         # Vitis HLS logs use hls.HlsLog, which swaps in its own parser
+
     def __init__(self, path, config, catalogs=None):
         self.path = str(path)
         self.cfg = config
         self.tail = LogTail(path)
         self.catalogs = catalogs
-        self.parser = LogParser(config, catalogs)
+        self.parser = self.parser_cls(config, catalogs)
         self._primed = False
 
     def update(self):
         lines, reset = self.tail.poll()
         if reset:
-            self.parser = LogParser(self.cfg, self.catalogs)
+            self.parser = self.parser_cls(self.cfg, self.catalogs)
             self._primed = False
         if lines:
             self.parser.live = self._primed
@@ -189,6 +193,7 @@ class Source:
         self._tcl_cache = {}
         self.info_reader = info_mod.InfoReader()
         self.version = None
+        self.family = None         # device family of the part, from the log's `-part` (None = unknown)
         self._parsers = []
         self.root_ranges = []      # whole-firmware log ranges
         self._step_nodes = {}      # node id -> step/run Node (for triage "nodes")
@@ -201,6 +206,8 @@ class Source:
             plog = self.logs[path] = ParsedLog(path, self.cfg, self.catalog)
         plog.update()
         self.version = plog.parser.version or self.version
+        if plog.parser.part and self.family is None:
+            self.family = self.catalog.family_of(plog.parser.part, self.version)
         return plog
 
     def _register(self, node, plog, line_start, line_end, running):
@@ -337,7 +344,7 @@ class Source:
         if hook_timing is not None:
             hook_timing.final, hook_timing.stage = False, "%s (script)" % extras[-1].cmd
             node.timing = hook_timing
-        node.children = self.catalog.merge(step_id, node, status, self.version)
+        node.children = self.catalog.merge(step_id, node, status, self.version, family=self.family)
         stall = plog.growth_age(now or time.time()) if plog and section is not None else None
         node.failure = failure
         node.alerts = alert_rules.node_alerts(node, step_id, self.cfg, stall, alive)
@@ -483,6 +490,10 @@ class Source:
         fw.vivado_version = versions[0] if versions else None
         fw.utilization = self._utilization(flows)
         fw.info = self._info(fw)
+        fw.info["family"] = self.family
+        used = self.catalog.version_used(fw.vivado_version)
+        if used and fw.vivado_version and used != fw.vivado_version:
+            fw.info["catalog_version"] = used        # no catalog for this exact version: the nearest one is in use
         self._parsers = list(parsers)
         self.root_ranges = [(p, 1, p.line_count, False) for p in parsers]
         self._step_nodes = {}
@@ -892,7 +903,8 @@ class ProjectSource(Source):
                                              section, plog)
         quiet = run.status in ("done", "failed", "stopped") or (
             plog is not None and self.catalog.is_cached_ip("synth_design", plog.parser.messages, self.version))
-        node.children = self.catalog.merge("synth_design", node, run.status, self.version, annotate_only=quiet)
+        node.children = self.catalog.merge("synth_design", node, run.status, self.version, annotate_only=quiet,
+                                           family=self.family)
         stall = plog.growth_age(now) if plog else None
         node.alerts = alert_rules.node_alerts(node, "synth_design", self.cfg, stall, run.alive)
         return node
@@ -1321,6 +1333,91 @@ class LogSource(Source):
     def __init__(self, log_path, config, report_cache, catalog, attempt_dir=None):
         super().__init__(log_path, config, report_cache, catalog, attempt_dir)
         self.name = Path(log_path).stem
+        self._banner = None        # (cwd, -source script) from the log banner
+        self._plan_cache = {}      # (script, cwd) -> (planned step ids, commands, [(file, stamp)], variables)
+
+    # ---- non-project script and reports
+    def _header(self):
+        """(cwd, script, tclargs, session start) from the banner of the log (Vivado writes them for every session), cached."""
+        if self._banner is None:
+            spec, cwd, script, tclargs, start = self.cfg.nonproject, None, None, [], None
+            try:
+                with open(self.path, "rb") as fh:
+                    head = decode(fh.read(8192)).split("\n")[:spec.header_lines]
+            except OSError:
+                return None, None, [], None
+            for line in head:
+                if cwd is None and (m := spec.header_cwd_re.match(line)):
+                    cwd = m.group(1)
+                if script is None and (m := spec.header_script_re.match(line)):
+                    script = m.group(1) or m.group(2)
+                if not tclargs and (m := spec.header_tclargs_re.search(line)) and line.startswith("# Command line"):
+                    tclargs = [a.strip("\"'") for a in m.group(1).split()]
+                if start is None and (m := spec.header_start_re.match(line)):
+                    try:
+                        start = time.mktime(time.strptime(m.group(1), self.cfg.wallclock_format))
+                    except ValueError:
+                        pass
+            self._banner = (cwd, script, tclargs, start)
+        return self._banner
+
+    def _launch_dir(self, group):
+        cwd = self._header()[0]
+        launcher = group.launcher if group else None
+        return (launcher or {}).get("cwd") or cwd or os.path.dirname(os.path.abspath(self.path))
+
+    def _script_plan(self, group):
+        """(step ids, command names, variables) of the Tcl script of the build, or Nones when it cannot be read."""
+        launcher = (group.launcher if group else None) or {}
+        script = launcher.get("script") or self._header()[1]
+        if not script:
+            return None, None, {}
+        cwd = self._launch_dir(group)
+        key = (script, cwd)
+        cached = self._plan_cache.get(key)
+        if cached is not None:
+            files = cached[2]
+            if all(_stamp(f) == st for f, st in files):
+                return cached[0], cached[1], cached[3]
+        commands, files, variables = script_commands(script, cwd, self.cfg, launcher.get("tclargs") or self._header()[2])
+        plan = (plan_steps(commands, self.cfg), set(commands)) if commands is not None else (None, None)
+        self._plan_cache[key] = (plan[0], plan[1], [(f, _stamp(f)) for f in files], variables)
+        return plan + (variables,)
+
+    def _section_reports(self, sections, owner, begins, cwd, variables):
+        """{step id: [report]}: the files named by `report_xxx -file <path>` commands, on the step whose section holds
+        the command (hook sections belong to the step they follow)."""
+        spec = self.cfg.nonproject
+        by_kind = {}
+        for rtype in self.cfg.report_types:
+            by_kind.setdefault(rtype.kind, rtype)
+        found, seen = {}, set()
+        current = None
+        for section in sections:
+            current = owner.get(id(section), current)
+            if current is None:
+                continue
+            calls = [(n.cmd, n.args) for n in section.children if n.kind == "command"] + section.echoes
+            for command, args in calls:
+                rtype = by_kind.get(spec.report_commands.get(command))
+                match = spec.report_file_re.search(args or "") if rtype else None
+                name = substitute(match.group(1) or match.group(2) or match.group(3), variables) if match else None
+                if not name:
+                    continue
+                path = canon(name if os.path.isabs(name) else os.path.join(cwd, name))
+                parsed = self.reports.parse(path, rtype.parser)
+                if parsed is None or path in seen:
+                    continue
+                seen.add(path)
+                begin = begins.get(current) or self._header()[3]
+                mtime = os.stat(path).st_mtime
+                self.report_paths.add(path)
+                found.setdefault(current, []).append({
+                    "name": os.path.basename(path), "label": rtype.label, "kind": rtype.kind, "path": path,
+                    "mtime": mtime, "stale": begin is not None and mtime < begin - 1, "summary": parsed[0],
+                    "alerts": [] if begin is not None and mtime < begin - 1 else parsed[1],
+                    "doc_url": self.docs.report(rtype.kind)})
+        return found
 
     def snapshot(self, group, now=None):
         now = now or time.time()
@@ -1329,9 +1426,15 @@ class LogSource(Source):
         plog = self._log(self.path)
         live = bool(group and group.pids) or (plog.growth_age(now) or 1e9) < RECENT_GROWTH_S
         sections = plog.step_sections()
-        assigned = assign_sections([], sections, self.cfg)
+        planned, called, variables = self._script_plan(group)
+        if planned and any(s.cmd in self.cfg.step_commands and s.cmd not in called for s in sections):
+            planned = None                     # the script does not tell the whole story (variables, other files)
+        assigned = assign_sections(planned or [], sections, self.cfg)
         extras = extra_sections(assigned, sections)
         order = [s for s in self.cfg.step_order if s in assigned]
+        owner = {id(section): sid for sid, section in assigned.items()}
+        begins = {sid: section.started_at for sid, section in assigned.items()}
+        reports = self._section_reports(sections, owner, begins, self._launch_dir(group), variables or {})
         stages = []
         for sid in order:
             section = assigned[sid]
@@ -1347,14 +1450,20 @@ class LogSource(Source):
                 open_status = "failed"
                 failure = self._failure_for([self.path], None, None, section, plog)
             stages.append(self._step_node(sid, "log/" + sid, plog, section, status, open_status, live,
-                                          None, None, None, (), now, failure, extras.get(sid, ())))
-        if live and order:
+                                          None, None, None, reports.get(sid, ()), now, failure, extras.get(sid, ())))
+        if live and planned:
+            last = planned.index(order[-1]) if order else -1
+            pending = planned[last + 1:]
+        elif live and order:
             flow_kind = self.cfg.steps[order[-1]].flow
             last = self.cfg.step_order.index(order[-1])
-            for sid in self.cfg.step_order[last + 1:]:
-                if self.cfg.steps[sid].flow == flow_kind:
-                    stages.append(self._step_node(sid, "log/" + sid, plog, None, "pending", "done", live,
-                                                  None, None, None, (), now))
+            pending = [s for s in self.cfg.step_order[last + 1:] if self.cfg.steps[s].flow == flow_kind
+                       and self.catalog.step_applies(s, self.family, self.version)]
+        else:
+            pending = []
+        for sid in pending:
+            stages.append(self._step_node(sid, "log/" + sid, plog, None, "pending", "done", live,
+                                          None, None, None, (), now))
         fw = Firmware(id=self.id, name=self.name, kind="log", path=self.path)
         statuses = [s.status for s in stages if s.status != "pending"]
         if live:
@@ -1372,6 +1481,14 @@ class LogSource(Source):
         fw.updated_at = plog.tail.last_growth
         self._finish(fw, [Flow(id="log", label=Path(self.path).name, stages=stages)], [plog], group, live, now)
         return fw
+
+
+def _stamp(path):
+    try:
+        st = os.stat(path)
+        return st.st_mtime, st.st_size
+    except OSError:
+        return None
 
 
 def fmt_duration(seconds):

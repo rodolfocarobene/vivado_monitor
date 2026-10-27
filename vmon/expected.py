@@ -28,6 +28,15 @@ def normalize(name):
     return re.sub(r"\s+", " ", name)
 
 
+def _families(value):
+    return frozenset(value) if isinstance(value, list) and value else None
+
+
+def _applies(families, family):
+    """No restriction, or the family is unknown: the entry applies (unknown family = behave as before)."""
+    return families is None or family is None or family in families
+
+
 def _entry(item, kind):
     pattern = item.get("pattern")
     try:
@@ -38,7 +47,7 @@ def _entry(item, kind):
             "alt_norm": normalize(item["name"]), "kind": kind, "parent": item.get("parent"),
             "optional": bool(item.get("optional", False)), "description": item.get("desc") or item.get("description"),
             "weight": item.get("weight"), "regex": regex, "repeat": bool(item.get("repeat")),
-            "children": []}
+            "families": _families(item.get("families")), "children": []}
 
 
 def _tree(items, kind):
@@ -55,6 +64,7 @@ def _tree(items, kind):
 class StepCatalog:
     def __init__(self, spec):
         self.weight = spec.get("weight")
+        self.families = _families(spec.get("device_families"))
         self.dynamic = spec.get("plan_mode") == "dynamic"
         tasks = _tree(spec.get("tasks") or [], "task")
         phases = _tree(spec.get("phases") or [], "phase")
@@ -76,6 +86,13 @@ class StepCatalog:
 
 class Catalog:
     def __init__(self, data):
+        self.version = (data.get("catalog") or {}).get("vivado")
+        self.family_map = []
+        for item in (data.get("catalog") or {}).get("family_map") or ():
+            try:
+                self.family_map.append((re.compile(item["match"], re.I), item["family"]))
+            except (KeyError, TypeError, re.error):
+                continue
         self.steps = {}
         for spec in data.get("step") or ():
             if isinstance(spec, dict) and spec.get("id") and not spec.get("disabled"):
@@ -102,6 +119,27 @@ class CatalogSet:
                         self.catalogs[path.stem[len("vivado_"):]] = Catalog(tomllib.load(fh))
                 except (OSError, tomllib.TOMLDecodeError):
                     continue
+
+    def family_of(self, part, version=None):
+        """Device family ("7series", "ultrascale+", ...) for a part name, None when unknown."""
+        if not part:
+            return None
+        catalogs = [self.get(version)] + list(self.catalogs.values())
+        for catalog in catalogs:
+            for regex, family in (catalog.family_map if catalog else ()):
+                if regex.match(part):
+                    return family
+        return None
+
+    def step_applies(self, step_id, family, version=None):
+        catalog = self.get(version)
+        entry = catalog.steps.get(step_id) if catalog else None
+        return entry is None or _applies(entry.families, family)
+
+    def version_used(self, version):
+        """Version of the catalog file `get(version)` falls back to (None without a catalog)."""
+        catalog = self.get(version)
+        return catalog.version if catalog else None
 
     def stage_matchers(self, version):
         catalog = self.get(version)
@@ -151,7 +189,7 @@ class CatalogSet:
         return self.catalogs[pick]
 
     # ------------------------------------------------------------------ merging
-    def merge(self, step_id, node, status, version=None, annotate_only=False):
+    def merge(self, step_id, node, status, version=None, annotate_only=False, family=None):
         catalog = self.get(version)
         entry = catalog.steps.get(step_id) if catalog else None
         if not entry:
@@ -159,9 +197,10 @@ class CatalogSet:
         seen_names = set()
         _collect_names(node.children, seen_names)
         return self._merge_level(node.children, entry.tree, node.id, status,
-                                 entry.dynamic or annotate_only, seen_names)
+                                 entry.dynamic or annotate_only, seen_names, family=family)
 
-    def _merge_level(self, seen, expected, parent_id, status, dynamic, seen_names, parent_number=None):
+    def _merge_level(self, seen, expected, parent_id, status, dynamic, seen_names, parent_number=None,
+                     family=None):
         finished = status in ("done", "failed", "stopped", "skipped")
         pool = list(seen)
         out = []
@@ -179,10 +218,11 @@ class CatalogSet:
                         last = int(match.number.rsplit(".", 1)[-1])
                     if spec["children"]:
                         match.children = self._merge_level(match.children, spec["children"], match.id,
-                                                           match.status, dynamic, seen_names, match.number)
+                                                           match.status, dynamic, seen_names, match.number,
+                                                           family)
                     out.append(match)
                 continue
-            if dynamic or (spec["optional"] and finished):
+            if dynamic or (spec["optional"] and finished) or not _applies(spec["families"], family):
                 continue
             if spec["kind"] == "task" and spec["norm"] in seen_names:   # task seen deeper in the tree
                 continue
@@ -199,7 +239,7 @@ class CatalogSet:
             if spec["children"]:
                 placeholder.children = self._merge_level([], spec["children"], placeholder.id,
                                                          placeholder.status, dynamic, seen_names,
-                                                         placeholder.number)
+                                                         placeholder.number, family)
             out.append(placeholder)
         out.extend(pool)
         return out

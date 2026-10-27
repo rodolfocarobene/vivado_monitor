@@ -9,6 +9,7 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 ## Features
 
 - **Auto-discovery** of running Vivado processes; one tab per firmware, finished runs stay visible.
+- **Vitis HLS**: a `vitis_hls` (or `vitis-run`) run is an `hls` firmware with its steps (`csynth_design` with compile, transformation, scheduling, binding and RTL phases, `export_design` with its packaging Vivado log, `csim_design`, `cosim_design`), message counts, the estimated clock against the target as "estimated" timing, and the `csynth.xml` latency, interval and resource summary. `vmon /path/to/vitis_hls.log` (or the directory, the HLS project or solution dir) opens it by hand. A `v++` build is only tied to the Vivado it runs (unverified, see below).
 - **Stage rail + drill-down**: synth, opt, place, phys_opt, route, bitstream stay pinned in a left rail, with a *follow live* switch in the top bar; the selected stage drills down on the right (on narrow windows the list becomes one tree, with the stage opening in place). Upcoming steps and phases come from a per-version phase catalog, with predicted phase numbers.
 - **Timing you can trust**: intermediate and estimated values are shown as "not final"; red only when the final result fails. Missing hold metrics are carried forward and marked stale.
 - **Utilization card**, parsing of intermediate reports (timing, DRC, power, route status, ...).
@@ -46,10 +47,13 @@ Live web monitor for Xilinx Vivado builds: see which step and phase is running, 
 
 - Linux, or Windows (experimental, see below)
 - Python 3.11 or newer
-- Vivado project-mode or non-project logs
+- Vitis HLS 2023.2 `vitis_hls.log` (project and solution are read from the log, the planned steps from the `-f` Tcl script).
+- Vivado project-mode or non-project logs. For a scripted non-project build (`vivado -mode batch -source build.tcl`) the steps are planned from the script (`source`d files followed), so only the steps it calls show as pending, and the reports it writes with `report_xxx -file <path>` (timing, utilization, ...) are shown on the step that wrote them
 
 > [!IMPORTANT]
 > **Testing is limited.** vmon has been used and checked on one Linux machine, with Vivado 2023.2 on UltraScale+ RFSoC, plus the automated tests and the mock data in this repository. Other Vivado versions, device families and flows have not been tested and may need catalog entries (see [docs/catalog.md](docs/catalog.md)).
+>
+> **Vitis HLS** was verified on one 2023.2 `csynth_design` + `export_design` run (Vivado IP flow target). The `csim_design` and `cosim_design` steps are written from the documented log format, and **`v++` (Vitis kernel compile and link) is unverified**: Vitis is not installed on the development machine, so vmon only maps a `v++` process to the build it starts (its Vivado `prj.runs` project, or its Vitis HLS run) and reads no `v++` log.
 >
 > **Windows support has not been tested with a real Vivado build.** It runs only in CI (unit tests and a smoke test on GitHub's `windows-latest`, without Vivado). Process discovery, log and path handling, the folder explorer and desktop notifications on Windows are implemented but unverified in practice. Reports from Windows users are welcome.
 

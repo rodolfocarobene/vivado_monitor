@@ -726,7 +726,7 @@ const utilClass = (pct) => (pct == null ? '' : pct > 100 ? 'over' : pct >= 90 ? 
 const UTIL_BADGE = { over: ['OVER CAPACITY', 'notmet'], crit: ['VERY HIGH', 'critb'], warn: ['HIGH', 'warnb'] };
 function utilCardHTML(fw) {
   const u = fw.utilization;
-  if (!u || !(u.rows || []).length) return '<div class="tc-top"><span class="tc-title">Utilization</span></div><div class="uc-none">No utilization report yet — shown after placement</div>';
+  if (!u || !(u.rows || []).length) return `<div class="tc-top"><span class="tc-title">Utilization</span></div><div class="uc-none">${fw.kind === 'hls' ? 'No resource estimate yet — shown after C synthesis' : 'No utilization report yet — shown after placement'}</div>`;
   const step = String(u.step || '').split('/').pop().replace(/_design$/, '').replace(/_/g, ' ');
   const src = `Report · ${step ? step.charAt(0).toUpperCase() + step.slice(1) + ' · ' : ''}${u.label || u.report || ''}`;
   const rows = u.rows.map((r) => {
@@ -796,7 +796,7 @@ function infoHTML(fw) {
   if (!i.vivado_version) i.vivado_version = fw.vivado_version;
   const cell = (k, v, cls = '') => `<div class="ic ${cls}"><div class="k">${esc(k)}</div><div class="v" title="${esc(v)}">${esc(v)}</div></div>`;
   const has = (v) => v != null && v !== '';
-  const out = [['Part', i.part], ['Board', i.board], ['Top', i.top], ['Vivado', i.vivado_version], ['Host', i.host], ['Synth strategy', i.strategy_synth],
+  const out = [['Part', i.part], ['Board', i.board], ['Top', i.top], ['Vivado', i.catalog_version ? `${i.vivado_version} (catalog ${i.catalog_version})` : i.vivado_version], ['Host', i.host], ['Synth strategy', i.strategy_synth],
     ['Impl strategy', i.strategy_impl], ['Jobs', i.jobs]].filter(([, v]) => has(v)).map(([k, v]) => cell(k, v));
   const dirs = Object.entries(i.directives || {}).filter(([, v]) => has(v));
   if (dirs.length) out.push(`<div class="ic wide"><div class="k">Directives</div><div class="v dirs">${dirs.map(([k, v]) => `<span class="dchip" title="${esc(k)} -directive ${esc(v)}"><i>${esc(k.replace(/_design$/, ''))}</i>${esc(v)}</span>`).join('')}</div></div>`);
@@ -818,7 +818,7 @@ function renderHeader(fw) {
   const oc = outcomeOf(fw);
   const stale = staleRemote(fw);
   setAttr(r.pill, 'data-status', stale ? 'stale' : oc.key);
-  setText(r.pill, oc.pill + (fw.kind === 'log' ? ' · log' : '') + (stale ? ' · stale' : ''));
+  setText(r.pill, oc.pill + (fw.kind === 'log' ? ' · log' : fw.kind === 'hls' ? ' · HLS' : '') + (stale ? ' · stale' : ''));
   setText(r.path, fw.path || '');
   r.host.hidden = !fw.host; setAttr(r.host, 'data-stale', stale ? '1' : '0');
   setText(r.host, fw.host ? (stale ? staleText(stale) : `on ${fw.host}`) : '');
@@ -1319,6 +1319,10 @@ const REPORT_RENDERERS = {
   route_status: (sm) => statGrid(sm, (k, v) => /unrouted|error/.test(k) && v > 0),
 };
 REPORT_RENDERERS.methodology = REPORT_RENDERERS.drc;
+REPORT_RENDERERS.hls_csynth = (sm) => {   // Vitis HLS csynth.xml: clock estimate, latency, resources, loops
+  const { resources, loops, ...rest } = sm;
+  return `${statGrid(rest, (k, v) => k === 'slack_ns' && v < 0)}${resources && resources.length ? REPORT_RENDERERS.utilization({ rows: resources }) : ''}${loops && loops.length ? renderGeneric(loops) : ''}`;
+};
 
 function renderReports(pane, n, key, fw) {
   const reps = n.reports || [];

@@ -35,17 +35,22 @@ def parse_number(text):
         return None
 
 
+_PART_RE = re.compile(r"\s-part\s+(\S+)")
+
+
 class ParseNode:
     __slots__ = ("key", "label", "kind", "cmd", "number", "depth", "status", "line_start",
                  "line_end", "own", "children", "elapsed_s", "peak_mem", "started_at",
                  "ended_at", "history", "summary", "key_counts", "completed_line", "cum_start",
-                 "saved_cum", "iters", "iter_ok", "iter_entry", "congestion")
+                 "saved_cum", "iters", "iter_ok", "iter_entry", "congestion", "args", "echoes")
 
     def __init__(self, kind, label, key):
         self.kind = kind
         self.label = label
         self.key = key
         self.cmd = None
+        self.args = ""             # commands: the rest of the `Command:` line
+        self.echoes = []           # steps: (command, args) of `# report_xxx` script lines echoed in the section
         self.number = None
         self.depth = 0
         self.status = "running"
@@ -92,6 +97,7 @@ class LogParser:
         self.lines_by_key = {}         # same key -> [line numbers]
         self.msg_count = 0             # bumps on every message: cache key for derived views
         self.version = None
+        self.part = None               # from the first `Command: ... -part X` line
         self.session_starts = []       # line numbers of "Start of session" banners (-applog appends relaunches)
         self.wall = None               # last wall-clock timestamp seen in the log
         self.live = False              # True once the initial catch-up is done
@@ -117,6 +123,9 @@ class LogParser:
                     self.version = match.group(1)
                     if self.catalogs is not None:
                         self.stages = self.catalogs.stage_matchers(self.version)
+            if self.part is None and line.startswith("Command: ") and " -part " in line:
+                match = _PART_RE.search(line)
+                self.part = match.group(1) if match else None
             if line[0] == "#" and session_re is not None and session_re.search(line):   # banners are comments
                 self.session_starts.append(self.line_no)
             if self.stages and self.cur_step is not None and self.cur_step.completed_line is None:
@@ -229,7 +238,12 @@ class LogParser:
             self._truncate(self.stack.index(parent) + 1, self.line_no - 1)
             node = self._new_node("command", name, "c-" + name, parent)
             node.cmd = name
+            node.args = match.group(2).strip()
         self.stack.append(node)
+
+    def _on_script_report(self, match, line):
+        if self.cur_step is not None:
+            self.cur_step.echoes.append((match.group(1), match.group(2).strip()))
 
     def _on_completed(self, match, line):
         name = match.group(1)

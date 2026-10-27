@@ -30,6 +30,8 @@ On Windows, if `%APPDATA%` or `%LOCALAPPDATA%` is unset vmon uses `~\AppData\Roa
 | `[messages.*]` | Message triage scoring, keywords and rules |
 | `[failure]`, `[failure.signals]`, `[failure.patterns.*]` | Crash and failure detection (segfault, lost license, out of memory, ...) |
 | `[resume]`, `[resume.checkpoints]` | Recognising non-project sessions that resume a run from a checkpoint |
+| `[hls]`, `[hls.processes]`, `[hls.parse]`, `[hls.settings]`, `[hls.timing]`, `[hls.steps.*]` | Vitis HLS: which processes are HLS (`vitis_hls`, `vitis-run`; `v++` as a wrapper), how `vitis_hls.log` is read (command, `Finished` and phase patterns), the HLS steps with their phases (`start_re`), the csynth report file and the estimated-timing patterns. New steps and phases are data only |
+| `[nonproject]`, `[nonproject.reports]` | Non-project flows: how the `-source` Tcl script is read (size limit, `source` regex, banner patterns) and which `report_xxx` commands name a parsable report |
 | `[timing_paths]` | Worst paths kept per timing report (`max_paths`) and how many go in the state JSON (`summary_paths`) |
 | `[convergence]` | Router convergence: iteration phases, trend window and threshold, `route_not_converging` alert |
 | `[eta]` | ETA: history size, band quantiles, small-sample margin, floor for a running step/phase, builds needed for high confidence |

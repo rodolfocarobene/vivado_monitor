@@ -1,0 +1,471 @@
+<profile>
+    <ReportVersion>
+        <Version>2023.2</Version>
+    </ReportVersion>
+    <UserAssignments>
+        <unit>ns</unit>
+        <ProductFamily>artix7</ProductFamily>
+        <Part>xc7a35t-cpg236-1</Part>
+        <TopModelName>dot</TopModelName>
+        <TargetClockPeriod>5.00</TargetClockPeriod>
+        <ClockUncertainty>1.35</ClockUncertainty>
+        <FlowTarget>vivado</FlowTarget>
+    </UserAssignments>
+    <PerformanceEstimates>
+        <PipelineType>no</PipelineType>
+        <SummaryOfTimingAnalysis>
+            <unit>ns</unit>
+            <EstimatedClockPeriod>5.251</EstimatedClockPeriod>
+        </SummaryOfTimingAnalysis>
+        <SummaryOfOverallLatency>
+            <unit>clock cycles</unit>
+            <Best-caseLatency>72</Best-caseLatency>
+            <Average-caseLatency>72</Average-caseLatency>
+            <Worst-caseLatency>72</Worst-caseLatency>
+            <Best-caseRealTimeLatency>0.378 us</Best-caseRealTimeLatency>
+            <Average-caseRealTimeLatency>0.378 us</Average-caseRealTimeLatency>
+            <Worst-caseRealTimeLatency>0.378 us</Worst-caseRealTimeLatency>
+            <Interval-min>73</Interval-min>
+            <Interval-max>73</Interval-max>
+        </SummaryOfOverallLatency>
+        <SummaryOfLoopLatency>
+            <VITIS_LOOP_4_1>
+                <Slack>3.65</Slack>
+                <TripCount>64</TripCount>
+                <Latency>70</Latency>
+                <AbsoluteTimeLatency>367</AbsoluteTimeLatency>
+                <PipelineII>1</PipelineII>
+                <PipelineDepth>8</PipelineDepth>
+                <InstanceList/>
+            </VITIS_LOOP_4_1>
+        </SummaryOfLoopLatency>
+        <SummaryOfViolations>
+            <IssueType>Timing Violation</IssueType>
+            <ViolationType>-</ViolationType>
+            <SourceLocation>dot.cpp:3</SourceLocation>
+            <SummaryOfLoopViolations>
+                <VITIS_LOOP_4_1>
+                    <Name>VITIS_LOOP_4_1</Name>
+                    <IssueType>-</IssueType>
+                    <ViolationType>-</ViolationType>
+                    <SourceLocation>dot.cpp:4</SourceLocation>
+                </VITIS_LOOP_4_1>
+            </SummaryOfLoopViolations>
+        </SummaryOfViolations>
+    </PerformanceEstimates>
+    <AreaEstimates>
+        <Resources>
+            <DSP>3</DSP>
+            <FF>266</FF>
+            <LUT>160</LUT>
+            <BRAM_18K>0</BRAM_18K>
+            <URAM>0</URAM>
+        </Resources>
+        <AvailableResources>
+            <BRAM_18K>100</BRAM_18K>
+            <DSP>90</DSP>
+            <FF>41600</FF>
+            <LUT>20800</LUT>
+            <URAM>0</URAM>
+        </AvailableResources>
+    </AreaEstimates>
+    <InterfaceSummary>
+        <RtlPorts>
+            <name>ap_clk</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>in</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>ap_rst</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>in</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>ap_start</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>in</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>ap_done</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>ap_idle</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>ap_ready</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>ap_return</name>
+            <Object>dot</Object>
+            <Type>return value</Type>
+            <Scope/>
+            <IOProtocol>ap_ctrl_hs</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>32</Bits>
+            <Attribute>data</Attribute>
+        </RtlPorts>
+        <RtlPorts>
+            <name>a_address0</name>
+            <Object>a</Object>
+            <Type>array</Type>
+            <Scope/>
+            <IOProtocol>ap_memory</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>6</Bits>
+            <Attribute>address</Attribute>
+            <CType>int</CType>
+        </RtlPorts>
+        <RtlPorts>
+            <name>a_ce0</name>
+            <Object>a</Object>
+            <Type>array</Type>
+            <Scope/>
+            <IOProtocol>ap_memory</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+            <CType>int</CType>
+        </RtlPorts>
+        <RtlPorts>
+            <name>a_q0</name>
+            <Object>a</Object>
+            <Type>array</Type>
+            <Scope/>
+            <IOProtocol>ap_memory</IOProtocol>
+            <IOConfig/>
+            <Dir>in</Dir>
+            <Bits>32</Bits>
+            <Attribute>data</Attribute>
+            <CType>int</CType>
+        </RtlPorts>
+        <RtlPorts>
+            <name>b_address0</name>
+            <Object>b</Object>
+            <Type>array</Type>
+            <Scope/>
+            <IOProtocol>ap_memory</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>6</Bits>
+            <Attribute>address</Attribute>
+            <CType>int</CType>
+        </RtlPorts>
+        <RtlPorts>
+            <name>b_ce0</name>
+            <Object>b</Object>
+            <Type>array</Type>
+            <Scope/>
+            <IOProtocol>ap_memory</IOProtocol>
+            <IOConfig/>
+            <Dir>out</Dir>
+            <Bits>1</Bits>
+            <Attribute>control</Attribute>
+            <CType>int</CType>
+        </RtlPorts>
+        <RtlPorts>
+            <name>b_q0</name>
+            <Object>b</Object>
+            <Type>array</Type>
+            <Scope/>
+            <IOProtocol>ap_memory</IOProtocol>
+            <IOConfig/>
+            <Dir>in</Dir>
+            <Bits>32</Bits>
+            <Attribute>data</Attribute>
+            <CType>int</CType>
+        </RtlPorts>
+    </InterfaceSummary>
+    <RTLDesignHierarchy>
+        <TopModule MAX_DEPTH="2">
+            <ModuleName>dot</ModuleName>
+            <BindInstances>add_ln4_fu_97_p2 mul_32s_32s_32_5_1_U1 acc_1_fu_117_p2</BindInstances>
+        </TopModule>
+    </RTLDesignHierarchy>
+    <ModuleInformation>
+        <Module>
+            <Name>dot</Name>
+            <Loops>
+                <VITIS_LOOP_4_1/>
+            </Loops>
+            <PerformanceEstimates>
+                <SummaryOfTimingAnalysis>
+                    <TargetClockPeriod>5.00</TargetClockPeriod>
+                    <ClockUncertainty>1.35</ClockUncertainty>
+                    <EstimatedClockPeriod>5.251</EstimatedClockPeriod>
+                </SummaryOfTimingAnalysis>
+                <SummaryOfOverallLatency>
+                    <Best-caseLatency>72</Best-caseLatency>
+                    <Average-caseLatency>72</Average-caseLatency>
+                    <Worst-caseLatency>72</Worst-caseLatency>
+                    <Best-caseRealTimeLatency>0.378 us</Best-caseRealTimeLatency>
+                    <Average-caseRealTimeLatency>0.378 us</Average-caseRealTimeLatency>
+                    <Worst-caseRealTimeLatency>0.378 us</Worst-caseRealTimeLatency>
+                    <PipelineInitiationInterval>73</PipelineInitiationInterval>
+                    <PipelineType>no</PipelineType>
+                </SummaryOfOverallLatency>
+                <SummaryOfLoopLatency>
+                    <VITIS_LOOP_4_1>
+                        <Name>VITIS_LOOP_4_1</Name>
+                        <Slack>3.65</Slack>
+                        <TripCount>64</TripCount>
+                        <Latency>70</Latency>
+                        <AbsoluteTimeLatency>0.368 us</AbsoluteTimeLatency>
+                        <PipelineII>1</PipelineII>
+                        <PipelineDepth>8</PipelineDepth>
+                        <PipelineType>yes</PipelineType>
+                        <InstanceList/>
+                    </VITIS_LOOP_4_1>
+                </SummaryOfLoopLatency>
+                <SummaryOfViolations>
+                    <IssueType>Timing Violation</IssueType>
+                    <ViolationType>-</ViolationType>
+                    <SourceLocation>dot.cpp:3</SourceLocation>
+                    <SummaryOfLoopViolations>
+                        <VITIS_LOOP_4_1>
+                            <Name>VITIS_LOOP_4_1</Name>
+                            <IssueType>-</IssueType>
+                            <ViolationType>-</ViolationType>
+                            <SourceLocation>dot.cpp:4</SourceLocation>
+                        </VITIS_LOOP_4_1>
+                    </SummaryOfLoopViolations>
+                </SummaryOfViolations>
+            </PerformanceEstimates>
+            <AreaEstimates>
+                <Resources>
+                    <DSP>3</DSP>
+                    <AVAIL_DSP>90</AVAIL_DSP>
+                    <UTIL_DSP>3</UTIL_DSP>
+                    <FF>266</FF>
+                    <AVAIL_FF>41600</AVAIL_FF>
+                    <UTIL_FF>~0</UTIL_FF>
+                    <LUT>160</LUT>
+                    <AVAIL_LUT>20800</AVAIL_LUT>
+                    <UTIL_LUT>~0</UTIL_LUT>
+                    <BRAM_18K>0</BRAM_18K>
+                    <AVAIL_BRAM>100</AVAIL_BRAM>
+                    <UTIL_BRAM>0</UTIL_BRAM>
+                    <URAM>0</URAM>
+                    <AVAIL_URAM>0</AVAIL_URAM>
+                    <UTIL_URAM>0</UTIL_URAM>
+                </Resources>
+            </AreaEstimates>
+            <BindNodes>
+                <BindNode BINDTYPE="op" BRAM="0" BUNDLEDNAME="" DISPNAME="bind_op add" DSP="0" ID="" IMPL="fabric" LATENCY="0" LOOP="VITIS_LOOP_4_1" OPTYPE="add" PRAGMA="" RTLNAME="add_ln4_fu_97_p2" SOURCE="dot.cpp:4" STORAGESUBTYPE="" URAM="0" VARIABLE="add_ln4"/>
+                <BindNode BINDTYPE="op" BRAM="0" BUNDLEDNAME="" DISPNAME="bind_op mul" DSP="3" ID="" IMPL="dsp" LATENCY="4" LOOP="VITIS_LOOP_4_1" OPTYPE="mul" PRAGMA="" RTLNAME="mul_32s_32s_32_5_1_U1" SOURCE="dot.cpp:6" STORAGESUBTYPE="" URAM="0" VARIABLE="mul_ln6"/>
+                <BindNode BINDTYPE="op" BRAM="0" BUNDLEDNAME="" DISPNAME="bind_op add" DSP="0" ID="" IMPL="fabric" LATENCY="0" LOOP="VITIS_LOOP_4_1" OPTYPE="add" PRAGMA="" RTLNAME="acc_1_fu_117_p2" SOURCE="dot.cpp:6" STORAGESUBTYPE="" URAM="0" VARIABLE="acc_1"/>
+            </BindNodes>
+        </Module>
+    </ModuleInformation>
+    <FIFOInformation/>
+    <UserConfigCommands/>
+    <Args>
+        <Arg ArgName="a" index="0" direction="in" srcType="int const *" srcSize="32">
+            <hwRefs>
+                <hwRef type="port" interface="a_address0" name="a_address0" usage="address" direction="out"/>
+                <hwRef type="port" interface="a_ce0" name="a_ce0" usage="control" direction="out"/>
+                <hwRef type="port" interface="a_q0" name="a_q0" usage="data" direction="in"/>
+            </hwRefs>
+        </Arg>
+        <Arg ArgName="b" index="1" direction="in" srcType="int const *" srcSize="32">
+            <hwRefs>
+                <hwRef type="port" interface="b_address0" name="b_address0" usage="address" direction="out"/>
+                <hwRef type="port" interface="b_ce0" name="b_ce0" usage="control" direction="out"/>
+                <hwRef type="port" interface="b_q0" name="b_q0" usage="data" direction="in"/>
+            </hwRefs>
+        </Arg>
+    </Args>
+    <ReturnValue ReturnValueName="srcType">int</ReturnValue>
+    <ReturnValue ReturnValueName="srcSize">32</ReturnValue>
+    <ReturnValue ReturnValueName="hwRefs" type="port" interface="ap_return" name="ap_return" usage="data" direction="out"/>
+    <Interfaces>
+        <Interface InterfaceName="ap_clk" type="clock" busTypeName="clock" mode="slave">
+            <busParams>
+                <busParam busParamName="ASSOCIATED_RESET">ap_rst</busParam>
+            </busParams>
+            <portMaps>
+                <portMap portMapName="ap_clk">CLK</portMap>
+            </portMaps>
+            <ports>
+                <port>ap_clk</port>
+            </ports>
+        </Interface>
+        <Interface InterfaceName="ap_rst" type="reset" busTypeName="reset" mode="slave">
+            <busParams>
+                <busParam busParamName="POLARITY">ACTIVE_HIGH</busParam>
+            </busParams>
+            <portMaps>
+                <portMap portMapName="ap_rst">RST</portMap>
+            </portMaps>
+            <ports>
+                <port>ap_rst</port>
+            </ports>
+        </Interface>
+        <Interface InterfaceName="ap_ctrl" type="ap_ctrl" busTypeName="acc_handshake" mode="slave">
+            <portMaps>
+                <portMap portMapName="ap_start">start</portMap>
+                <portMap portMapName="ap_done">done</portMap>
+                <portMap portMapName="ap_idle">idle</portMap>
+                <portMap portMapName="ap_ready">ready</portMap>
+            </portMaps>
+            <ports>
+                <port>ap_done</port>
+                <port>ap_idle</port>
+                <port>ap_ready</port>
+                <port>ap_start</port>
+            </ports>
+        </Interface>
+        <Interface InterfaceName="ap_return" type="data" busTypeName="data" protocol="ap_ctrl_hs" mode="master" dataWidth="32">
+            <portMaps>
+                <portMap portMapName="ap_return">DATA</portMap>
+            </portMaps>
+            <ports>
+                <port>ap_return</port>
+            </ports>
+        </Interface>
+        <Interface InterfaceName="a_address0" type="data" busTypeName="data" protocol="ap_memory" mode="master" dataWidth="6">
+            <portMaps>
+                <portMap portMapName="a_address0">DATA</portMap>
+            </portMaps>
+            <ports>
+                <port>a_address0</port>
+            </ports>
+            <constraints>
+                <constraint constraint_type="pragma interface" mode="ap_memory" register_option="0" argName="a"/>
+            </constraints>
+        </Interface>
+        <Interface InterfaceName="a_q0" type="data" busTypeName="data" protocol="ap_memory" mode="slave" dataWidth="32">
+            <portMaps>
+                <portMap portMapName="a_q0">DATA</portMap>
+            </portMaps>
+            <ports>
+                <port>a_q0</port>
+            </ports>
+            <constraints>
+                <constraint constraint_type="pragma interface" mode="ap_memory" register_option="0" argName="a"/>
+            </constraints>
+        </Interface>
+        <Interface InterfaceName="b_address0" type="data" busTypeName="data" protocol="ap_memory" mode="master" dataWidth="6">
+            <portMaps>
+                <portMap portMapName="b_address0">DATA</portMap>
+            </portMaps>
+            <ports>
+                <port>b_address0</port>
+            </ports>
+            <constraints>
+                <constraint constraint_type="pragma interface" mode="ap_memory" register_option="0" argName="b"/>
+            </constraints>
+        </Interface>
+        <Interface InterfaceName="b_q0" type="data" busTypeName="data" protocol="ap_memory" mode="slave" dataWidth="32">
+            <portMaps>
+                <portMap portMapName="b_q0">DATA</portMap>
+            </portMaps>
+            <ports>
+                <port>b_q0</port>
+            </ports>
+            <constraints>
+                <constraint constraint_type="pragma interface" mode="ap_memory" register_option="0" argName="b"/>
+            </constraints>
+        </Interface>
+    </Interfaces>
+    <ReportHWInterface>
+        <section name="HW Interfaces" level="0">
+            <item name="AP_MEMORY">
+                <table>
+                    <keys size="3">Port, Direction, Bitwidth</keys>
+                    <column name="a_address0">out, 6</column>
+                    <column name="a_q0">in, 32</column>
+                    <column name="b_address0">out, 6</column>
+                    <column name="b_q0">in, 32</column>
+                </table>
+            </item>
+            <item name="Other Ports">
+                <table>
+                    <keys size="3">Port, Direction, Bitwidth</keys>
+                    <column name="ap_return">out, 32</column>
+                </table>
+            </item>
+            <item name="TOP LEVEL CONTROL">
+                <table>
+                    <keys size="3">Interface, Type, Ports</keys>
+                    <column name="ap_clk">clock, ap_clk</column>
+                    <column name="ap_rst">reset, ap_rst</column>
+                    <column name="ap_ctrl">ap_ctrl_hs, ap_done ap_idle ap_ready ap_start</column>
+                </table>
+            </item>
+        </section>
+    </ReportHWInterface>
+    <ReportSWInterface>
+        <section name="SW I/O Information" level="0">
+            <item name="Top Function Arguments">
+                <table>
+                    <keys size="3">Argument, Direction, Datatype</keys>
+                    <column name="a">in, int const *</column>
+                    <column name="b">in, int const *</column>
+                    <column name="return">out, int</column>
+                </table>
+            </item>
+            <item name="SW-to-HW Mapping">
+                <table>
+                    <keys size="4">Argument, HW Interface, HW Type, HW Usage</keys>
+                    <column name="a">a_address0, port, offset</column>
+                    <column name="a">a_ce0, port, </column>
+                    <column name="a">a_q0, port, </column>
+                    <column name="b">b_address0, port, offset</column>
+                    <column name="b">b_ce0, port, </column>
+                    <column name="b">b_q0, port, </column>
+                    <column name="return">ap_return, port, </column>
+                </table>
+            </item>
+        </section>
+    </ReportSWInterface>
+    <ResolutionUrl key="ZZZ">docs.xilinx.com/access/sources/dita/topic?Doc_Version=2023.2%20English&amp;url=ug1448-hls-guidance&amp;resourceid=ZZZ.html</ResolutionUrl>
+    <PragmaReport>
+        <Pragma type="pipeline" location="dot.cpp:5" status="valid" parentFunction="dot" variable="" isDirective="0" options="II=1"/>
+    </PragmaReport>
+</profile>
+

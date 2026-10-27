@@ -25,6 +25,13 @@ action = "command"
 prefix = ["Command: "]
 re = '^Command: (\S+)(.*)$'
 
+# a sourced script is echoed one command per line; report commands do not get a `Command:` line
+[rules.script_report]
+order = 11
+action = "script_report"
+prefix = ["# report_"]
+re = '^# (report_\w+)(.*)$'
+
 [rules.command_failed_error]
 order = 12
 action = "command_failed"
@@ -297,6 +304,149 @@ jobs_glob = "vrs_config_*.xml"
 synth_stage_label = "Synthesis"
 ooc_group_label = "IP out-of-context ({n})"
 ooc_collapse_children_above = 8   # done OOC runs omit phase children beyond this count
+
+# ---------------------------------------------------------------- non-project flows
+# A log with no .runs project is planned from the Tcl script given with `-source` (commands that open a step are
+# the [steps.*] commands) and its reports are the files named by `report_xxx -file <path>` in the log.
+[nonproject]
+script_size_limit = 1048576      # bytes read per Tcl file
+max_script_files = 32            # `source`d files followed, cycles are skipped
+# a command at the start of a line or after `;`, `{` or `[`: not inside a string or a comment
+command_prefix_re = '(?:^|[;{\[])\s*'
+source_re = '(?:^|[;{\[])\s*source\s+(?:-\w+\s+)*(?:\{([^}]*)\}|"([^"]*)"|\[\s*file\s+join\s+\[\s*file\s+dirname\s+\[\s*info\s+script\s*\]\s*\]\s+([^\s\]]+)\s*\]|([^\s;}\]]+))'
+header_cwd_re = '^# Current directory: (.+?)\s*$'          # banner of the log: where relative paths start
+header_script_re = '^# Command line: .*?\s-source\s+(?:"([^"]+)"|(\S+))'
+report_file_re = '(?:^|\s)-file\s+(?:\{([^}]+)\}|"([^"]+)"|(\S+))'
+header_lines = 40
+header_start_re = '^# Start of session at: (.+?)\s*$'     # lower bound of every step's start when the log has no clock
+header_tclargs_re = '\s-tclargs\s+(.*?)\s*$'
+set_re = '^\s*set\s+(\w+)\s+(.+?)\s*$'
+
+[nonproject.reports]             # Tcl command -> kind of the [reports.types.*] entry whose parser reads the file
+report_timing_summary = "timing_summary"
+report_utilization = "utilization"
+report_control_sets = "control_sets"
+report_io = "io"
+report_drc = "drc"
+report_methodology = "methodology"
+report_route_status = "route_status"
+report_power = "power"
+report_clock_utilization = "clock_utilization"
+report_bus_skew = "bus_skew"
+report_incremental_reuse = "incremental_reuse"
+
+# ---------------------------------------------------------------- Vitis HLS
+# vitis_hls.log is one flat log of Tcl commands (`Running: csynth_design`), each closed by `Finished Command`.
+# Verified on one Vitis HLS 2023.2 csynth + export run; csim_design, cosim_design and v++ are written from the
+# documented formats and unverified.
+[hls]
+log_name = "vitis_hls.log"
+sniff_bytes = 4096
+sniff_re = '\*{4,} Vitis HLS|\*{4,} Vivado HLS|\[HLS 200-\d+\]'      # a log (not a project) is HLS when its head matches
+project_files = ["hls.app"]                                       # marks an HLS project directory
+
+[hls.processes]
+engines = ["vitis_hls", "vitis-run"]    # each is an HLS firmware; the Windows backend appends .exe
+wrappers = ["v++"]                      # not an HLS log of their own: joins the group of the build it starts (unverified)
+script_flags = ["-f", "--tcl", "--input_file"]
+log_flags = ["-l", "-log"]
+# a Vivado started by the HLS flow (export_design packaging) stays in the group of the HLS project
+child_cwd_re = '[/\\]impl[/\\](?:ip|verilog|vhdl|misc)(?:[/\\]|$)'
+
+[hls.parse]
+banner_re = '\*{4,} (?:Vitis|Vivado) HLS.* v(\d+\.\d+)'
+message_re = '^(INFO|WARNING|CRITICAL WARNING|ERROR): (?:\[([^\]]+)\] )?(.*)$'
+command_re = '^INFO: \[HLS 200-1510\] Running: (\S+)(.*)$'
+finished_re = '^INFO: \[HLS 200-111\] Finished Command (\S+) .*?Elapsed time: ([\d.]+) seconds'
+phase_finished_re = '^INFO: \[HLS 200-111\] Finished (?!Command )(.+?):? CPU user time: .*?Elapsed time: ([\d.]+) seconds'
+total_re = '^INFO: \[HLS 200-112\] Total CPU .*?Total elapsed time: ([\d.]+) seconds; peak allocated memory: ([\d.]+) MB'
+exit_re = '^INFO: \[Common 17-206\] Exiting (?:vitis_hls|vitis-run|vivado_hls)\b'
+directory_re = "^INFO: \\[HLS 200-10\\] In directory '(.+)'"
+script_re = "^Sourcing Tcl script '(.+)'"
+project_re = "^INFO: \\[HLS 200-10\\] (?:Creating and opening|Opening) project '(.+?)'\\."
+solution_re = "^INFO: \\[HLS 200-10\\] (?:Creating and opening|Opening) solution '(.+?)'\\."
+session_start_re = "^INFO: \\[HLS 200-10\\] For user .* on (\\w{3} \\w{3} +\\d+ [\\d:]+) \\w+ (\\d{4})"
+session_format = "%a %b %d %H:%M:%S %Y"
+fail_re = '^ERROR: \[[A-Za-z]+ \d+-\d+\].*(?:[Ff]ailed|errors? found|Aborting)'
+
+[hls.settings]                     # Tcl command -> regex on its arguments, shown in the firmware info
+top = { command = "set_top", re = '^(\S+)' }
+part = { command = "set_part", re = '^(\S+)' }
+clock = { command = "create_clock", re = '-period\s+(\S+)' }
+
+[hls.timing]                       # HLS timing is an estimate: slack = target - uncertainty - estimated clock period
+label = "HLS estimate"
+step = "csynth_design"
+violation_re = 'WARNING: \[HLS 200-871\] Estimated clock period \(([\d.]+) ns\) exceeds the target \(target clock period: ([\d.]+) ns, clock uncertainty: ([\d.]+) ns, effective delay budget: ([\d.]+) ns\)'
+fmax_re = '\*{4} Estimated Fmax: ([\d.]+) MHz'
+clock_re = "\\[SYN 201-201\\] Setting up clock '[^']*' with a period of ([\\d.]+)ns"
+
+# steps: `commands` open the step; phases open at the first line matching `start_re` (none: when the step opens) and
+# close when the next phase opens or the step ends. A phase lasts as long as the `Finished <task>` lines inside it add up to.
+[hls.steps.csim_design]
+order = 10
+label = "C Simulation"
+commands = ["csim_design"]
+description = "Compiles and runs the C test bench (unverified log format)"
+
+[hls.steps.csynth_design]
+order = 20
+label = "C Synthesis"
+commands = ["csynth_design"]
+description = "C/C++ to RTL: compile, transform, schedule, bind and write the RTL"
+report_dir = "syn/report"          # relative to the solution directory
+report_files = ["csynth.xml"]
+
+[hls.steps.csynth_design.phases.compile]
+order = 10
+label = "C/C++ compile and analysis"
+
+[hls.steps.csynth_design.phases.transform]
+order = 20
+label = "Code transformations"
+start_re = 'Finished Checking Pragmas|Starting code transformations'
+
+[hls.steps.csynth_design.phases.schedule]
+order = 30
+label = "Scheduling"
+start_re = '\[SCHED 204-11\] Starting scheduling'
+
+[hls.steps.csynth_design.phases.bind]
+order = 40
+label = "Binding"
+start_re = '\[BIND 205-100\] Starting micro-architecture generation'
+
+[hls.steps.csynth_design.phases.rtl]
+order = 50
+label = "RTL generation"
+start_re = 'Generating RTL for module'
+
+[hls.steps.csynth_design.phases.export_rtl]
+order = 60
+label = "VHDL / Verilog output"
+start_re = '\[VHDL 208-304\]|\[VLOG 209-307\]'
+
+[hls.steps.cosim_design]
+order = 30
+label = "C/RTL Cosimulation"
+commands = ["cosim_design"]
+description = "Runs the C test bench against the generated RTL (unverified log format)"
+
+[hls.steps.export_design]
+order = 40
+label = "Export RTL"
+commands = ["export_design"]
+description = "Packages the RTL as an IP or Vitis kernel; the IP packaging runs a Vivado whose own log is kept in impl/ip"
+child_log = "impl/ip/vivado.log"   # relative to the solution directory
+
+[hls.steps.export_design.phases.package]
+order = 10
+label = "Package IP (Vivado)"
+start_re = '^\*+ Vivado v'
+
+[hls.csynth_report]                # summary of syn/report/csynth.xml shown on csynth_design
+label = "C synthesis report"
+kind = "hls_csynth"
 
 # ---------------------------------------------------------------- reports registry
 # pattern: regex on the filename with the "<top>_" prefix removed; parser: python parser name;

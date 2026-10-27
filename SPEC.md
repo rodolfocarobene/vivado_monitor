@@ -35,6 +35,9 @@ vivado-monitor/
   - Else (launcher / non-project batch): look for `-log <file>` in cmdline (else cwd/vivado.log). Scan that log for
     `open_project <path>.xpr` → project `<dir of xpr>/<stem>.runs`. Also: any vivado descendant whose cwd is in a .runs dir
     ties the launcher to that project. If nothing found → standalone "log" firmware (non-project flow), parsed from that log.
+  - comm in `[hls.processes]` (`vitis_hls`, `vitis-run`, unwrapped binary; `.exe` on Windows) → kind "hls" firmware whose path is its log
+    (`-l`/`-log`, else cwd/vitis_hls.log). A Vivado below it (export_design packaging, cwd `<proj>/<sol>/impl/ip`) joins its group.
+    `v++` (unverified) joins the group of the Vivado project or HLS run it starts; it gets no firmware of its own.
   - Launcher info (pid, log path, script from `-source`) is kept as `launcher` on the firmware.
 - Run dir files (project mode), for run dir R:
   - `R/.<step>.begin.rst`, `.<step>.end.rst`, `.<step>.error.rst` → step status + start/end time (mtime). `vivado` step = whole run.
@@ -97,12 +100,12 @@ State = {
 Firmware = {
   "id": str (stable short hash of project/log path),
   "name": str ("lockin"),
-  "kind": "project" | "log",
+  "kind": "project" | "log" | "hls",
   "path": str (.runs dir or log path),
   "status": "queued"|"running"|"done"|"failed"|"stopped"|"idle",   # stopped = process gone but not finished
   "live": bool,                      # any vivado process alive for it
   "pids": [int],
-  "launcher": {"pid": int|null, "log": str|null, "script": str|null} | null,
+  "launcher": {"pid": int|null, "log": str|null, "script": str|null, "cwd": str|null, "tclargs": [str]} | null,
   "started_at": float|null, "updated_at": float|null, "elapsed_s": float|null,
   "current": {"node_id": str, "label": str} | null,   # deepest currently running node, for tab/header display
   "counts": Counts,                  # whole firmware (current launch)
@@ -155,7 +158,14 @@ Project-mode flow layout (default; configured in flows.toml so it is not hard-co
    phys_opt_design, route_design, (post_route_phys_opt_design), write_bitstream. Steps not yet begun = pending.
    Children = command nodes / phase / task nodes parsed from the .vdi section.
 Log-mode (non-project): stages = steps found by command mapping (synth_design, opt_design, ...) in log order; planned
-list from flows.toml default_order with not-seen ones pending only if the process is still alive.
+list read from the `-source` Tcl script (`source`d files followed; falls back to the flows.toml step order when the script
+is unreadable), not-seen ones pending only if the process is still alive. Reports named by `report_xxx -file <path>`
+are attached to the step whose section holds the command.
+Hls kind: one flow `hls`, stages = steps of `[hls.steps]` found in vitis_hls.log (`csim_design`, `csynth_design`, `cosim_design`,
+`export_design`), ids `hls/<step>`; phases of csynth (compile, transformations, scheduling, binding, RTL, VHDL/Verilog) as children;
+planned steps from the `-f` script are pending while the process lives. Timing = HLS estimate (`wns` = target - uncertainty - estimated
+clock, `source` "log" or "report", never final). `csynth_design` carries one report of kind `hls_csynth`
+(summary: target_ns, uncertainty_ns, estimated_ns, slack_ns, fmax_mhz, latency_min/max, interval_min/max, resources[], loops[]).
 
 ## Performance
 - Incremental parsing: each log parsed once; subsequent ticks read only appended bytes. Restart from 0 if inode changes
