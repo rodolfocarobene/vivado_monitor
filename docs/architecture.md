@@ -15,6 +15,7 @@ vmon is a stdlib-only Python backend that reads Vivado logs and marker files, bu
 | `discovery.py` | Finds Vivado processes through the platform backend and groups them into firmwares. |
 | `logtail.py` | Incremental file reader (byte offset + file identity, handles truncation and replacement). |
 | `logparse.py` | Streaming parser: log lines to sections, phases, tasks, messages and timing. |
+| `hls.py`, `hls_source.py` | Vitis HLS: compiled `[hls]` config, path resolution, `vitis_hls.log` parser, `csynth.xml` report parser; `HlsSource` builds the flow (see [Vitis HLS](#vitis-hls)). |
 | `project.py` | Builds a firmware's flow from a `.runs` directory (marker files, run tcl, logs, reports). |
 | `expected.py` | Merges catalog placeholders (upcoming steps/phases, predicted numbers, weights) into the seen nodes. |
 | `timing_paths.py`, `path_table.py`, `clocks.py`, `convergence.py`, `congestion.py` | Worst-path parser for timing reports (streamed), per-clock history across stages and builds, router overlap trend, congestion level summary. |
@@ -52,7 +53,7 @@ Everything read is read-only. The only files vmon writes are under the cache dir
   - Other systems (macOS): a null backend with no discovery and no stats; a one-line notice is printed and manually added paths still work.
 - If the cwd is `<X>.runs/<run>/` (matched case-insensitively, with either slash style on Windows), the process belongs to project `<X>.runs`.
 - Otherwise it looks for `-log <file>` (or `vivado.log` in the cwd) and scans it for `open_project <path>.xpr` and `create_project <name> [dir]` (the last one wins). Vivado echoes a sourced script with its variables unexpanded, so simple `set var value`, `set var [file normalize x]` and `set var [pwd]` lines are substituted first; anything still unresolved is ignored (patterns in `[parse]`). A launcher process is also tied to a project through its Vivado descendants, and a log first seen on its own is merged into the project once it turns out to be that project's launcher.
-- With no project found, the log becomes a standalone "log" firmware (non-project flow).
+- With no project found, the log becomes a standalone "log" firmware (non-project flow, see below). The launcher keeps `script`, `cwd` and the `-tclargs` words.
 - Paths given on the command line or through the UI are watched too, and the last 20 are remembered in `<cache dir>/recent.json` so finished runs reappear after a restart.
 
 ## Windows notes
@@ -82,6 +83,24 @@ For a run directory `R`:
 - Reports such as `<top>_timing_summary_routed.rpt`; a report older than its step's begin marker is flagged stale and never raises alerts.
 
 Flow layout: a "Synthesis" stage (out-of-context IP runs collapsed into a sub-group, then the top synth run), followed by each implementation step in tcl order. Steps not yet started are shown as pending placeholders from the catalog.
+
+## Non-project flows
+
+A standalone log (`LogSource`) has one flat flow: each step command in the log (`synth_design`, `opt_design`, ...) is a stage, synthesis first, in log order.
+
+- **Planned steps**: `tclscript.py` reads the script of `-source` (from the launcher, else the log banner; a relative path starts at the process cwd, else the banner's `# Current directory`), follows `source <file>` with a cycle guard and a size and file-count limit (`[nonproject]`), skips commented lines, and lists the step commands it calls. `plan_steps` maps them to steps in flow order, so a second `phys_opt_design` after `route_design` is `post_route_phys_opt_design`. Only planned steps not yet reached are pending placeholders. Proc bodies are not special-cased. When the script cannot be read, or the log runs a step command the script never mentions (variables, other files), the guess of earlier versions is used: every later step of the same flow kind.
+- **Reports**: Vivado echoes a sourced script as `# report_utilization -file $out/x.rpt` lines (no `Command:` line for reports) and a typed command as `Command: report_... -file <path>`. The parser keeps both on the step section open at that point; `LogSource._section_reports` expands `$var` from the script's simple `set` lines (`[lindex $argv N]` from `-tclargs`, `[pwd]`, `[file normalize x]`), resolves the path against the cwd, and parses the file with the parser of the `[reports.types.*]` entry of the kind named in `[nonproject.reports]`. Missing files are skipped; a report older than the step start (or, without a log clock, the session start) is stale. The paths are added to `report_paths` so `/api/report` serves them.
+
+## Vitis HLS
+
+Verified on one Vitis HLS 2023.2 csynth + export run. `csim_design`, `cosim_design` and `v++` follow the documented formats only and are unverified.
+
+- **Discovery**: backends expose `hls_processes(names)` next to `vivado_processes()` (comm `vitis_hls` / `vitis-run` / `v++` on Linux, the unwrapped binary only, never the bash wrapper; `.exe` images on Windows; names in `[hls.processes]`). An engine becomes a `Group` of kind `hls` whose path is its log (`-l`/`-log`, else `vitis_hls.log` in its cwd, which must exist); the launcher keeps `-f`/`--tcl`/`--input_file`, `cwd` and `-tclargs`. A Vivado under an HLS engine (export_design packaging) is never a firmware: it joins by ancestry, or, when orphaned, by a cwd matching `child_cwd_re` inside the project named in the log. A `v++` process (a *wrapper*, unverified) only joins the group of the Vivado `prj.runs` project or HLS run found below it, so the `vpl` Vivado it runs is the normal project firmware. Backends without `hls_processes` simply report none.
+- **Manual paths**: `monitor.resolve_path` returns kind `hls` for `vitis_hls.log` (or any log whose head matches `[hls] sniff_re`), a directory holding it, an HLS project dir (has `hls.app`; the log beside it, else the newest solution log) or a solution dir.
+- **Parser**: `HlsParser` has the surface of `LogParser`, so `ParsedLog` (class attribute `parser_cls`) and `Source` are reused for counts, messages, triage and log excerpts. A step opens at `INFO: [HLS 200-1510] Running: <command>` for a command of `[hls.steps.*]` and closes at `Finished Command`; an unfinished step is failed when it has errors (or `fail_re`, or the session exited), else done when the next step starts. Phases open at the first line matching their `start_re`, close when the next opens, and last the sum of the `Finished <task>` elapsed times inside them. The preamble (setup commands) counts toward the first step. Project, solution, directory, script, top, part and clock come from the log (`[hls.parse]`, `[hls.settings]`). Times: live logs use the wall clock, finished ones chain from the session start line.
+- **Source**: `HlsSource` (kind `hls`, node ids `hls/<step>`) maps sections to steps (a command run twice: the newest wins), reads planned steps with `tclscript.script_commands` fed with the HLS command vocabulary (script from `-f`, else `Sourcing Tcl script` in the log), and shows planned steps not yet run as pending only while the process is alive. `export_design` gets its Vivado log (`impl/ip/vivado.log`) as a child node that can be opened but is not counted again, because Vivado's output is also echoed in the HLS log.
+- **Timing**: HLS gives estimates, so timing is never final and always labelled estimated. From the log, `WARNING: [HLS 200-871]` gives slack = effective delay budget - estimated period; without it `Estimated Fmax` gives target - 1000/Fmax. When `syn/report/csynth.xml` exists and is not older than the session, its slack (target - uncertainty - estimated) replaces the log value (`source` "report").
+- **Report**: parser `hls_csynth` (registered in the `reports.py` registry from `hls.py`) summarises `csynth.xml`: clocks, latency and interval, resources against the device (an alert when over 100 %) and loops. The UI draws it with `REPORT_RENDERERS.hls_csynth`; the firmware pill says `hls`.
 
 ## Incremental parsing
 

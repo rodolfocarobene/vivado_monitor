@@ -116,11 +116,12 @@ class LinuxBackend:
     def cpu_count(self):
         return os.cpu_count() or 1
 
-    def vivado_processes(self):
-        """Real vivado binaries (not the bash wrappers)."""
+    def _processes(self, names):
+        """Real binaries (not the bash wrappers) whose comm is in `names`: [{pid, ppid, args, cwd, name}]."""
         found = []
         for pid in self._pids():
-            if _read("%s/%d/comm" % (self.proc, pid)).strip() != b"vivado":
+            name = _read("%s/%d/comm" % (self.proc, pid)).strip().decode("utf-8", "replace")
+            if name not in names:
                 continue
             try:
                 exe = os.path.basename(os.readlink("%s/%d/exe" % (self.proc, pid)))
@@ -128,13 +129,20 @@ class LinuxBackend:
                 exe = ""
             args = [a.decode("utf-8", "replace")
                     for a in _read("%s/%d/cmdline" % (self.proc, pid)).split(b"\0") if a]
-            if exe != "vivado" and not (args and os.path.basename(args[0]) == "vivado"
-                                        and "unwrapped" in args[0]):
+            if exe != name and not (args and os.path.basename(args[0]) == name and "unwrapped" in args[0]):
                 continue
             try:
                 cwd = os.readlink("%s/%d/cwd" % (self.proc, pid))
             except OSError:
                 cwd = None
             parsed = self._stat(pid)
-            found.append({"pid": pid, "ppid": parsed[0] if parsed else None, "args": args, "cwd": cwd})
+            found.append({"pid": pid, "ppid": parsed[0] if parsed else None, "args": args, "cwd": cwd, "name": name})
         return found
+
+    def vivado_processes(self):
+        """Real vivado binaries (not the bash wrappers)."""
+        return [{k: v for k, v in p.items() if k != "name"} for p in self._processes({"vivado"})]
+
+    def hls_processes(self, names):
+        """Vitis HLS / v++ binaries; `name` says which of `names` (comm) each one is."""
+        return self._processes(set(names))

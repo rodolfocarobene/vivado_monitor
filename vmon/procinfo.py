@@ -3,6 +3,8 @@
 A backend exposes (all read-only, never raising for a vanished or protected process):
   name                      "linux" | "windows" | "none"
   vivado_processes()        [{"pid", "ppid", "args" (argv list), "cwd"}] for real Vivado binaries
+  hls_processes(names)      [{"pid", "ppid", "args", "cwd", "name"}] for Vitis HLS / v++ binaries (optional; names are
+                            comm names on Linux, image names with .exe on Windows)
   process_table()           {pid: ppid} for every process (builds the children map)
   alive(pid)                True while the process exists
   cpu_seconds(pid)          user+system CPU time of one process, or None
@@ -23,6 +25,9 @@ class NullBackend:
     name = "none"
 
     def vivado_processes(self):
+        return []
+
+    def hls_processes(self, names):
         return []
 
     def process_table(self):

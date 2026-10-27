@@ -9,13 +9,14 @@ from .paths import basename as _basename, canon, syntax_path
 from .procinfo import get_backend
 from .textio import decode
 from .resume import scan_session
+from .hls import hls_config, read_meta
 
 LOG_SCAN_BYTES = 2_000_000
 
 
 @dataclass
 class Group:
-    kind: str                       # "project" | "log"
+    kind: str                       # "project" | "log" | "hls"
     path: str                       # .runs dir or log path
     name: str
     pids: set = field(default_factory=set)
@@ -24,6 +25,16 @@ class Group:
     # resume sessions (open_checkpoint + route_design ... in a non-project Vivado): they ARE the workers
     # of the run they continue, not launchers. {"pid","run","log","script","checkpoint","cwd"}
     resumes: list = field(default_factory=list)
+
+
+def _inside(path, folder):
+    key, base = paths.path_key(path), paths.path_key(folder).rstrip("/\\")
+    return key == base or (key.startswith(base) and key[len(base)] in "/\\")
+
+
+def _hls_names(backend, cfg):
+    """{image name: "engine" | "wrapper"} for the HLS processes of this platform."""
+    return hls_config(cfg).process_names(backend.name == "windows")
 
 
 def _read(path):
@@ -238,9 +249,28 @@ class Discovery:
                               "script": _arg_after(proc["args"], "-source"),
                               "checkpoint": session["checkpoint"], "cwd": proc["cwd"]})
 
+    def _hls_log(self, proc):
+        """(log, script, tclargs) of a Vitis HLS process: -l/-log, else vitis_hls.log in its directory."""
+        hls, args, cwd = hls_config(self.cfg), proc["args"], proc["cwd"]
+        log = next((v for f in hls.log_flags if (v := _arg_after(args, f))), None)
+        log = log or (paths.join(cwd, hls.log_name) if cwd else None)
+        if log and not paths.is_abs(log) and cwd:
+            log = paths.join(cwd, log)
+        script = next((v for f in hls.script_flags if (v := _arg_after(args, f))), None)
+        tclargs = args[args.index("-tclargs") + 1:] if "-tclargs" in args else []
+        return log, script, tclargs
+
+    def _hls_processes(self):
+        """[(proc, kind)] for Vitis HLS engines and v++ wrappers; backends without the call report none."""
+        backend = get_backend()
+        scan = getattr(backend, "hls_processes", None)
+        names = _hls_names(backend, self.cfg)
+        return [(p, names[p["name"]]) for p in scan(list(names)) if p.get("name") in names] if scan else []
+
     def discover(self):
         procs = scan_vivado()
-        if not procs:
+        hls_procs = self._hls_processes()
+        if not procs and not hls_procs:
             return []
         children_of, parent_of = {}, get_backend().process_table()
         for pid, parent in parent_of.items():
@@ -270,9 +300,24 @@ class Discovery:
         # dir) is a helper of its ancestor's build: it counts for resources, but is never a resume, an attempt or a
         # build of its own. Only the top Vivado of each process tree is classified below.
         vivado = {p["pid"] for p in procs}
+        engines = [p for p, kind in hls_procs if kind == "engine"]
+        wrappers = [p for p, kind in hls_procs if kind == "wrapper"]
+        engine_pids = {p["pid"] for p in engines}
+        for proc in engines:                                  # Vitis HLS: one firmware per log, unless started by another HLS
+            if _ancestor_in(proc["pid"], parent_of, engine_pids) is not None:
+                continue
+            log, script, tclargs = self._hls_log(proc)
+            if log and os.path.exists(log):
+                group = group_for("hls", log, _basename(paths.dirname(paths.normpath(log))))
+                group.pids.add(proc["pid"])
+                group.launcher = {"pid": proc["pid"], "log": log, "script": script, "cwd": proc["cwd"],
+                                  "tclargs": tclargs}
         resumable = {proc["pid"] for proc, _, _ in maybe_resume}
         tops = [p for p in procs if p["pid"] not in in_runs or p["pid"] in resumable]
         tops = [p for p in tops if _ancestor_in(p["pid"], parent_of, vivado) is None and not in_scratch(p["cwd"])]
+        # a Vivado under an HLS engine (export_design packaging) is part of that HLS build, never a firmware
+        tops = [p for p in tops if _ancestor_in(p["pid"], parent_of, engine_pids) is None
+                and not self._join_hls_by_cwd(p, groups)]
         top_ids = {p["pid"] for p in tops}
         for proc, runs_dir, run in maybe_resume:               # 3. a top Vivado inside a run dir: a user resume
             if proc["pid"] in top_ids:
@@ -285,7 +330,8 @@ class Discovery:
             args, cwd = proc["args"], proc["cwd"]
             log = _log_of(proc)
             script = _arg_after(args, "-source")
-            launcher = {"pid": proc["pid"], "log": log, "script": script}
+            tclargs = args[args.index("-tclargs") + 1:] if "-tclargs" in args else []
+            launcher = {"pid": proc["pid"], "log": log, "script": script, "cwd": cwd, "tclargs": tclargs}
             target = None
             for pid in _descendants(proc["pid"], children_of):
                 if pid in in_runs:
@@ -306,9 +352,31 @@ class Discovery:
                 group.pids.add(proc["pid"])
                 group.launcher = launcher
         owner = {pid: g for g in groups.values() for pid in g.pids}
-        for proc in procs:                                    # helpers join the build of their nearest owned ancestor
+        for proc in procs + engines:                          # helpers join the build of their nearest owned ancestor
             if proc["pid"] not in owner and proc["pid"] not in top_ids:
                 group = _ancestor_group(proc["pid"], parent_of, owner)
                 if group is not None:
                     group.pids.add(proc["pid"])
+        # v++ (unverified): it runs Vivado / Vitis HLS underneath, whose group it joins
+        for proc in sorted(wrappers, key=lambda p: p["pid"]):
+            below = [owner[pid] for pid in sorted(_descendants(proc["pid"], children_of)) if pid in owner]
+            if below:
+                below[0].pids.add(proc["pid"])
         return list(groups.values())
+
+    def _join_hls_by_cwd(self, proc, groups):
+        """True (and joined) when a Vivado with no HLS ancestor runs inside the project of a known HLS group."""
+        hls = hls_config(self.cfg)
+        cwd = proc["cwd"]
+        if not cwd or not hls.child_cwd_re.search(cwd):
+            return False
+        for (kind, _), group in groups.items():
+            project = self._hls_project(group.path) if kind == "hls" else None
+            if project and _inside(cwd, project):
+                group.pids.add(proc["pid"])
+                return True
+        return False
+
+    def _hls_project(self, log):
+        project = read_meta(log, hls_config(self.cfg))["project"]
+        return canon(project) if project else None

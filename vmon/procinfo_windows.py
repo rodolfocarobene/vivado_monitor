@@ -11,6 +11,11 @@ def is_vivado_image(name):
     return name.lower() == "vivado.exe"
 
 
+def is_named_image(name, names):
+    """Image name in `names` (given with .exe, any case); returns the matching entry or None."""
+    return next((n for n in names if n.lower() == name.lower()), None)
+
+
 def memory_to_meminfo(status):
     """Map GlobalMemoryStatusEx bytes to the Linux-style kB dict. The commit limit minus physical RAM
     approximates the pagefile size (swap), and its free part is derived the same way; both clamp at 0."""
@@ -45,6 +50,17 @@ class WindowsBackend:
             cmdline, cwd = self.api.command_line_and_cwd(pid)
             found.append({"pid": pid, "ppid": ppid, "args": self._argv(cmdline) if cmdline else [],
                           "cwd": cwd or None})
+        return found
+
+    def hls_processes(self, names):
+        found = []
+        for pid, ppid, name in self.api.process_entries():
+            match = is_named_image(name, names)
+            if match is None:
+                continue
+            cmdline, cwd = self.api.command_line_and_cwd(pid)
+            found.append({"pid": pid, "ppid": ppid, "args": self._argv(cmdline) if cmdline else [],
+                          "cwd": cwd or None, "name": match})
         return found
 
     def alive(self, pid):

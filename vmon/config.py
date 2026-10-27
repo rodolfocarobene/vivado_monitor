@@ -75,6 +75,23 @@ class ReportType:
         self.label = spec.get("label", self.kind.replace("_", " ").capitalize())
 
 
+class NonProjectConfig:
+    def __init__(self, spec, step_commands):
+        self.script_size_limit = spec["script_size_limit"]
+        self.max_script_files = spec["max_script_files"]
+        self.header_lines = spec["header_lines"]
+        self.report_commands = dict(spec["reports"])
+        names = "|".join(re.escape(c) for c in sorted(set(step_commands) | set(self.report_commands), key=len, reverse=True))
+        self.command_re = re.compile("(?:%s)(%s)(?![\\w-])" % (spec["command_prefix_re"], names))
+        self.source_re = re.compile(spec["source_re"])
+        self.header_cwd_re = re.compile(spec["header_cwd_re"])
+        self.header_script_re = re.compile(spec["header_script_re"])
+        self.report_file_re = re.compile(spec["report_file_re"])
+        self.header_start_re = re.compile(spec["header_start_re"])
+        self.header_tclargs_re = re.compile(spec["header_tclargs_re"])
+        self.set_re = re.compile(spec["set_re"])
+
+
 class FailurePattern:
     def __init__(self, name, spec):
         self.name = name
@@ -196,6 +213,7 @@ class Config:
         self.report_types = [ReportType(n, s) for n, s in _ordered(reports["types"])]
         self.utilization_map = [(k, re.compile(v)) for k, v in reports["utilization"].items()]
         self.timing_columns = reports["timing_columns"]
+        self.nonproject = NonProjectConfig(data["nonproject"], self.step_commands)
         self.alerts = data["alerts"]
         self.failure = FailureConfig(data.get("failure", {}))
         self.resume = ResumeConfig(data.get("resume", {}))
