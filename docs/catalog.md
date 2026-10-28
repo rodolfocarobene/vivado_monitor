@@ -1,5 +1,7 @@
 # Phase catalog
 
+You are here: the reference for the per-version phase catalog. See also the [user guide](guide.md), [configuration.md](configuration.md) and [architecture.md](architecture.md).
+
 Declarative description of every step, phase and task a Vivado run can go through, so the UI can show what is still to come, not just what has run. One file per Vivado version: `vivado_<major>.<minor>.toml`. Mined from real 2023.2 logs (UltraScale+ RFSoC, plus a few tiny 7-series builds), the install's `strategies/VDI2023.psg`, and generated run tcl files. Nothing here is code.
 
 ## Schema (schema = 1)

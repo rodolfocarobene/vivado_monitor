@@ -1,5 +1,9 @@
 # Configuration
 
+You are here: the reference for everything you can change. For how to use vmon day to day see the [user guide](guide.md); for how the pieces fit together see [architecture.md](architecture.md) and [catalog.md](catalog.md).
+
+All Vivado-specific knowledge is data, not code: `vmon/flows.toml` (line rules, timing patterns, steps, report parsers, alert thresholds, docs links, message triage rules) and `vmon/catalog/vivado_<ver>.toml` (steps, phases and tasks per Vivado version).
+
 vmon ships with `vmon/flows.toml`. To change anything, create `flows.toml` in the config dir (`~/.config/vmon/flows.toml` on Linux, `%APPDATA%\vmon\flows.toml` on Windows) or pass `--config FILE`. Your file is deep-merged over the defaults: tables merge key by key, lists and scalars are replaced. Tables with an `order` key are sorted by it, so you can add entries without touching Python.
 
 Other files:
