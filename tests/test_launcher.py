@@ -119,3 +119,13 @@ def test_a_launchers_vivado_child_is_not_a_build(cfg, tmp_path):
              {"pid": 11, "args": ["vivado", "-mode", "batch"], "cwd": str(tmp_path)}]
     groups = discover_with(cfg, procs, {10: 1, 11: 10})
     assert [(g.kind, g.pids) for g in groups] == [("log", {10, 11})]
+
+
+def test_version_flag_prints_package_version(capsys):
+    import pytest
+    from vmon import __version__
+    from vmon.cli import main
+    with pytest.raises(SystemExit) as exc:
+        main(["--version"])
+    assert exc.value.code == 0
+    assert capsys.readouterr().out.strip() == "vmon %s" % __version__
