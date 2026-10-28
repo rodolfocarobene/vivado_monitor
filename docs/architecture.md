@@ -1,5 +1,7 @@
 # Architecture
 
+You are here: how vmon works inside, for contributors. To use it see the [user guide](guide.md); for settings see [configuration.md](configuration.md).
+
 vmon is a stdlib-only Python backend that reads Vivado logs and marker files, builds a JSON model, and serves it with a vanilla JS single-page UI. It never writes to build directories and never signals processes.
 
 ## Modules
@@ -198,3 +200,24 @@ A record also stores `steps` and `phases` (the durations `eta.py` keeps, same no
 ## Notifications outside the browser
 
 `notify.py` delivers events with no browser open. `Monitor._observe` hands every event it logs to `Notifier.submit`; because `_observe` returns on the first observation of a firmware, builds that were already finished or running at startup (and history backfill) never notify, and `submit` also ignores events older than the notifier. Events are filtered like the browser does: `kinds` for step/run events, `codes` plus `min_level` for alerts. A key of (firmware, time, kind, node, code, title) dedupes. Accepted events go to a bounded queue (200) served by one daemon thread, so a slow endpoint never delays the tick. At most `max_per_minute` messages are sent per rolling minute; the rest are counted and sent as one "N more events" message once the window frees. Channels: desktop (`notify-send` argv with no shell, or on Windows a fixed PowerShell toast script passed as `-EncodedCommand`, with title and body in environment variables, never in the code), ntfy, Slack, Matrix (a unique transaction id per message) and a generic JSON webhook, all with `timeout_s`. A failing channel is logged once per distinct error with scheme://host only and never raises into the monitor. Configuration is in [`docs/configuration.md`](configuration.md#notifications-outside-the-browser).
+
+## Development and CI
+
+```sh
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest -q
+.venv/bin/python tools/check_docs.py   # docs cover every API route, config section and CLI option
+```
+
+Browser tests (`tests/e2e/`, marked `e2e`) drive the UI in headless Chromium through Playwright, which is a development-only dependency (pinned in `requirements-dev.txt`, currently 1.64.0; vmon itself still has no runtime dependencies). Install the browser once, then run them:
+
+```sh
+.venv/bin/python -m playwright install chromium
+.venv/bin/python -m pytest -m e2e -q
+```
+
+Without playwright or a browser they are skipped, so a plain `python -m pytest` works everywhere. Set `VMON_E2E_BROWSER=firefox` to use Firefox instead (`playwright install firefox`), `PLAYWRIGHT_BROWSERS_PATH` to keep the browsers outside `~/.cache/ms-playwright`, and `VMON_E2E_REQUIRE=1` to fail instead of skip when the browser is missing (CI does). A failing test leaves a screenshot and a Playwright trace in `.tmp/e2e-artifacts/` (`VMON_E2E_ARTIFACTS` changes the folder; open a trace with `playwright show-trace`).
+
+CI (GitHub Actions) runs the tests on Python 3.11–3.14, a server smoke test, frontend checks, the browser tests (job "Frontend e2e", failure screenshots and traces are uploaded as an artifact), a packaging check and the docs check on every push and pull request.
+
+The architecture contract is in [SPEC.md](../SPEC.md).
