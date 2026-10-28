@@ -9,6 +9,7 @@ import urllib.request
 import threading
 import webbrowser
 
+from . import __version__
 from .config import load_config
 from . import remote as remote_mod
 from . import status as status_mod
@@ -24,6 +25,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="vmon", description="Live monitor for Vivado builds",
                                      epilog="`vmon status [paths] [--json] [--watch N]` prints a one-shot summary "
                                             "(see `vmon status --help`).")
+    parser.add_argument("--version", action="version", version="vmon %s" % __version__)
     parser.add_argument("paths", nargs="*", help=".runs dir, .xpr, run dir or log file to watch")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--host", default="127.0.0.1")

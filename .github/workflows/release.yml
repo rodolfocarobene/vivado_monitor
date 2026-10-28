@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - "tools/vmon.spec"
+      - "tools/vmon_entry.py"
+      - "tools/smoke_binary.py"
+      - "requirements-release.txt"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Version from the tag (release) or pyproject (PR, manual run)
+        id: v
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os, re, sys, tomllib
+          with open("pyproject.toml", "rb") as fh:
+              pyproject = tomllib.load(fh)["project"]["version"]
+          init = re.search(r'__version__\s*=\s*"([^"]+)"', open("vmon/__init__.py").read()).group(1)
+          version = pyproject
+          if os.environ["EVENT"] == "release":
+              version = os.environ["TAG"].removeprefix("v")
+              if not (version == pyproject == init):
+                  print("::error::version mismatch: release tag %r gives %s, pyproject.toml has %s, "
+                        "vmon/__init__.py has %s. Bump both files, move the tag and publish again."
+                        % (os.environ["TAG"], version, pyproject, init))
+                  sys.exit(1)
+          elif init != pyproject:
+              print("::error::pyproject.toml (%s) and vmon/__init__.py (%s) disagree" % (pyproject, init))
+              sys.exit(1)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write("version=%s\n" % version)
+          print("version:", version)
+          PY
+
+  binary:
+    name: Binary (${{ matrix.os_name }})
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ubuntu-22.04: the oldest glibc we can get, so the binary runs on older distros too
+          - runner: ubuntu-22.04
+            os_name: linux-x86_64
+            suffix: ""
+          - runner: windows-latest
+            os_name: windows-x86_64
+            suffix: ".exe"
+    env:
+      ASSET: vmon-${{ needs.version.outputs.version }}-${{ matrix.os_name }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-release.txt
+      - name: Build single-file executable
+        env:
+          VMON_BINARY_NAME: ${{ env.ASSET }}
+        run: python -m PyInstaller tools/vmon.spec --distpath dist-bin --workpath build-bin --noconfirm
+      - name: Smoke test the executable
+        run: python tools/smoke_binary.py "dist-bin/${ASSET}${{ matrix.suffix }}" "${{ needs.version.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ASSET }}
+          path: dist-bin/${{ env.ASSET }}${{ matrix.suffix }}
+          if-no-files-found: error
+
+  dist:
+    name: Wheel and sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-release.txt
+          python -m build --sdist --wheel --outdir dist-py
+          ls -l dist-py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist-py/*
+          if-no-files-found: error
+
+  publish:
+    name: Attach to the release
+    if: github.event_name == 'release'
+    needs: [version, binary, dist]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Checksums
+        working-directory: assets
+        run: |
+          ls -l
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" assets/* --clobber

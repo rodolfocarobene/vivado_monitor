@@ -29,7 +29,7 @@ def cli_options():
     out = "".join(subprocess.run([sys.executable, "-m", "vmon", *args, "--help"], cwd=ROOT,
                                  capture_output=True, text=True, check=True).stdout
                   for args in ([], ["status"]))
-    return sorted(set(re.findall(r"--[a-z][a-z-]*", out)) - {"--help"})
+    return sorted(set(re.findall(r"--[a-z][a-z-]*", out)) - {"--help", "--version"})
 
 
 def broken_links():
